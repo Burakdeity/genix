@@ -137,9 +137,9 @@ export function VoiceModePanel({
 
         <div
           className={cn(
-            "genix-voice-orb mb-10",
-            isListening && "genix-voice-orb-active",
-            (isLoading || isSpeaking) && "genix-voice-orb-speaking",
+            "orwix-voice-orb mb-10",
+            isListening && "orwix-voice-orb-active",
+            (isLoading || isSpeaking) && "orwix-voice-orb-speaking",
           )}
           aria-hidden
         />

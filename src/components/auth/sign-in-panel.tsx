@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 
 import { AuthFooter } from "@/components/auth/auth-footer";
 import { GoogleOAuthSignInButton } from "@/components/auth/google-oauth-sign-in-button";
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { useAuthStore } from "@/stores/auth.store";
 
 interface SignInPanelProps {
@@ -40,21 +40,21 @@ export function SignInPanel({ onBack, onClose }: SignInPanelProps) {
           ) : null}
 
           <div className="mb-8">
-            <GenixWordmark className="mb-6 text-3xl font-bold" />
+            <OrwixWordmark className="mb-6 text-3xl font-bold" />
             <h1 className="text-2xl font-normal text-[#1f1f1f]">
               Oturum açın
             </h1>
             <p className="mt-2 text-[15px] text-[#444746]">
               {signInEmail
                 ? `${signInEmail} ile devam edin`
-                : "Genix'e devam etmek için Google hesabınızla oturum açın"}
+                : "Orwix'e devam etmek için Google hesabınızla oturum açın"}
             </p>
           </div>
 
           <div className="space-y-4">
             <GoogleOAuthSignInButton />
             <p className="text-center text-xs leading-relaxed text-[#444746]">
-              Devam ederek Genix&apos;in{" "}
+              Devam ederek Orwix&apos;in{" "}
               <a href="#" className="text-[#0b57d0] hover:underline">
                 Hizmet Şartları
               </a>{" "}

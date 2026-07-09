@@ -2,7 +2,7 @@
 
 import { ChevronDown, Menu, SquarePen } from "lucide-react";
 
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { ClientOnly } from "@/components/ui/client-only";
 import {
   Select,
@@ -45,7 +45,7 @@ export function MobileHeader({
       <ClientOnly
         fallback={
           <div className="flex items-center gap-1.5 px-1">
-            <GenixWordmark className="text-base font-bold" />
+            <OrwixWordmark className="text-base font-bold" />
             <span className="text-base font-medium text-muted-foreground">
               {getModelLabel(model)}
             </span>
@@ -59,16 +59,16 @@ export function MobileHeader({
           }
         >
           <SelectTrigger className="h-10 w-auto gap-1.5 border-0 bg-transparent px-1 text-base font-medium text-foreground shadow-none focus:ring-0 [&>svg:last-child]:hidden">
-            <GenixWordmark className="text-base font-bold" />
+            <OrwixWordmark className="text-base font-bold" />
             <span className="text-base font-medium text-muted-foreground">
               {getModelLabel(model)}
             </span>
             <ChevronDown className="size-4 opacity-70" />
           </SelectTrigger>
           <SelectContent className="border-border bg-popover text-popover-foreground">
-            <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Genix Flash</SelectItem>
-            <SelectItem value={GEMINI_MODELS.FLASH}>Genix Flash 2.5</SelectItem>
-            <SelectItem value={GEMINI_MODELS.PRO}>Genix Pro</SelectItem>
+            <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Orwix Flash</SelectItem>
+            <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash 2.5</SelectItem>
+            <SelectItem value={GEMINI_MODELS.PRO}>Orwix Pro</SelectItem>
           </SelectContent>
         </Select>
       </ClientOnly>

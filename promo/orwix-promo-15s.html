@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1080, height=1920" />
+  <title>Orwix Promo 15s</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: #06040f;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #fff;
+    }
+
+    .stage {
+      position: relative;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      background: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(124,58,237,.35), transparent 60%),
+                  radial-gradient(ellipse 60% 40% at 80% 80%, rgba(34,211,238,.18), transparent 55%),
+                  radial-gradient(ellipse 50% 35% at 10% 70%, rgba(232,121,249,.15), transparent 50%),
+                  linear-gradient(180deg, #0a0618 0%, #06040f 45%, #05040c 100%);
+    }
+
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(167,139,250,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(167,139,250,.06) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(180deg, black, transparent 85%);
+      opacity: 0;
+      animation: grid-in 1s 0.2s ease-out forwards;
+    }
+    @keyframes grid-in { to { opacity: 1; } }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0;
+    }
+    .orb-1 {
+      width: 500px; height: 500px;
+      top: -100px; left: -80px;
+      background: rgba(124,58,237,.45);
+      animation: orb-float 15s linear infinite, fade-in 1.2s ease forwards;
+    }
+    .orb-2 {
+      width: 420px; height: 420px;
+      bottom: 200px; right: -120px;
+      background: rgba(34,211,238,.3);
+      animation: orb-float 18s linear infinite reverse, fade-in 1.4s .2s ease forwards;
+    }
+    @keyframes orb-float {
+      0%, 100% { transform: translate(0,0); }
+      50% { transform: translate(30px, -20px); }
+    }
+    @keyframes fade-in { to { opacity: 1; } }
+
+    .content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      padding: 120px 64px 100px;
+      text-align: center;
+    }
+
+    .logo-wrap {
+      opacity: 0;
+      transform: scale(0.7) translateY(30px);
+      animation: logo-in 1s 0.3s cubic-bezier(.22,1,.36,1) forwards;
+    }
+    @keyframes logo-in {
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .logo-icon {
+      width: 160px;
+      height: 160px;
+      margin: 0 auto 28px;
+      filter: drop-shadow(0 0 40px rgba(124,58,237,.6));
+    }
+
+    .brand {
+      font-size: 96px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #c4b5fd 0%, #e879f9 45%, #22d3ee 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .scene {
+      position: absolute;
+      left: 64px;
+      right: 64px;
+      opacity: 0;
+      pointer-events: none;
+      transition: none;
+    }
+
+    .tagline-scene {
+      top: 680px;
+      animation: scene-tagline 15s linear forwards;
+    }
+    @keyframes scene-tagline {
+      0%, 18% { opacity: 0; transform: translateY(24px); }
+      22%, 38% { opacity: 1; transform: translateY(0); }
+      42%, 100% { opacity: 0; transform: translateY(-16px); }
+    }
+
+    .tagline {
+      font-size: 72px;
+      font-weight: 700;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+    }
+    .tagline span {
+      display: block;
+      background: linear-gradient(90deg, #a78bfa, #e879f9, #22d3ee);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .sub {
+      margin-top: 28px;
+      font-size: 36px;
+      color: rgba(255,255,255,.65);
+      font-weight: 500;
+    }
+
+    .features-scene {
+      top: 620px;
+      animation: scene-features 15s linear forwards;
+    }
+    @keyframes scene-features {
+      0%, 38% { opacity: 0; transform: scale(0.95); }
+      42%, 62% { opacity: 1; transform: scale(1); }
+      66%, 100% { opacity: 0; transform: scale(1.02); }
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+    }
+    .feat {
+      padding: 36px 28px;
+      border-radius: 28px;
+      border: 1px solid rgba(167,139,250,.25);
+      background: rgba(255,255,255,.06);
+      backdrop-filter: blur(12px);
+      font-size: 32px;
+      font-weight: 700;
+      box-shadow: 0 8px 32px rgba(0,0,0,.25);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .feat:nth-child(1) { animation: feat-in .5s 6.3s ease-out forwards; }
+    .feat:nth-child(2) { animation: feat-in .5s 6.5s ease-out forwards; }
+    .feat:nth-child(3) { animation: feat-in .5s 6.7s ease-out forwards; }
+    .feat:nth-child(4) { animation: feat-in .5s 6.9s ease-out forwards; }
+    @keyframes feat-in { to { opacity: 1; transform: translateY(0); } }
+    .feat em { font-style: normal; font-size: 40px; display: block; margin-bottom: 8px; }
+
+    .phone-scene {
+      top: 520px;
+      animation: scene-phone 15s linear forwards;
+    }
+    @keyframes scene-phone {
+      0%, 62% { opacity: 0; transform: translateY(40px); }
+      66%, 84% { opacity: 1; transform: translateY(0); }
+      88%, 100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    .phone {
+      width: 340px;
+      margin: 0 auto 32px;
+      padding: 12px;
+      border-radius: 48px;
+      background: linear-gradient(160deg, rgba(255,255,255,.15), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 40px 80px rgba(0,0,0,.5), 0 0 60px rgba(16,185,129,.15);
+    }
+    .phone-screen {
+      border-radius: 38px;
+      overflow: hidden;
+      aspect-ratio: 9/19;
+      background: linear-gradient(180deg, #12121c, #0a0a12);
+      position: relative;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 10px; left: 50%;
+      transform: translateX(-50%);
+      width: 100px; height: 22px;
+      background: #050508;
+      border-radius: 999px;
+      z-index: 2;
+    }
+    .phone-ui {
+      padding: 48px 20px 20px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .phone-bar { height: 12px; border-radius: 6px; background: rgba(255,255,255,.15); width: 40%; }
+    .phone-hero { flex: 1; border-radius: 16px; background: linear-gradient(135deg, rgba(16,185,129,.3), rgba(34,211,238,.2)); margin: 8px 0; }
+    .phone-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; height: 60px; }
+    .phone-cell { border-radius: 12px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.08); }
+    .phone-label {
+      font-size: 28px;
+      color: rgba(110,231,183,.9);
+      font-weight: 600;
+    }
+
+    .cta-scene {
+      top: 700px;
+      animation: scene-cta 15s linear forwards;
+    }
+    @keyframes scene-cta {
+      0%, 84% { opacity: 0; transform: scale(0.9); }
+      88%, 100% { opacity: 1; transform: scale(1); }
+    }
+
+    .cta-btn {
+      display: inline-block;
+      margin-top: 40px;
+      padding: 28px 64px;
+      border-radius: 999px;
+      font-size: 40px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #7c3aed, #c026d3, #0891b2);
+      box-shadow: 0 12px 48px rgba(124,58,237,.5);
+      animation: cta-pulse 1.2s 13.2s ease-in-out infinite;
+    }
+    @keyframes cta-pulse {
+      0%, 100% { box-shadow: 0 12px 48px rgba(124,58,237,.5); }
+      50% { box-shadow: 0 16px 64px rgba(124,58,237,.75); transform: scale(1.03); }
+    }
+    .cta-url {
+      margin-top: 24px;
+      font-size: 32px;
+      color: rgba(255,255,255,.5);
+      letter-spacing: 0.05em;
+    }
+
+    .logo-small {
+      opacity: 0;
+      animation: logo-small-in .6s 12.8s ease-out forwards;
+      margin-bottom: 20px;
+    }
+    @keyframes logo-small-in { to { opacity: 1; } }
+    .logo-small svg { width: 80px; height: 80px; }
+
+    .progress {
+      position: absolute;
+      bottom: 48px;
+      left: 64px;
+      right: 64px;
+      height: 4px;
+      background: rgba(255,255,255,.1);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #7c3aed, #e879f9, #22d3ee);
+      border-radius: 999px;
+      animation: progress 15s linear forwards;
+    }
+    @keyframes progress { to { width: 100%; } }
+  </style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="grid"></div>
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+
+    <div class="content">
+      <div class="logo-wrap">
+        <svg class="logo-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+          <defs>
+            <linearGradient id="orwix-brand" x1="12" y1="10" x2="54" y2="54">
+              <stop stop-color="#a78bfa"/><stop offset="0.45" stop-color="#e879f9"/><stop offset="1" stop-color="#22d3ee"/>
+            </linearGradient>
+            <radialGradient id="orwix-core" cx="0" cy="0" r="1" gradientTransform="translate(32 32) rotate(90) scale(14)">
+              <stop stop-color="#e9d5ff" stop-opacity="0.45"/><stop offset="0.55" stop-color="#a78bfa" stop-opacity="0.2"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+          <circle cx="32" cy="32" r="21" stroke="url(#orwix-brand)" stroke-width="3.25" stroke-dasharray="102 30" transform="rotate(-28 32 32)"/>
+          <circle cx="32" cy="32" r="15.5" stroke="url(#orwix-brand)" stroke-width="1.5" stroke-opacity="0.35" stroke-dasharray="62 36" transform="rotate(132 32 32)"/>
+          <circle cx="32" cy="32" r="14" fill="url(#orwix-core)"/>
+          <path d="M32 24.5 34.1 30.2 40 31.6 34.9 35.6 36.2 41.5 32 38.2 27.8 41.5 29.1 35.6 24 31.6 29.9 30.2 32 24.5Z" fill="url(#orwix-brand)"/>
+        </svg>
+        <div class="brand">Orwix</div>
+      </div>
+
+      <div class="scene tagline-scene">
+        <h1 class="tagline">
+          <span>Hayal et.</span>
+          <span>Söyle.</span>
+          <span>Oluşsun.</span>
+        </h1>
+        <p class="sub">Slayt · Web · Tasarım · Uygulama</p>
+      </div>
+
+      <div class="scene features-scene">
+        <div class="features">
+          <div class="feat"><em>📊</em> Slaytlar</div>
+          <div class="feat"><em>🌐</em> Web Sitesi</div>
+          <div class="feat"><em>🎨</em> Tasarım</div>
+          <div class="feat"><em>📱</em> Uygulama</div>
+        </div>
+      </div>
+
+      <div class="scene phone-scene">
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="phone-notch"></div>
+            <div class="phone-ui">
+              <div class="phone-bar"></div>
+              <div class="phone-hero"></div>
+              <div class="phone-row">
+                <div class="phone-cell"></div>
+                <div class="phone-cell"></div>
+                <div class="phone-cell"></div>
+                <div class="phone-cell"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <p class="phone-label">Tek komutla mobil uygulama akışı</p>
+      </div>
+
+      <div class="scene cta-scene">
+        <div class="logo-small">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+            <defs>
+              <linearGradient id="g" x1="12" y1="10" x2="54" y2="54">
+                <stop stop-color="#a78bfa"/><stop offset=".45" stop-color="#e879f9"/><stop offset="1" stop-color="#22d3ee"/>
+              </linearGradient>
+            </defs>
+            <circle cx="32" cy="32" r="21" stroke="url(#g)" stroke-width="3.25" stroke-dasharray="102 30" transform="rotate(-28 32 32)"/>
+            <path d="M32 24.5 34.1 30.2 40 31.6 34.9 35.6 36.2 41.5 32 38.2 27.8 41.5 29.1 35.6 24 31.6 29.9 30.2 32 24.5Z" fill="url(#g)"/>
+          </svg>
+        </div>
+        <div class="cta-btn">Hemen Başla</div>
+        <p class="cta-url">orwix.app</p>
+      </div>
+    </div>
+
+    <div class="progress"><div class="progress-bar"></div></div>
+  </div>
+
+  <script>
+    document.body.classList.add("ready");
+    window.__PROMO_DONE__ = false;
+    setTimeout(() => { window.__PROMO_DONE__ = true; }, 15000);
+  </script>
+</body>
+</html>

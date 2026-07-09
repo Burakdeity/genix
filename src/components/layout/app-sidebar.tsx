@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 import { ProfileMenu } from "@/components/auth/profile-menu";
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { ClientOnly } from "@/components/ui/client-only";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -33,9 +33,9 @@ export function AppSidebar({ onNewChat }: AppSidebarProps) {
       <button
         type="button"
         className="mb-6 flex size-10 items-center justify-center rounded-xl transition-transform hover:scale-105"
-        aria-label="Genix"
+        aria-label="Orwix"
       >
-        <GenixWordmark className="text-[11px] font-extrabold" />
+        <OrwixWordmark className="text-[11px] font-extrabold" />
       </button>
 
       <nav className="flex flex-1 flex-col items-center gap-1">

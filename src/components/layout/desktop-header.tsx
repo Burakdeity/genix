@@ -2,7 +2,7 @@
 
 import { SquarePen } from "lucide-react";
 
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { ClientOnly } from "@/components/ui/client-only";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,7 @@ export function DesktopHeader({
   return (
     <header className="hidden h-14 shrink-0 items-center justify-between border-b border-border/80 bg-background/80 px-6 backdrop-blur-md md:flex">
       <div className="flex min-w-0 items-center gap-3">
-        <GenixWordmark className="text-lg font-bold" />
+        <OrwixWordmark className="text-lg font-bold" />
         <Badge
           variant="secondary"
           className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
@@ -63,9 +63,9 @@ export function DesktopHeader({
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="border-border bg-popover text-popover-foreground">
-              <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Genix Flash</SelectItem>
-              <SelectItem value={GEMINI_MODELS.FLASH}>Genix Flash 2.5</SelectItem>
-              <SelectItem value={GEMINI_MODELS.PRO}>Genix Pro</SelectItem>
+              <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Orwix Flash</SelectItem>
+              <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash 2.5</SelectItem>
+              <SelectItem value={GEMINI_MODELS.PRO}>Orwix Pro</SelectItem>
             </SelectContent>
           </Select>
         </ClientOnly>

@@ -55,11 +55,12 @@ export function ChatInput({
           : "border-t border-border pb-[max(1rem,env(safe-area-inset-bottom))]",
       )}
     >
-      <div className="genix-input-bar mx-auto flex max-w-2xl items-end gap-2 rounded-2xl px-3 py-2.5 md:px-4">
+      <div className="orwix-composer-wrap mx-auto max-w-2xl">
+        <div className="orwix-composer flex items-end gap-2 rounded-[27px] px-3 py-2.5 md:px-4">
         <textarea
           value={value}
           onChange={(event) => setValue(event.target.value)}
-          placeholder="Genix'e bir mesaj yazın..."
+          placeholder="Orwix'e bir mesaj yazın..."
           disabled={isLoading}
           rows={1}
           onKeyDown={(event) => {
@@ -122,6 +123,7 @@ export function ChatInput({
             <ArrowUp className="size-4" />
           )}
         </Button>
+        </div>
       </div>
     </div>
   );

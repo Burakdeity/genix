@@ -11,7 +11,7 @@ export const ChatInterfaceClient = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex h-screen items-center justify-center bg-background text-sm text-muted-foreground">
-        Genix yükleniyor...
+        Orwix yükleniyor...
       </div>
     ),
   },

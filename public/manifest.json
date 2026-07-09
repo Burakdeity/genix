@@ -1,16 +1,16 @@
 {
-  "name": "Genix",
-  "short_name": "Genix",
-  "description": "Genix AI sohbet uygulaması",
+  "name": "Orwix",
+  "short_name": "Orwix",
+  "description": "Orwix AI — Yapay zeka ile uygulamalı",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f7f6fb",
-  "theme_color": "#7c3aed",
+  "background_color": "#f4f2ff",
+  "theme_color": "#6366f1",
   "lang": "tr",
   "icons": [
     {
-      "src": "/brand/genix-icon.svg",
+      "src": "/brand/orwix-icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"
