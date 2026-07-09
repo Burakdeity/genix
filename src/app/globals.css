@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-jakarta);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-inter);
+  --font-heading: var(--font-space);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,78 +49,84 @@
 }
 
 :root {
-  --background: #f7f6fb;
-  --foreground: #1a1625;
-  --card: #ffffff;
-  --card-foreground: #1a1625;
+  --background: #f4f2ff;
+  --foreground: #0c0a14;
+  --card: rgba(255, 255, 255, 0.85);
+  --card-foreground: #0c0a14;
   --popover: #ffffff;
-  --popover-foreground: #1a1625;
+  --popover-foreground: #0c0a14;
   --primary: #7c3aed;
   --primary-foreground: #ffffff;
-  --secondary: #f0edf8;
-  --secondary-foreground: #4b4563;
-  --muted: #ece9f4;
-  --muted-foreground: #6b647d;
+  --secondary: #ede9fe;
+  --secondary-foreground: #5b21b6;
+  --muted: #e8e4f5;
+  --muted-foreground: #6b6280;
   --accent: rgba(124, 58, 237, 0.1);
   --accent-foreground: #6d28d9;
   --destructive: #dc2626;
-  --border: #e3dff0;
-  --input: #ffffff;
-  --ring: #7c3aed;
-  --chart-1: #7c3aed;
-  --chart-2: #06b6d4;
-  --chart-3: #ec4899;
-  --chart-4: #f59e0b;
-  --chart-5: #10b981;
-  --radius: 1rem;
+  --border: rgba(124, 58, 237, 0.14);
+  --input: rgba(255, 255, 255, 0.9);
+  --ring: #8b5cf6;
+  --radius: 0.875rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #4b4563;
+  --sidebar-foreground: #6b6280;
   --sidebar-primary: #7c3aed;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f3f0fa;
-  --sidebar-accent-foreground: #1a1625;
-  --sidebar-border: #e3dff0;
-  --sidebar-ring: #7c3aed;
-  --genix-glow: rgba(124, 58, 237, 0.12);
-  --genix-mesh-1: rgba(124, 58, 237, 0.08);
-  --genix-mesh-2: rgba(6, 182, 212, 0.06);
+  --sidebar-accent: #f5f3ff;
+  --sidebar-accent-foreground: #0c0a14;
+  --sidebar-border: rgba(124, 58, 237, 0.14);
+  --sidebar-ring: #8b5cf6;
+  --orwix-accent: #22d3ee;
+  --orwix-glow: rgba(124, 58, 237, 0.35);
+  --orwix-surface: rgba(255, 255, 255, 0.65);
+  --orwix-gradient: linear-gradient(
+    135deg,
+    #7c3aed 0%,
+    #c026d3 45%,
+    #22d3ee 100%
+  );
+  --mx: 0px;
+  --my: 0px;
+  --orwix-orb-1: rgba(124, 58, 237, 0.55);
+  --orwix-orb-2: rgba(192, 38, 211, 0.4);
+  --orwix-orb-3: rgba(34, 211, 238, 0.35);
+  --orwix-orb-4: rgba(244, 63, 94, 0.25);
+  --orwix-grid-rgb: 124, 58, 237;
+  --orwix-spotlight: rgba(167, 139, 250, 0.15);
+  --orwix-beam-start: rgba(167, 139, 250, 0.6);
+  --orwix-beam-mid: rgba(34, 211, 238, 0.2);
+  --orwix-beam-glow: rgba(124, 58, 237, 0.3);
 }
 
 .dark {
-  --background: #000000;
-  --foreground: #e8eaed;
-  --card: #1a1a1a;
-  --card-foreground: #e8eaed;
-  --popover: #1e1e1e;
-  --popover-foreground: #e8eaed;
+  --background: #030014;
+  --foreground: #f0ecff;
+  --card: rgba(12, 8, 28, 0.75);
+  --card-foreground: #f0ecff;
+  --popover: #0f0a1f;
+  --popover-foreground: #f0ecff;
   --primary: #a78bfa;
-  --primary-foreground: #000000;
-  --secondary: #1e1e1e;
-  --secondary-foreground: #bdc1c6;
-  --muted: #1a1a1a;
-  --muted-foreground: #9aa0a6;
-  --accent: rgba(167, 139, 250, 0.12);
+  --primary-foreground: #030014;
+  --secondary: rgba(167, 139, 250, 0.12);
+  --secondary-foreground: #ddd6fe;
+  --muted: rgba(255, 255, 255, 0.05);
+  --muted-foreground: #9b92b8;
+  --accent: rgba(167, 139, 250, 0.15);
   --accent-foreground: #c4b5fd;
   --destructive: #f87171;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: #2d2d2d;
+  --border: rgba(167, 139, 250, 0.18);
+  --input: rgba(15, 10, 31, 0.9);
   --ring: #a78bfa;
-  --chart-1: #a78bfa;
-  --chart-2: #22d3ee;
-  --chart-3: #f472b6;
-  --chart-4: #fbbf24;
-  --chart-5: #34d399;
-  --sidebar: #000000;
-  --sidebar-foreground: #9aa0a6;
+  --sidebar: #030014;
+  --sidebar-foreground: #9b92b8;
   --sidebar-primary: #a78bfa;
-  --sidebar-primary-foreground: #000000;
-  --sidebar-accent: rgba(255, 255, 255, 0.06);
-  --sidebar-accent-foreground: #e8eaed;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-primary-foreground: #030014;
+  --sidebar-accent: rgba(255, 255, 255, 0.04);
+  --sidebar-accent-foreground: #f0ecff;
+  --sidebar-border: rgba(167, 139, 250, 0.12);
   --sidebar-ring: #a78bfa;
-  --genix-glow: rgba(167, 139, 250, 0.25);
-  --genix-mesh-1: rgba(124, 58, 237, 0.12);
-  --genix-mesh-2: rgba(6, 182, 212, 0.06);
+  --orwix-glow: rgba(167, 139, 250, 0.45);
+  --orwix-surface: rgba(8, 4, 20, 0.72);
 }
 
 @layer base {
@@ -130,16 +136,25 @@
 
   html {
     @apply font-sans;
-    color-scheme: light;
+    color-scheme: dark;
   }
 
-  html.dark {
-    color-scheme: dark;
+  html:not(.dark) {
+    color-scheme: light;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
+    transition: background-color 0.5s ease;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-space), var(--font-jakarta), system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -150,186 +165,806 @@
     background-color: var(--background);
   }
 
-  .app-bg::before {
-    content: "";
+  .orwix-page {
+    position: relative;
+    isolation: isolate;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated background ── */
+  .orwix-bg {
+    pointer-events: none;
     position: fixed;
     inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        ellipse 70% 50% at 15% 0%,
-        var(--genix-mesh-1) 0%,
-        transparent 55%
-      ),
-      radial-gradient(
-        ellipse 60% 45% at 85% 10%,
-        var(--genix-mesh-2) 0%,
-        transparent 50%
-      ),
-      var(--background);
+    z-index: 0;
+    overflow: hidden;
+    background: var(--background);
+    transition: background 0.5s ease;
   }
 
-  .genix-shell::before {
-    content: "";
-    position: fixed;
+  .orwix-bg-noise {
+    position: absolute;
     inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background:
-      radial-gradient(
-        ellipse 80% 55% at 50% 100%,
-        var(--genix-mesh-1) 0%,
-        transparent 60%
-      ),
-      radial-gradient(
-        ellipse 50% 40% at 80% 0%,
-        var(--genix-mesh-2) 0%,
-        transparent 55%
-      ),
-      var(--background);
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
   }
 
-  .dark .genix-shell::before {
-    background:
-      radial-gradient(
-        ellipse 90% 50% at 50% 100%,
-        rgba(124, 58, 237, 0.1) 0%,
-        transparent 70%
-      ),
-      radial-gradient(
-        ellipse 55% 45% at 50% 35%,
-        rgba(6, 182, 212, 0.05) 0%,
-        transparent 65%
-      ),
-      #000000;
+  .dark .orwix-bg-noise {
+    opacity: 0.5;
   }
 
-  .dark .app-bg::before {
-    background:
-      radial-gradient(
-        ellipse 55% 45% at 50% 38%,
-        rgba(124, 58, 237, 0.1) 0%,
-        transparent 65%
-      ),
-      #000000;
+  .orwix-bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(var(--orwix-grid-rgb), 0.06) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        rgba(var(--orwix-grid-rgb), 0.06) 1px,
+        transparent 1px
+      );
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black 20%, transparent 75%);
   }
 
-  .genix-greeting {
+  .dark .orwix-bg-grid {
+    background-image:
+      linear-gradient(rgba(var(--orwix-grid-rgb), 0.1) 1px, transparent 1px),
+      linear-gradient(
+        90deg,
+        rgba(var(--orwix-grid-rgb), 0.1) 1px,
+        transparent 1px
+      );
+  }
+
+  .orwix-bg-orb {
+    position: absolute;
+    border-radius: 9999px;
+    filter: blur(80px);
+    will-change: transform;
+  }
+
+  .orwix-bg-orb-1 {
+    width: 55vw;
+    height: 55vw;
+    max-width: 700px;
+    max-height: 700px;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, var(--orwix-orb-1) 0%, transparent 70%);
+    animation: orwix-float-1 18s ease-in-out infinite;
+  }
+
+  .orwix-bg-orb-2 {
+    width: 40vw;
+    height: 40vw;
+    max-width: 500px;
+    max-height: 500px;
+    top: 30%;
+    right: -10%;
+    background: radial-gradient(circle, var(--orwix-orb-2) 0%, transparent 70%);
+    animation: orwix-float-2 22s ease-in-out infinite;
+  }
+
+  .orwix-bg-orb-3 {
+    width: 35vw;
+    height: 35vw;
+    max-width: 450px;
+    max-height: 450px;
+    bottom: -5%;
+    left: -5%;
+    background: radial-gradient(circle, var(--orwix-orb-3) 0%, transparent 70%);
+    animation: orwix-float-3 20s ease-in-out infinite;
+  }
+
+  .orwix-bg-orb-4 {
+    width: 25vw;
+    height: 25vw;
+    max-width: 320px;
+    max-height: 320px;
+    bottom: 20%;
+    right: 15%;
+    background: radial-gradient(circle, var(--orwix-orb-4) 0%, transparent 70%);
+    animation: orwix-float-4 16s ease-in-out infinite;
+  }
+
+  .orwix-bg-spotlight {
+    position: absolute;
+    width: 60vw;
+    height: 60vw;
+    max-width: 800px;
+    max-height: 800px;
+    top: 10%;
+    left: 50%;
+    transform: translate(calc(-50% + var(--mx)), calc(var(--my)));
+    background: radial-gradient(circle, var(--orwix-spotlight) 0%, transparent 60%);
+    transition: transform 0.4s ease-out;
+  }
+
+  .orwix-bg-beam {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 1px;
+    height: 50%;
+    transform: translateX(-50%);
     background: linear-gradient(
-      135deg,
-      #7c3aed 0%,
-      #a855f7 45%,
-      #06b6d4 100%
+      180deg,
+      var(--orwix-beam-start) 0%,
+      var(--orwix-beam-mid) 40%,
+      transparent 100%
     );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    box-shadow: 0 0 60px 20px var(--orwix-beam-glow);
+    animation: orwix-beam-pulse 4s ease-in-out infinite;
   }
 
-  .genix-wordmark {
-    background: linear-gradient(
-      120deg,
-      #7c3aed 0%,
-      #9333ea 40%,
-      #06b6d4 100%
-    );
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .genix-wordmark-hero {
-    background: linear-gradient(
-      100deg,
-      #7c3aed 0%,
-      #a855f7 35%,
-      #06b6d4 85%
-    );
-    background-size: 200% auto;
-    animation: genix-gradient-shift 8s ease-in-out infinite;
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  .dark .genix-wordmark-hero {
-    filter: drop-shadow(0 0 20px var(--genix-glow));
-  }
-
-  @keyframes genix-gradient-shift {
+  @keyframes orwix-float-1 {
     0%,
     100% {
-      background-position: 0% center;
+      transform: translateX(-50%) translateY(0) scale(1);
     }
     50% {
-      background-position: 100% center;
+      transform: translateX(-48%) translateY(30px) scale(1.05);
     }
   }
 
-  .genix-input-bar {
-    background: var(--card);
-    border: 1px solid var(--border);
-    box-shadow:
-      0 4px 24px rgba(26, 22, 37, 0.06),
-      0 1px 2px rgba(26, 22, 37, 0.04);
+  @keyframes orwix-float-2 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-40px, 25px) scale(1.08);
+    }
   }
 
-  .dark .genix-input-bar {
-    background: #1e1e1e;
-    border-color: rgba(255, 255, 255, 0.1);
-    box-shadow:
-      0 2px 8px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(255, 255, 255, 0.04);
+  @keyframes orwix-float-3 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(30px, -20px) scale(1.06);
+    }
   }
 
-  .genix-user-bubble {
+  @keyframes orwix-float-4 {
+    0%,
+    100% {
+      transform: translate(0, 0) scale(1);
+    }
+    50% {
+      transform: translate(-25px, -30px) scale(1.1);
+    }
+  }
+
+  @keyframes orwix-beam-pulse {
+    0%,
+    100% {
+      opacity: 0.6;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  /* ── Brand & text ── */
+  .orwix-wordmark {
+    background: linear-gradient(135deg, #a78bfa 0%, #e879f9 50%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.4));
+  }
+
+  .orwix-gradient-text {
+    background: var(--orwix-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .orwix-hero-title {
+    background: linear-gradient(
+      115deg,
+      #e9d5ff 0%,
+      #c4b5fd 14%,
+      #e879f9 28%,
+      #f472b6 42%,
+      #22d3ee 56%,
+      #a78bfa 70%,
+      #d8b4fe 84%,
+      #e9d5ff 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: orwix-hero-shimmer 9s linear infinite;
+  }
+
+  :not(.dark) .orwix-hero-title {
+    background: linear-gradient(
+      115deg,
+      #5b21b6 0%,
+      #7c3aed 16%,
+      #c026d3 32%,
+      #db2777 48%,
+      #0891b2 64%,
+      #6d28d9 80%,
+      #5b21b6 100%
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  @keyframes orwix-hero-shimmer {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 300% 50%;
+    }
+  }
+
+  .orwix-stat-value {
+    background: var(--orwix-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ── Glass & surfaces ── */
+  .orwix-glass {
+    border: 1px solid rgba(167, 139, 250, 0.2);
+    background: var(--orwix-surface);
+    backdrop-filter: blur(24px) saturate(1.4);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      0 0 60px rgba(124, 58, 237, 0.08);
+  }
+
+  :not(.dark) .orwix-glass {
+    border: 1px solid rgba(124, 58, 237, 0.15);
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.8) inset,
+      0 8px 32px rgba(124, 58, 237, 0.1);
+  }
+
+  /* ── Composer with animated border ── */
+  .orwix-composer-wrap {
+    position: relative;
+    border-radius: 28px;
+    padding: 1.5px;
     background: linear-gradient(
       135deg,
-      rgba(124, 58, 237, 0.14) 0%,
-      rgba(6, 182, 212, 0.1) 100%
+      rgba(124, 58, 237, 0.8),
+      rgba(192, 38, 211, 0.8),
+      rgba(34, 211, 238, 0.8),
+      rgba(124, 58, 237, 0.8)
     );
-    border: 1px solid rgba(124, 58, 237, 0.18);
+    background-size: 300% 300%;
+    animation: orwix-border-flow 6s ease infinite;
+    box-shadow:
+      0 0 40px rgba(124, 58, 237, 0.25),
+      0 0 80px rgba(192, 38, 211, 0.1);
   }
 
-  .dark .genix-user-bubble {
-    background: #2d2d2d;
-    border-color: rgba(255, 255, 255, 0.06);
+  @keyframes orwix-border-flow {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
   }
 
-  .genix-suggestion-chip {
-    border: 1px solid var(--border);
+  .orwix-composer {
+    border-radius: 27px;
     background: var(--card);
+    backdrop-filter: blur(20px);
+    transition: box-shadow 0.3s ease;
+  }
+
+  .orwix-composer-wrap:focus-within {
+    box-shadow:
+      0 0 0 4px rgba(167, 139, 250, 0.15),
+      0 0 60px rgba(124, 58, 237, 0.35),
+      0 0 100px rgba(34, 211, 238, 0.15);
+  }
+
+  /* ── Chips ── */
+  .orwix-chip {
+    position: relative;
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    background: rgba(12, 8, 28, 0.6);
     color: var(--foreground);
-    box-shadow: 0 1px 2px rgba(26, 22, 37, 0.04);
+    backdrop-filter: blur(12px);
+    overflow: hidden;
+    transition: all 0.25s ease;
   }
 
-  .genix-suggestion-chip:hover {
-    border-color: rgba(124, 58, 237, 0.28);
-    background: var(--accent);
-    color: var(--accent-foreground);
+  :not(.dark) .orwix-chip {
+    background: rgba(255, 255, 255, 0.8);
+    border-color: rgba(124, 58, 237, 0.2);
   }
 
-  .dark .genix-suggestion-chip {
+  .orwix-chip::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(124, 58, 237, 0.15),
+      rgba(34, 211, 238, 0.1)
+    );
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .orwix-chip:hover {
+    border-color: rgba(167, 139, 250, 0.5);
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 24px rgba(124, 58, 237, 0.25),
+      0 0 20px rgba(34, 211, 238, 0.1);
+  }
+
+  .orwix-chip:hover::before {
+    opacity: 1;
+  }
+
+  .orwix-chip-icon {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(34, 211, 238, 0.2));
+    color: #c4b5fd;
+    box-shadow: 0 0 12px rgba(124, 58, 237, 0.3);
+  }
+
+  :not(.dark) .orwix-chip-icon {
+    color: #6d28d9;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(34, 211, 238, 0.1));
+  }
+
+  /* ── Buttons ── */
+  .orwix-send-btn {
+    background: var(--orwix-gradient);
+    box-shadow:
+      0 4px 20px rgba(124, 58, 237, 0.5),
+      0 0 30px rgba(34, 211, 238, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .orwix-send-btn:hover:not(:disabled) {
+    transform: scale(1.08);
+    box-shadow:
+      0 6px 28px rgba(124, 58, 237, 0.6),
+      0 0 40px rgba(34, 211, 238, 0.3);
+  }
+
+  .orwix-send-btn:disabled {
+    background: var(--muted);
     box-shadow: none;
+    transform: none;
   }
 
-  .genix-typing-dot {
+  .orwix-cta-btn {
+    position: relative;
+    overflow: hidden;
+    background: var(--orwix-gradient);
+    box-shadow:
+      0 4px 20px rgba(124, 58, 237, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .orwix-cta-btn::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.25) 50%,
+      transparent 60%
+    );
+    transform: translateX(-100%);
+    animation: orwix-shimmer-btn 3s ease-in-out infinite;
+  }
+
+  @keyframes orwix-shimmer-btn {
+    0% {
+      transform: translateX(-100%);
+    }
+    50%,
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .orwix-cta-btn:hover {
+    transform: scale(1.03);
+    box-shadow:
+      0 6px 28px rgba(124, 58, 237, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  /* ── Badges ── */
+  .orwix-badge {
+    border: 1px solid rgba(167, 139, 250, 0.35);
+    background: rgba(124, 58, 237, 0.12);
+    color: #c4b5fd;
+    box-shadow: 0 0 24px rgba(124, 58, 237, 0.2);
+    animation: orwix-badge-glow 3s ease-in-out infinite;
+  }
+
+  :not(.dark) .orwix-badge {
+    color: #6d28d9;
+    background: rgba(124, 58, 237, 0.08);
+  }
+
+  @keyframes orwix-badge-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 20px rgba(124, 58, 237, 0.2);
+    }
+    50% {
+      box-shadow: 0 0 32px rgba(192, 38, 211, 0.35);
+    }
+  }
+
+  .orwix-wordmark-hero {
+    background: linear-gradient(135deg, #c4b5fd 0%, #e879f9 45%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .orwix-hero-logo svg {
+    filter: drop-shadow(0 8px 24px rgba(124, 58, 237, 0.4));
+  }
+
+  .orwix-section-badge {
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 9999px;
+    padding: 0.375rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #c4b5fd;
+    background: rgba(124, 58, 237, 0.1);
+  }
+
+  :not(.dark) .orwix-section-badge {
+    color: #6d28d9;
+  }
+
+  /* ── Feature cards ── */
+  .orwix-feature-card {
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    background: rgba(12, 8, 28, 0.5);
+    backdrop-filter: blur(16px);
+    transition: all 0.3s ease;
+  }
+
+  :not(.dark) .orwix-feature-card {
+    background: rgba(255, 255, 255, 0.7);
+    border-color: rgba(124, 58, 237, 0.12);
+  }
+
+  .orwix-feature-card:hover {
+    border-color: rgba(167, 139, 250, 0.35);
+    transform: translateY(-3px);
+    box-shadow:
+      0 16px 48px rgba(0, 0, 0, 0.3),
+      0 0 40px rgba(124, 58, 237, 0.15);
+  }
+
+  .orwix-feature-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      105deg,
+      transparent 40%,
+      rgba(255, 255, 255, 0.04) 50%,
+      transparent 60%
+    );
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+  }
+
+  .orwix-feature-card:hover .orwix-feature-shine {
+    transform: translateX(100%);
+  }
+
+  .orwix-icon-violet {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.3), rgba(124, 58, 237, 0.1));
+    color: #a78bfa;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  }
+
+  .orwix-icon-fuchsia {
+    background: linear-gradient(135deg, rgba(192, 38, 211, 0.3), rgba(192, 38, 211, 0.1));
+    color: #e879f9;
+    box-shadow: 0 0 20px rgba(192, 38, 211, 0.3);
+  }
+
+  .orwix-icon-cyan {
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.3), rgba(34, 211, 238, 0.1));
+    color: #22d3ee;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.3);
+  }
+
+  .orwix-icon-emerald {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(16, 185, 129, 0.1));
+    color: #34d399;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+  }
+
+  .orwix-icon-amber {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+    color: #fbbf24;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  }
+
+  .orwix-icon-rose {
+    background: linear-gradient(135deg, rgba(244, 63, 94, 0.3), rgba(244, 63, 94, 0.1));
+    color: #fb7185;
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+  }
+
+  /* ── Footer ── */
+  .orwix-footer {
+    position: relative;
+    border-top: 1px solid rgba(167, 139, 250, 0.15);
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(124, 58, 237, 0.06) 50%,
+      rgba(12, 8, 28, 0.8) 100%
+    );
+  }
+
+  .orwix-footer::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60%;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(167, 139, 250, 0.6),
+      rgba(34, 211, 238, 0.6),
+      transparent
+    );
+  }
+
+  .orwix-footer-badge {
+    border: 1px solid rgba(167, 139, 250, 0.28);
+    border-radius: 9999px;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    background: rgba(124, 58, 237, 0.12);
+  }
+
+  :not(.dark) .orwix-footer-badge {
+    color: #6d28d9;
+  }
+
+  .orwix-surprise-btn {
+    border-radius: 9999px;
+    border: 1px solid rgba(167, 139, 250, 0.35);
+    background: linear-gradient(
+      135deg,
+      rgba(124, 58, 237, 0.2),
+      rgba(34, 211, 238, 0.12)
+    );
+    padding: 0.65rem 1.35rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--foreground);
+    box-shadow:
+      0 4px 20px rgba(124, 58, 237, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+
+  .orwix-surprise-btn:hover {
+    transform: translateY(-1px) scale(1.02);
+    border-color: rgba(167, 139, 250, 0.55);
+    box-shadow:
+      0 8px 28px rgba(124, 58, 237, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .orwix-surprise-btn:active {
+    transform: scale(0.98);
+  }
+
+  /* ── App studio / phone mockup ── */
+  .orwix-app-studio-panel {
+    animation: orwix-app-studio-enter 0.45s ease-out both;
+  }
+
+  @keyframes orwix-app-studio-enter {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .orwix-phone-frame {
+    position: relative;
+    border-radius: 2.4rem;
+    padding: 0.55rem;
+    background: linear-gradient(
+      160deg,
+      rgba(255, 255, 255, 0.14),
+      rgba(255, 255, 255, 0.04) 40%,
+      rgba(16, 185, 129, 0.12)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      0 24px 60px rgba(0, 0, 0, 0.45),
+      0 0 40px rgba(16, 185, 129, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  }
+
+  .orwix-phone-notch {
+    position: absolute;
+    top: 0.85rem;
+    left: 50%;
+    z-index: 2;
+    height: 1.1rem;
+    width: 5.5rem;
+    transform: translateX(-50%);
+    border-radius: 9999px;
+    background: #050508;
+  }
+
+  .orwix-phone-screen {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 2rem;
+    aspect-ratio: 9 / 19;
+    background: linear-gradient(180deg, #12121c 0%, #0a0a12 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .orwix-phone-screen-content {
+    animation: orwix-app-screen-fade 0.35s ease-out both;
+  }
+
+  @keyframes orwix-app-screen-fade {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .orwix-app-logo-pulse {
+    animation: orwix-app-logo-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes orwix-app-logo-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 20px rgba(52, 211, 153, 0.35);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 32px rgba(52, 211, 153, 0.55);
+    }
+  }
+
+  .orwix-app-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 0.15rem;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+
+  .orwix-app-flow::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orwix-app-flow-step {
+    border-radius: 9999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    padding: 0.35rem 0.65rem;
+    color: rgba(255, 255, 255, 0.55);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .orwix-app-flow-step:hover {
+    border-color: rgba(16, 185, 129, 0.35);
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .orwix-app-flow-step-active {
+    border-color: rgba(52, 211, 153, 0.55);
+    background: rgba(16, 185, 129, 0.15);
+    color: #6ee7b7;
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+  }
+
+  .orwix-app-flow-step-done {
+    border-color: rgba(52, 211, 153, 0.25);
+    color: rgba(110, 231, 183, 0.75);
+  }
+
+  .orwix-app-studio-live {
+    animation: orwix-app-studio-pulse 1.4s ease-in-out infinite;
+  }
+
+  @keyframes orwix-app-studio-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  /* ── Chat bubbles ── */
+  .orwix-user-bubble {
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.25), rgba(192, 38, 211, 0.15));
+    border: 1px solid rgba(167, 139, 250, 0.25);
+  }
+
+  .orwix-typing-dot {
     display: inline-block;
-    size: 6px;
     width: 6px;
     height: 6px;
     border-radius: 9999px;
-    background: var(--muted-foreground);
-    animation: genix-typing-bounce 1.2s ease-in-out infinite;
+    background: var(--primary);
+    animation: orwix-typing-bounce 1.2s ease-in-out infinite;
   }
 
-  @keyframes genix-typing-bounce {
+  @keyframes orwix-typing-bounce {
     0%,
     80%,
     100% {
       transform: translateY(0);
-      opacity: 0.45;
+      opacity: 0.4;
     }
     40% {
       transform: translateY(-4px);
@@ -337,11 +972,11 @@
     }
   }
 
-  .genix-message-enter {
-    animation: genix-message-enter 0.28s ease-out both;
+  .orwix-message-enter {
+    animation: orwix-message-enter 0.28s ease-out both;
   }
 
-  @keyframes genix-message-enter {
+  @keyframes orwix-message-enter {
     from {
       opacity: 0;
       transform: translateY(6px);
@@ -352,46 +987,169 @@
     }
   }
 
-  .genix-voice-orb {
+  .orwix-voice-orb {
     width: 220px;
     height: 220px;
     border-radius: 9999px;
-    background:
-      radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.95), transparent 35%),
-      radial-gradient(circle at 70% 75%, rgba(6, 182, 212, 0.55), transparent 40%),
-      linear-gradient(145deg, #7c3aed 0%, #4f46e5 45%, #06b6d4 100%);
-    box-shadow: 0 20px 60px rgba(124, 58, 237, 0.25);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: var(--orwix-gradient);
+    box-shadow:
+      0 24px 60px rgba(124, 58, 237, 0.4),
+      0 0 80px rgba(34, 211, 238, 0.2);
   }
 
-  .genix-voice-orb-active {
-    animation: genix-voice-pulse 1.4s ease-in-out infinite;
-    box-shadow: 0 24px 70px rgba(124, 58, 237, 0.35);
+  .orwix-voice-orb-active {
+    animation: orwix-voice-pulse 1.4s ease-in-out infinite;
   }
 
-  .genix-voice-orb-speaking {
-    animation: genix-voice-speak 0.9s ease-in-out infinite;
-  }
-
-  @keyframes genix-voice-pulse {
+  @keyframes orwix-voice-pulse {
     0%,
     100% {
       transform: scale(1);
+      box-shadow:
+        0 24px 60px rgba(124, 58, 237, 0.4),
+        0 0 80px rgba(34, 211, 238, 0.2);
     }
     50% {
       transform: scale(1.04);
+      box-shadow:
+        0 28px 70px rgba(124, 58, 237, 0.55),
+        0 0 100px rgba(34, 211, 238, 0.35);
     }
   }
+}
 
-  @keyframes genix-voice-speak {
-    0%,
-    100% {
-      transform: scale(1);
-      filter: brightness(1);
-    }
-    50% {
-      transform: scale(1.03);
-      filter: brightness(1.08);
-    }
-  }
+/* Background presets — unlayered so they override :root / .dark tokens */
+html[data-orwix-bg="ocean"] {
+  --orwix-orb-1: rgba(14, 165, 233, 0.55);
+  --orwix-orb-2: rgba(6, 182, 212, 0.42);
+  --orwix-orb-3: rgba(34, 211, 238, 0.38);
+  --orwix-orb-4: rgba(59, 130, 246, 0.28);
+  --orwix-grid-rgb: 14, 165, 233;
+  --orwix-spotlight: rgba(56, 189, 248, 0.16);
+  --orwix-beam-start: rgba(56, 189, 248, 0.65);
+  --orwix-beam-mid: rgba(34, 211, 238, 0.22);
+  --orwix-beam-glow: rgba(14, 165, 233, 0.32);
+}
+
+html[data-orwix-bg="ocean"]:not(.dark) {
+  --background: #f0f9ff;
+}
+
+html.dark[data-orwix-bg="ocean"] {
+  --background: #010a12;
+}
+
+html[data-orwix-bg="ember"] {
+  --orwix-orb-1: rgba(234, 88, 12, 0.55);
+  --orwix-orb-2: rgba(249, 115, 22, 0.42);
+  --orwix-orb-3: rgba(251, 191, 36, 0.35);
+  --orwix-orb-4: rgba(239, 68, 68, 0.28);
+  --orwix-grid-rgb: 249, 115, 22;
+  --orwix-spotlight: rgba(251, 146, 60, 0.16);
+  --orwix-beam-start: rgba(251, 146, 60, 0.65);
+  --orwix-beam-mid: rgba(251, 191, 36, 0.22);
+  --orwix-beam-glow: rgba(234, 88, 12, 0.32);
+}
+
+html[data-orwix-bg="ember"]:not(.dark) {
+  --background: #fff7ed;
+}
+
+html.dark[data-orwix-bg="ember"] {
+  --background: #0a0503;
+}
+
+html[data-orwix-bg="forest"] {
+  --orwix-orb-1: rgba(5, 150, 105, 0.55);
+  --orwix-orb-2: rgba(16, 185, 129, 0.42);
+  --orwix-orb-3: rgba(52, 211, 153, 0.35);
+  --orwix-orb-4: rgba(34, 197, 94, 0.28);
+  --orwix-grid-rgb: 16, 185, 129;
+  --orwix-spotlight: rgba(52, 211, 153, 0.16);
+  --orwix-beam-start: rgba(52, 211, 153, 0.65);
+  --orwix-beam-mid: rgba(110, 231, 183, 0.22);
+  --orwix-beam-glow: rgba(5, 150, 105, 0.32);
+}
+
+html[data-orwix-bg="forest"]:not(.dark) {
+  --background: #f0fdf4;
+}
+
+html.dark[data-orwix-bg="forest"] {
+  --background: #020f0a;
+}
+
+html[data-orwix-bg="rose"] {
+  --orwix-orb-1: rgba(219, 39, 119, 0.55);
+  --orwix-orb-2: rgba(236, 72, 153, 0.42);
+  --orwix-orb-3: rgba(244, 114, 182, 0.35);
+  --orwix-orb-4: rgba(192, 38, 211, 0.28);
+  --orwix-grid-rgb: 236, 72, 153;
+  --orwix-spotlight: rgba(244, 114, 182, 0.16);
+  --orwix-beam-start: rgba(244, 114, 182, 0.65);
+  --orwix-beam-mid: rgba(236, 72, 153, 0.22);
+  --orwix-beam-glow: rgba(219, 39, 119, 0.32);
+}
+
+html[data-orwix-bg="rose"]:not(.dark) {
+  --background: #fdf2f8;
+}
+
+html.dark[data-orwix-bg="rose"] {
+  --background: #0a0208;
+}
+
+html[data-orwix-bg="midnight"] {
+  --orwix-orb-1: rgba(71, 85, 105, 0.55);
+  --orwix-orb-2: rgba(100, 116, 139, 0.42);
+  --orwix-orb-3: rgba(148, 163, 184, 0.32);
+  --orwix-orb-4: rgba(59, 130, 246, 0.22);
+  --orwix-grid-rgb: 100, 116, 139;
+  --orwix-spotlight: rgba(148, 163, 184, 0.14);
+  --orwix-beam-start: rgba(148, 163, 184, 0.55);
+  --orwix-beam-mid: rgba(100, 116, 139, 0.2);
+  --orwix-beam-glow: rgba(71, 85, 105, 0.28);
+}
+
+html[data-orwix-bg="midnight"]:not(.dark) {
+  --background: #f8fafc;
+}
+
+html.dark[data-orwix-bg="midnight"] {
+  --background: #020617;
+}
+
+/* Chip contrast — unlayered overrides */
+html.dark .orwix-chip {
+  background: rgba(255, 255, 255, 0.93);
+  color: #0c0a14;
+  border-color: rgba(167, 139, 250, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+html.dark .orwix-chip:hover {
+  background: #ffffff;
+  color: #000000;
+  border-color: rgba(124, 58, 237, 0.35);
+}
+
+html.dark .orwix-chip-icon {
+  color: #6d28d9;
+  background: linear-gradient(
+    135deg,
+    rgba(124, 58, 237, 0.16),
+    rgba(34, 211, 238, 0.1)
+  );
+}
+
+html:not(.dark) .orwix-chip {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0c0a14;
+  border-color: rgba(124, 58, 237, 0.22);
+}
+
+html:not(.dark) .orwix-chip:hover {
+  color: #000000;
 }

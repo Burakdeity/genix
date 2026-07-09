@@ -25,7 +25,7 @@ export const useVoiceStore = create<VoiceState>()(
       setAutoSpeak: (autoSpeak) => set({ autoSpeak }),
     }),
     {
-      name: "genix-voice",
+      name: "orwix-voice",
       skipHydration: true,
       partialize: (state) => ({
         profileId: state.profileId,

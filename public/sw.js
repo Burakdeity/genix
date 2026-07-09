@@ -1,4 +1,4 @@
-const CACHE_NAME = "genix-v1";
+const CACHE_NAME = "orwix-v1";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

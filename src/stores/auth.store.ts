@@ -132,7 +132,7 @@ export const useAuthStore = create<AuthState>()(
       },
     }),
     {
-      name: "genix-auth",
+      name: "orwix-auth",
       skipHydration: true,
       partialize: (state) => ({
         accounts: state.accounts,

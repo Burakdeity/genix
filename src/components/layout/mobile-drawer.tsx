@@ -3,7 +3,7 @@
 import { Clock, Settings, SquarePen, X } from "lucide-react";
 
 import { ProfileMenu } from "@/components/auth/profile-menu";
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { ClientOnly } from "@/components/ui/client-only";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
@@ -32,7 +32,7 @@ export function MobileDrawer({ open, onClose, onNewChat }: MobileDrawerProps) {
         )}
       >
         <div className="mb-6 flex items-center justify-between">
-          <GenixWordmark className="text-xl font-bold" />
+          <OrwixWordmark className="text-xl font-bold" />
           <button
             type="button"
             onClick={onClose}

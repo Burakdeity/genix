@@ -25,7 +25,7 @@ export function ThemeToggle({
     return (
       <div className={className}>
         <ToggleSwitch
-          id="genix-dark-theme"
+          id="orwix-dark-theme"
           label="Koyu tema"
           checked={isDark}
           onCheckedChange={toggleTheme}

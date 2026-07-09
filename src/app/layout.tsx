@@ -1,15 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Geist_Mono, Plus_Jakarta_Sans, Space_Grotesk } from "next/font/google";
 import Script from "next/script";
 
 import { GoogleAuthProvider } from "@/components/auth/google-auth-provider";
 import { StoreHydration } from "@/components/providers/store-hydration";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { ORWIX_META } from "@/content/orwix-content";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
@@ -18,17 +25,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genix",
-  description: "Genix AI sohbet uygulaması",
+  title: ORWIX_META.title,
+  description: ORWIX_META.description,
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Genix",
+    title: "Orwix",
   },
   icons: {
-    icon: "/brand/genix-icon.svg",
-    apple: "/brand/genix-icon.svg",
+    icon: "/brand/orwix-icon.svg",
+    apple: "/brand/orwix-icon.svg",
   },
 };
 
@@ -37,7 +44,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#f7f6fb",
+  themeColor: "#030014",
   viewportFit: "cover",
 };
 
@@ -47,10 +54,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="tr" className={`${inter.variable} ${geistMono.variable} h-full`} suppressHydrationWarning>
+    <html
+      lang="tr"
+      className={`${jakarta.variable} ${spaceGrotesk.variable} ${geistMono.variable} dark h-full`}
+      data-orwix-bg="cosmic"
+      suppressHydrationWarning
+    >
       <head>
-        <Script id="genix-theme-init" strategy="beforeInteractive">
-          {`(function(){try{var s=localStorage.getItem('genix-theme');if(!s)return;var p=JSON.parse(s);if(p&&p.state&&p.state.theme==='dark'){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}}catch(e){}})();`}
+        <Script id="orwix-theme-init" strategy="beforeInteractive">
+          {`(function(){try{var r=document.documentElement;var k=['orwix-theme','genix-theme'];var dark=false;for(var i=0;i<k.length;i++){var s=localStorage.getItem(k[i]);if(!s)continue;var p=JSON.parse(s);if(p&&p.state&&p.state.theme){dark=p.state.theme==='dark';break;}}if(!localStorage.getItem('orwix-theme')&&!localStorage.getItem('genix-theme'))dark=true;if(dark){r.classList.add('dark');r.style.colorScheme='dark';}else{r.classList.remove('dark');r.style.colorScheme='light';}var bg=localStorage.getItem('orwix-background');if(bg){var b=JSON.parse(bg);if(b&&b.state&&b.state.preset)r.setAttribute('data-orwix-bg',b.state.preset);}}catch(e){r.classList.add('dark');r.setAttribute('data-orwix-bg','cosmic');}})();`}
         </Script>
       </head>
       <body className="app-bg flex min-h-full flex-col">

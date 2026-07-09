@@ -10,12 +10,17 @@ import {
 } from "react";
 
 import { useAuthStore } from "@/stores/auth.store";
+import {
+  applyBackgroundToDocument,
+  useBackgroundStore,
+} from "@/stores/background.store";
 import { applyThemeToDocument, useThemeStore } from "@/stores/theme.store";
 import { useVoiceStore } from "@/stores/voice.store";
 
 const persistApis = [
   useAuthStore.persist,
   useThemeStore.persist,
+  useBackgroundStore.persist,
   useVoiceStore.persist,
 ] as const;
 
@@ -28,6 +33,7 @@ export function useStoresHydrated(): boolean {
 export function StoreHydration({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
   const theme = useThemeStore((state) => state.theme);
+  const backgroundPreset = useBackgroundStore((state) => state.preset);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,6 +41,7 @@ export function StoreHydration({ children }: { children: ReactNode }) {
     function finish() {
       if (cancelled) return;
       applyThemeToDocument(useThemeStore.getState().theme);
+      applyBackgroundToDocument(useBackgroundStore.getState().preset);
       setHydrated(true);
     }
 
@@ -71,6 +78,11 @@ export function StoreHydration({ children }: { children: ReactNode }) {
     if (!hydrated) return;
     applyThemeToDocument(theme);
   }, [hydrated, theme]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    applyBackgroundToDocument(backgroundPreset);
+  }, [hydrated, backgroundPreset]);
 
   const value = useMemo(() => hydrated, [hydrated]);
 

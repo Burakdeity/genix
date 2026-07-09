@@ -4,7 +4,7 @@ export function AppHeader() {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <h1 className="truncate text-base font-semibold tracking-tight md:text-xl">
-            <span className="text-gradient-brand">GENIX</span>
+            <span className="orwix-gradient-text">ORWIX</span>
             <span className="ml-1.5 hidden text-sm font-normal text-muted-foreground sm:inline">
               | v2.1
             </span>

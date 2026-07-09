@@ -12,7 +12,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
-      theme: "light",
+      theme: "dark",
 
       setTheme: (theme) => set({ theme }),
 
@@ -20,7 +20,7 @@ export const useThemeStore = create<ThemeState>()(
         set({ theme: get().theme === "light" ? "dark" : "light" }),
     }),
     {
-      name: "genix-theme",
+      name: "orwix-theme",
       skipHydration: true,
       partialize: (state) => ({ theme: state.theme }),
     },

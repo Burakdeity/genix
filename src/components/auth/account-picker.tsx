@@ -4,7 +4,7 @@ import { Minus, Plus, UserRound } from "lucide-react";
 
 import { AccountAvatar } from "@/components/auth/account-avatar";
 import { AuthFooter } from "@/components/auth/auth-footer";
-import { GenixWordmark } from "@/components/brand/genix-logo";
+import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
 
@@ -24,14 +24,14 @@ export function AccountPicker() {
         <div className="w-full max-w-[1040px] overflow-hidden rounded-[28px] bg-white shadow-sm">
           <div className="grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
             <section className="border-b border-[#dadce0] px-8 py-10 md:border-r md:border-b-0 md:px-10 md:py-14">
-              <GenixWordmark className="mb-10 text-3xl font-bold" />
+              <OrwixWordmark className="mb-10 text-3xl font-bold" />
               <h1 className="text-[2rem] leading-tight font-normal text-[#1f1f1f] md:text-[2.75rem]">
                 {isRemoveMode ? "Hesabı kaldırma" : "Bir hesap seçin"}
               </h1>
               <p className="mt-4 text-[15px] leading-relaxed text-[#444746]">
                 {isRemoveMode
                   ? "Bu cihazdan kaldırmak istediğiniz hesabı seçin."
-                  : "Genix'e devam etmek için bir hesap seçin"}
+                  : "Orwix'e devam etmek için bir hesap seçin"}
               </p>
             </section>
 
