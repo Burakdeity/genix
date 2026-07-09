@@ -1,0 +1,19 @@
+{
+  "name": "Genix",
+  "short_name": "Genix",
+  "description": "Genix AI sohbet uygulaması",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f7f6fb",
+  "theme_color": "#7c3aed",
+  "lang": "tr",
+  "icons": [
+    {
+      "src": "/brand/genix-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
