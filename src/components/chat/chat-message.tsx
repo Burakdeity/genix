@@ -4,9 +4,13 @@ import { cn } from "@/lib/utils";
 
 interface ChatMessageItemProps {
   message: ChatMessage;
+  isTyping?: boolean;
 }
 
-export function ChatMessageItem({ message }: ChatMessageItemProps) {
+export function ChatMessageItem({
+  message,
+  isTyping = false,
+}: ChatMessageItemProps) {
   const isUser = message.role === "user";
 
   return (
@@ -42,7 +46,15 @@ export function ChatMessageItem({ message }: ChatMessageItemProps) {
             </div>
           ) : null}
 
-          <p className="whitespace-pre-wrap">{message.content}</p>
+          <p className="whitespace-pre-wrap">
+            {message.content}
+            {isTyping ? (
+              <span
+                className="orwix-caret ml-0.5 inline-block h-[1em] w-[2px] translate-y-[0.1em] bg-primary align-baseline"
+                aria-hidden
+              />
+            ) : null}
+          </p>
 
           {message.structuredData ? (
             <div className="mt-3 space-y-2 rounded-xl border border-border bg-muted/50 p-3 text-xs">

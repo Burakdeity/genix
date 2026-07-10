@@ -15,6 +15,10 @@ function getErrorStatus(error: unknown): number | undefined {
     return error.status;
   }
 
+  if (error instanceof AppError) {
+    return error.statusCode;
+  }
+
   return undefined;
 }
 
@@ -63,6 +67,22 @@ export function mapGeminiError(error: unknown): AppError {
     );
   }
 
+  if (
+    status === 503 ||
+    status === 502 ||
+    status === 504 ||
+    normalized.includes("unavailable") ||
+    normalized.includes("high demand") ||
+    normalized.includes("overloaded") ||
+    normalized.includes("temporarily")
+  ) {
+    return new AppError(
+      "Model şu an yoğun. Birkaç saniye içinde otomatik yeniden denenecek; olmazsa tekrar deneyin.",
+      "RATE_LIMIT",
+      503,
+    );
+  }
+
   if (normalized.includes("quota") || normalized.includes("billing")) {
     return new AppError(
       "API kotanız doldu. Google AI Studio kotanızı kontrol edin.",
@@ -81,6 +101,18 @@ export function mapGeminiError(error: unknown): AppError {
       "Gemini API'ye bağlanılamadı. İnternet bağlantınızı kontrol edin.",
       "NETWORK_ERROR",
       503,
+    );
+  }
+
+  if (
+    status === 404 ||
+    normalized.includes("not found") ||
+    normalized.includes("no longer available")
+  ) {
+    return new AppError(
+      "Seçilen model kullanılamıyor. Lütfen başka bir model seçin veya sayfayı yenileyin.",
+      "GEMINI_API_ERROR",
+      404,
     );
   }
 

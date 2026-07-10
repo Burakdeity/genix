@@ -62,7 +62,7 @@ export default function RootLayout({
     >
       <head>
         <Script id="orwix-theme-init" strategy="beforeInteractive">
-          {`(function(){try{var r=document.documentElement;var k=['orwix-theme','genix-theme'];var dark=false;for(var i=0;i<k.length;i++){var s=localStorage.getItem(k[i]);if(!s)continue;var p=JSON.parse(s);if(p&&p.state&&p.state.theme){dark=p.state.theme==='dark';break;}}if(!localStorage.getItem('orwix-theme')&&!localStorage.getItem('genix-theme'))dark=true;if(dark){r.classList.add('dark');r.style.colorScheme='dark';}else{r.classList.remove('dark');r.style.colorScheme='light';}var bg=localStorage.getItem('orwix-background');if(bg){var b=JSON.parse(bg);if(b&&b.state&&b.state.preset)r.setAttribute('data-orwix-bg',b.state.preset);}}catch(e){r.classList.add('dark');r.setAttribute('data-orwix-bg','cosmic');}})();`}
+          {`(function(){try{var r=document.documentElement;var k=['orwix-theme','genix-theme'];var dark=false;for(var i=0;i<k.length;i++){var s=localStorage.getItem(k[i]);if(!s)continue;var p=JSON.parse(s);if(p&&p.state&&p.state.theme){dark=p.state.theme==='dark';break;}}if(!localStorage.getItem('orwix-theme')&&!localStorage.getItem('genix-theme'))dark=true;if(dark){r.classList.add('dark');r.style.colorScheme='dark';}else{r.classList.remove('dark');r.style.colorScheme='light';}var bg=localStorage.getItem('orwix-background');if(bg){var b=JSON.parse(bg);if(b&&b.state&&b.state.preset){var preset=b.state.preset;if(preset==='midnight')preset='violet';r.setAttribute('data-orwix-bg',preset);}}}catch(e){r.classList.add('dark');r.setAttribute('data-orwix-bg','cosmic');}})();`}
         </Script>
       </head>
       <body className="app-bg flex min-h-full flex-col">

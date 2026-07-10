@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 
 import {
   DEFAULT_BACKGROUND_PRESET,
+  resolveBackgroundPresetId,
   type BackgroundPresetId,
 } from "@/constants/background-presets";
 
@@ -22,10 +23,28 @@ export const useBackgroundStore = create<BackgroundState>()(
       name: "orwix-background",
       skipHydration: true,
       partialize: (state) => ({ preset: state.preset }),
+      merge: (persisted, current) => {
+        const raw =
+          persisted &&
+          typeof persisted === "object" &&
+          "preset" in persisted &&
+          typeof (persisted as { preset?: unknown }).preset === "string"
+            ? (persisted as { preset: string }).preset
+            : current.preset;
+
+        return {
+          ...current,
+          ...((persisted as object) ?? {}),
+          preset: resolveBackgroundPresetId(raw),
+        };
+      },
     },
   ),
 );
 
 export function applyBackgroundToDocument(preset: BackgroundPresetId) {
-  document.documentElement.setAttribute("data-orwix-bg", preset);
+  document.documentElement.setAttribute(
+    "data-orwix-bg",
+    resolveBackgroundPresetId(preset),
+  );
 }

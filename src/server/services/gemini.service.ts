@@ -13,7 +13,12 @@ import {
   type GeminiModelId,
   type GeminiStreamChunk,
 } from "@/server/types/gemini.types";
-import { withRetry } from "@/server/utils/retry";
+import { isRetryableError, withRetry } from "@/server/utils/retry";
+
+const STREAM_FALLBACK_MODELS = [
+  GEMINI_MODELS.FLASH_LITE,
+  GEMINI_MODELS.FLASH,
+] as const;
 
 function createGeminiClient(): GoogleGenAI {
   const { GEMINI_API_KEY } = getServerEnv();
@@ -22,6 +27,10 @@ function createGeminiClient(): GoogleGenAI {
 
 function resolveModel(model?: GeminiModelId): GeminiModelId {
   return model ?? GEMINI_MODELS.FLASH_LITE;
+}
+
+function getFallbackModels(primary: GeminiModelId): string[] {
+  return [...new Set([primary, ...STREAM_FALLBACK_MODELS])];
 }
 
 function buildGenerateConfig(request: GeminiGenerateRequest) {
@@ -61,84 +70,101 @@ export class GeminiService {
   async generateContent(
     request: GeminiGenerateRequest,
   ): Promise<GeminiGenerateResponse> {
-    const model = resolveModel(request.model);
+    const models = getFallbackModels(resolveModel(request.model));
+    let lastError: unknown;
 
-    try {
-      return await withRetry(async () => {
-        const response = await this.client.models.generateContent({
-          model,
-          contents: request.prompt,
-          config: buildGenerateConfig(request),
-        });
+    for (const model of models) {
+      try {
+        return await withRetry(
+          async () => {
+            const response = await this.client.models.generateContent({
+              model,
+              contents: request.prompt,
+              config: buildGenerateConfig(request),
+            });
 
-        const text = response.text ?? "";
+            const text = response.text ?? "";
 
-        if (!text) {
-          throw new Error("Gemini API boş yanıt döndürdü.");
+            if (!text) {
+              throw new Error("Gemini API boş yanıt döndürdü.");
+            }
+
+            const result: GeminiGenerateResponse = {
+              text,
+              model: model as GeminiModelId,
+            };
+
+            if (request.structuredOutput) {
+              result.structuredData = parseStructuredResponse(text);
+            }
+
+            return result;
+          },
+          { maxAttempts: 2, baseDelayMs: 400 },
+        );
+      } catch (error) {
+        lastError = error;
+        if (!isRetryableError(error)) {
+          throw mapGeminiError(error);
         }
-
-        const result: GeminiGenerateResponse = {
-          text,
-          model,
-        };
-
-        if (request.structuredOutput) {
-          result.structuredData = parseStructuredResponse(text);
-        }
-
-        return result;
-      });
-    } catch (error) {
-      throw mapGeminiError(error);
+      }
     }
+
+    throw mapGeminiError(lastError);
   }
 
   async *generateContentStream(
     request: GeminiGenerateRequest,
   ): AsyncGenerator<GeminiStreamChunk> {
-    const model = resolveModel(request.model);
-    let attempt = 0;
-    const maxAttempts = 3;
+    const models = getFallbackModels(resolveModel(request.model));
+    let lastMapped = mapGeminiError(
+      new Error("Gemini API isteği başarısız oldu."),
+    );
 
-    while (attempt < maxAttempts) {
-      attempt += 1;
+    for (const model of models) {
+      // One quick retry, then switch model — avoids long waits on overloaded models.
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const stream = await this.client.models.generateContentStream({
+            model,
+            contents: request.prompt,
+            config: buildGenerateConfig(request),
+          });
 
-      try {
-        const stream = await this.client.models.generateContentStream({
-          model,
-          contents: request.prompt,
-          config: buildGenerateConfig(request),
-        });
+          let hasContent = false;
 
-        let hasContent = false;
+          for await (const chunk of stream) {
+            const text = chunk.text ?? "";
+            if (text) {
+              hasContent = true;
+              yield { text, done: false };
+            }
+          }
 
-        for await (const chunk of stream) {
-          const text = chunk.text ?? "";
-          if (text) {
-            hasContent = true;
-            yield { text, done: false };
+          if (!hasContent) {
+            throw new Error("Gemini API boş akış yanıtı döndürdü.");
+          }
+
+          yield { text: "", done: true };
+          return;
+        } catch (error) {
+          const mapped = mapGeminiError(error);
+          lastMapped = mapped;
+
+          if (!isRetryableError(mapped)) {
+            throw mapped;
+          }
+
+          if (attempt < 2) {
+            await new Promise((resolve) => {
+              setTimeout(resolve, 350);
+            });
           }
         }
-
-        if (!hasContent) {
-          throw new Error("Gemini API boş akış yanıtı döndürdü.");
-        }
-
-        yield { text: "", done: true };
-        return;
-      } catch (error) {
-        const mapped = mapGeminiError(error);
-        const isLastAttempt = attempt >= maxAttempts;
-
-        if (isLastAttempt || mapped.code !== "RATE_LIMIT") {
-          throw mapped;
-        }
-
-        await new Promise((resolve) => {
-          setTimeout(resolve, 1000 * attempt);
-        });
       }
     }
+
+    throw lastMapped;
   }
 }
 

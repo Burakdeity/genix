@@ -93,7 +93,7 @@ export function ChatInput({
               </SelectTrigger>
               <SelectContent className="border-border bg-popover text-popover-foreground">
                 <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Flash</SelectItem>
-                <SelectItem value={GEMINI_MODELS.FLASH}>Flash (2.5)</SelectItem>
+                <SelectItem value={GEMINI_MODELS.FLASH}>Flash+</SelectItem>
                 <SelectItem value={GEMINI_MODELS.PRO}>Pro</SelectItem>
               </SelectContent>
             </Select>

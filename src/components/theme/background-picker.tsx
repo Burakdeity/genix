@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Palette } from "lucide-react";
 
 import { BACKGROUND_PRESETS } from "@/constants/background-presets";
@@ -20,6 +20,7 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
   const preset = useBackgroundStore((state) => state.preset);
   const setPreset = useBackgroundStore((state) => state.setPreset);
   const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
   const selectPreset = (next: (typeof BACKGROUND_PRESETS)[number]["id"]) => {
     setPreset(next);
@@ -27,8 +28,29 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
     setOpen(false);
   };
 
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   const swatches = (
-    <div className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center gap-1.5">
       {BACKGROUND_PRESETS.map((item) => {
         const active = hydrated && preset === item.id;
         return (
@@ -36,7 +58,7 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
             key={item.id}
             type="button"
             title={item.label}
-            aria-label={`${item.label} arka plan`}
+            aria-label={`${item.label} teması`}
             aria-pressed={active}
             onClick={() => selectPreset(item.id)}
             className={cn(
@@ -44,7 +66,7 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
               active &&
                 "ring-2 ring-primary ring-offset-2 ring-offset-background",
             )}
-            style={{ background: item.swatch }}
+            style={{ backgroundImage: item.swatch }}
           >
             {active ? (
               <span className="absolute inset-0 rounded-full ring-1 ring-inset ring-white/30" />
@@ -56,9 +78,9 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
   );
 
   return (
-    <div className={cn("relative", className)}>
+    <div ref={rootRef} className={cn("relative", className)}>
       <div className="hidden items-center gap-2 md:flex">
-        <Palette className="size-4 text-muted-foreground" aria-hidden />
+        <Palette className="orwix-nav-link size-4" aria-hidden />
         {swatches}
       </div>
 
@@ -66,17 +88,17 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
         <button
           type="button"
           onClick={() => setOpen((value) => !value)}
-          title="Arka plan rengi"
-          aria-label="Arka plan rengi seç"
+          title="Tema rengi"
+          aria-label="Tema rengi seç"
           aria-expanded={open}
-          className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+          className="orwix-nav-link flex size-9 items-center justify-center rounded-full transition-colors hover:bg-primary/10"
         >
           <Palette className="size-4" />
         </button>
         {open ? (
-          <div className="orwix-glass absolute right-0 top-full z-30 mt-2 rounded-xl p-3 shadow-xl">
+          <div className="orwix-glass absolute right-0 top-full z-50 mt-2 w-[min(16rem,calc(100vw-1.5rem))] rounded-xl p-3 shadow-xl">
             <p className="mb-2 text-xs font-semibold text-muted-foreground">
-              Arka plan
+              Tema
             </p>
             {swatches}
           </div>

@@ -7,7 +7,8 @@ import { ClientOnly } from "@/components/ui/client-only";
 import { useChat } from "@/hooks/use-chat";
 
 export function ChatInterface() {
-  const { messages, isLoading, error, sendMessage } = useChat();
+  const { messages, isLoading, error, sendMessage, settings, updateSettings } =
+    useChat();
 
   return (
     <ErrorBoundary>
@@ -23,6 +24,8 @@ export function ChatInterface() {
           isLoading={isLoading}
           error={error}
           onSend={sendMessage}
+          model={settings.model}
+          onModelChange={(model) => updateSettings({ model })}
         />
       </ClientOnly>
       <AuthModal />

@@ -1,28 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <defs>
-    <linearGradient id="orwix-brand" x1="12" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#a78bfa"/>
-      <stop offset="0.45" stop-color="#e879f9"/>
+    <linearGradient id="orwix-brand" x1="10" y1="8" x2="54" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0d9488"/>
+      <stop offset="0.5" stop-color="#14b8a6"/>
       <stop offset="1" stop-color="#22d3ee"/>
     </linearGradient>
-    <radialGradient id="orwix-core" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(32 32) rotate(90) scale(14)">
-      <stop stop-color="#e9d5ff" stop-opacity="0.45"/>
-      <stop offset="0.55" stop-color="#a78bfa" stop-opacity="0.2"/>
-      <stop offset="1" stop-color="#7c3aed" stop-opacity="0"/>
-    </radialGradient>
-    <filter id="orwix-glow" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="2.2" result="blur"/>
-      <feMerge>
-        <feMergeNode in="blur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
   </defs>
-  <circle cx="32" cy="32" r="21" stroke="url(#orwix-brand)" stroke-width="3.25" stroke-linecap="round" stroke-dasharray="102 30" transform="rotate(-28 32 32)"/>
-  <circle cx="32" cy="32" r="15.5" stroke="url(#orwix-brand)" stroke-width="1.5" stroke-opacity="0.35" stroke-linecap="round" stroke-dasharray="62 36" transform="rotate(132 32 32)"/>
-  <circle cx="32" cy="32" r="14" fill="url(#orwix-core)"/>
-  <path d="M32 24.5 34.1 30.2 40 31.6 34.9 35.6 36.2 41.5 32 38.2 27.8 41.5 29.1 35.6 24 31.6 29.9 30.2 32 24.5Z" fill="url(#orwix-brand)" filter="url(#orwix-glow)"/>
-  <circle cx="50.5" cy="24" r="2.4" fill="#e879f9"/>
-  <circle cx="18" cy="36.5" r="2" fill="#22d3ee"/>
-  <circle cx="44.5" cy="48.5" r="1.7" fill="#c4b5fd"/>
+  <circle cx="32" cy="32" r="22" stroke="url(#orwix-brand)" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="32" cy="32" r="16.5" stroke="url(#orwix-brand)" stroke-width="1.25" stroke-opacity="0.28"/>
+  <g stroke="url(#orwix-brand)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" transform="translate(32 32) scale(0.78) translate(-32 -32)">
+    <path d="M24 24 L40 40"/>
+    <path d="M40 24 L24 40"/>
+  </g>
 </svg>

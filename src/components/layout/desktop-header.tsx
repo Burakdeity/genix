@@ -24,7 +24,7 @@ interface DesktopHeaderProps {
 
 function getModelLabel(model: ChatSettings["model"]): string {
   if (model === GEMINI_MODELS.PRO) return "Pro";
-  if (model === GEMINI_MODELS.FLASH) return "Flash 2.5";
+  if (model === GEMINI_MODELS.FLASH) return "Flash+";
   return "Flash";
 }
 
@@ -64,7 +64,7 @@ export function DesktopHeader({
             </SelectTrigger>
             <SelectContent className="border-border bg-popover text-popover-foreground">
               <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Orwix Flash</SelectItem>
-              <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash 2.5</SelectItem>
+              <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash+</SelectItem>
               <SelectItem value={GEMINI_MODELS.PRO}>Orwix Pro</SelectItem>
             </SelectContent>
           </Select>

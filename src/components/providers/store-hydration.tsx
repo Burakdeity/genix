@@ -14,14 +14,17 @@ import {
   applyBackgroundToDocument,
   useBackgroundStore,
 } from "@/stores/background.store";
+import { useChatStore } from "@/stores/chat.store";
 import { applyThemeToDocument, useThemeStore } from "@/stores/theme.store";
 import { useVoiceStore } from "@/stores/voice.store";
+import { ChatAccountSync } from "@/components/chat/chat-account-sync";
 
 const persistApis = [
   useAuthStore.persist,
   useThemeStore.persist,
   useBackgroundStore.persist,
   useVoiceStore.persist,
+  useChatStore.persist,
 ] as const;
 
 const StoresHydrationContext = createContext(false);
@@ -88,6 +91,7 @@ export function StoreHydration({ children }: { children: ReactNode }) {
 
   return (
     <StoresHydrationContext.Provider value={value}>
+      <ChatAccountSync hydrated={hydrated} />
       {children}
     </StoresHydrationContext.Provider>
   );

@@ -1,3 +1,5 @@
+import { ApiError } from "@google/genai";
+
 import { AppError } from "@/server/errors/api-error";
 
 const RETRYABLE_CODES = new Set(["RATE_LIMIT", "NETWORK_ERROR"]);
@@ -11,12 +13,19 @@ export function isRetryableError(error: unknown): boolean {
     );
   }
 
+  if (error instanceof ApiError && RETRYABLE_STATUSES.has(error.status)) {
+    return true;
+  }
+
   const message =
     error instanceof Error ? error.message.toLowerCase() : String(error);
 
   return (
     message.includes("resource exhausted") ||
     message.includes("rate limit") ||
+    message.includes("high demand") ||
+    message.includes("unavailable") ||
+    message.includes("overloaded") ||
     message.includes("fetch failed") ||
     message.includes("econnreset") ||
     message.includes("etimedout")

@@ -60,7 +60,7 @@ export async function handleGenerateRequest(
       prompt,
       model: model as GeminiModelId,
       systemInstruction,
-      config: { temperature },
+      config: { temperature, maxOutputTokens: 1536 },
       ...(structured
         ? {
             structuredOutput: {

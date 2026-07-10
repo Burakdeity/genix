@@ -13,12 +13,12 @@ export function AppHeader() {
             API anahtarı sunucuda güvenli şekilde saklanır
           </p>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 sm:flex">
+        <div className="hidden items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 sm:flex">
           <span className="relative flex size-2">
-            <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-50" />
-            <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-50" />
+            <span className="relative inline-flex size-2 rounded-full bg-primary" />
           </span>
-          <span className="text-xs font-medium text-emerald-400">Bağlı</span>
+          <span className="text-xs font-medium text-primary">Bağlı</span>
         </div>
       </div>
     </header>

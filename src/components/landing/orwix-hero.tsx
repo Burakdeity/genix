@@ -33,6 +33,7 @@ import {
 
 
 import { OrwixLogo } from "@/components/brand/orwix-logo";
+import { QualityModeToggle } from "@/components/chat/quality-mode-toggle";
 import { OrwixAppStudio } from "@/components/landing/orwix-app-studio";
 
 import {
@@ -44,6 +45,7 @@ import {
 } from "@/content/orwix-content";
 
 import { cn } from "@/lib/utils";
+import type { ChatSettings } from "@/types/chat.types";
 
 
 
@@ -52,6 +54,8 @@ interface OrwixHeroProps {
   isLoading: boolean;
   hasMessages: boolean;
   promptRequest?: { id: number; text: string } | null;
+  model: ChatSettings["model"];
+  onModelChange: (model: ChatSettings["model"]) => void;
 }
 
 
@@ -105,6 +109,8 @@ function ComposerBlock({
   applyPrompt,
   fileInputRef,
   textareaRef,
+  model,
+  onModelChange,
 }: {
   isWebsiteMode: boolean;
   value: string;
@@ -119,6 +125,8 @@ function ComposerBlock({
   applyPrompt: (prompt: string) => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
+  model: ChatSettings["model"];
+  onModelChange: (model: ChatSettings["model"]) => void;
 }) {
   return (
     <div className="orwix-composer-wrap w-full">
@@ -143,12 +151,12 @@ function ComposerBlock({
               />
             </div>
 
-            <div className="flex items-center justify-between px-4 pb-4">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-4">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex size-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                   aria-label="Dosya ekle"
                 >
                   <Plus className="size-4" />
@@ -162,6 +170,11 @@ function ComposerBlock({
                   {modeLabel}
                   <X className="size-3 opacity-60" />
                 </button>
+                <QualityModeToggle
+                  model={model}
+                  onChange={onModelChange}
+                  disabled={isLoading}
+                />
               </div>
               <SendButton
                 canSend={canSend}
@@ -242,12 +255,12 @@ function ComposerBlock({
               }}
               className="min-h-[80px] w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-lg"
             />
-            <div className="mt-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex size-9 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                   aria-label="Dosya ekle"
                 >
                   <Plus className="size-4" />
@@ -259,7 +272,7 @@ function ComposerBlock({
                     className={cn(
                       "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1",
                       mode === "apps"
-                        ? "bg-emerald-500/15 text-emerald-400 ring-emerald-500/30"
+                        ? "bg-primary/15 text-primary ring-primary/30"
                         : "bg-primary/15 text-primary ring-primary/30",
                     )}
                   >
@@ -268,6 +281,11 @@ function ComposerBlock({
                     <X className="size-3 opacity-60" />
                   </button>
                 ) : null}
+                <QualityModeToggle
+                  model={model}
+                  onChange={onModelChange}
+                  disabled={isLoading}
+                />
               </div>
               <SendButton
                 canSend={canSend}
@@ -289,6 +307,8 @@ export function OrwixHero({
   isLoading,
   hasMessages,
   promptRequest = null,
+  model,
+  onModelChange,
 }: OrwixHeroProps) {
 
   const [value, setValue] = useState("");
@@ -373,7 +393,7 @@ export function OrwixHero({
 
         hasMessages
 
-          ? "pb-8 pt-4"
+          ? "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
 
           : "flex-1 items-center justify-center pb-10 pt-8 md:pb-14 md:pt-12",
 
@@ -397,11 +417,11 @@ export function OrwixHero({
 
           </h1>
 
-          <p className="mx-auto mt-4 max-w-lg text-base text-muted-foreground md:text-lg">
+          <p className="orwix-hero-subtitle mx-auto mt-4 max-w-lg text-base md:text-lg">
 
             Slayt, web sitesi, tasarım ve uygulama —{" "}
 
-            <span className="font-medium text-foreground/90">
+            <span className="orwix-hero-subtitle-em">
 
               tek bir komutla
 
@@ -433,6 +453,8 @@ export function OrwixHero({
             applyPrompt={applyPrompt}
             fileInputRef={fileInputRef}
             textareaRef={textareaRef}
+            model={model}
+            onModelChange={onModelChange}
           />
           <OrwixAppStudio
             isLoading={isLoading}
@@ -454,12 +476,14 @@ export function OrwixHero({
           applyPrompt={applyPrompt}
           fileInputRef={fileInputRef}
           textareaRef={textareaRef}
+          model={model}
+          onModelChange={onModelChange}
         />
       )}
 
 
 
-      {mode === "general" ? (
+      {mode === "general" && !hasMessages ? (
 
         <div className="relative mt-6 flex w-full flex-wrap justify-center gap-2.5 md:mt-7">
 

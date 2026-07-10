@@ -1,10 +1,11 @@
 export const BACKGROUND_PRESET_IDS = [
   "cosmic",
   "ocean",
+  "violet",
+  "rose",
+  "crimson",
   "ember",
   "forest",
-  "rose",
-  "midnight",
 ] as const;
 
 export type BackgroundPresetId = (typeof BACKGROUND_PRESET_IDS)[number];
@@ -20,38 +21,52 @@ export interface BackgroundPreset {
 export const BACKGROUND_PRESETS: BackgroundPreset[] = [
   {
     id: "cosmic",
-    label: "Kozmik",
-    swatch: "linear-gradient(135deg, #7c3aed, #c026d3, #22d3ee)",
+    label: "Turkuaz",
+    swatch: "linear-gradient(135deg, #0d9488, #14b8a6, #22d3ee)",
   },
   {
     id: "ocean",
-    label: "Okyanus",
-    swatch: "linear-gradient(135deg, #0369a1, #0ea5e9, #22d3ee)",
+    label: "Mavi",
+    swatch: "linear-gradient(135deg, #1d4ed8, #3b82f6, #38bdf8)",
   },
   {
-    id: "ember",
-    label: "Ateş",
-    swatch: "linear-gradient(135deg, #c2410c, #f97316, #fbbf24)",
-  },
-  {
-    id: "forest",
-    label: "Orman",
-    swatch: "linear-gradient(135deg, #047857, #10b981, #34d399)",
+    id: "violet",
+    label: "Mor",
+    swatch: "linear-gradient(135deg, #6d28d9, #a855f7, #e879f9)",
   },
   {
     id: "rose",
-    label: "Gül",
-    swatch: "linear-gradient(135deg, #be185d, #ec4899, #f472b6)",
+    label: "Pembe",
+    swatch: "linear-gradient(135deg, #be185d, #ec4899, #f9a8d4)",
   },
   {
-    id: "midnight",
-    label: "Gece",
-    swatch: "linear-gradient(135deg, #1e293b, #475569, #94a3b8)",
+    id: "crimson",
+    label: "Kırmızı",
+    swatch: "linear-gradient(135deg, #b91c1c, #ef4444, #fb7185)",
+  },
+  {
+    id: "ember",
+    label: "Sarı",
+    swatch: "linear-gradient(135deg, #d97706, #f59e0b, #fde047)",
+  },
+  {
+    id: "forest",
+    label: "Yeşil",
+    swatch: "linear-gradient(135deg, #15803d, #22c55e, #86efac)",
   },
 ];
+
+const LEGACY_PRESET_MAP: Record<string, BackgroundPresetId> = {
+  midnight: "violet",
+};
 
 export function isBackgroundPresetId(
   value: string,
 ): value is BackgroundPresetId {
   return BACKGROUND_PRESET_IDS.includes(value as BackgroundPresetId);
+}
+
+export function resolveBackgroundPresetId(value: string): BackgroundPresetId {
+  if (isBackgroundPresetId(value)) return value;
+  return LEGACY_PRESET_MAP[value] ?? DEFAULT_BACKGROUND_PRESET;
 }

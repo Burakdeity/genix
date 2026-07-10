@@ -67,7 +67,7 @@ export function MobileHeader({
           </SelectTrigger>
           <SelectContent className="border-border bg-popover text-popover-foreground">
             <SelectItem value={GEMINI_MODELS.FLASH_LITE}>Orwix Flash</SelectItem>
-            <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash 2.5</SelectItem>
+            <SelectItem value={GEMINI_MODELS.FLASH}>Orwix Flash+</SelectItem>
             <SelectItem value={GEMINI_MODELS.PRO}>Orwix Pro</SelectItem>
           </SelectContent>
         </Select>

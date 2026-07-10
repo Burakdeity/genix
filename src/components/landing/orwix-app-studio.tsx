@@ -39,7 +39,7 @@ function BottomNav({ active = "home" }: { active?: string }) {
           className={cn(
             "h-1.5 w-1.5 rounded-full transition-all",
             item === active
-              ? "scale-125 bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]"
+              ? "scale-125 bg-primary shadow-[0_0_8px] shadow-primary/60"
               : "bg-white/25",
           )}
         />
@@ -52,7 +52,7 @@ function ScreenWireframe({ screen }: { screen: OrwixAppScreen }) {
   if (screen.layout === "splash") {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-3 px-6">
-        <div className="orwix-app-logo-pulse size-14 rounded-2xl bg-gradient-to-br from-emerald-400 to-cyan-400 shadow-lg shadow-emerald-500/30" />
+        <div className="orwix-app-logo-pulse size-14 rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30" />
         <div className="h-2 w-20 rounded-full bg-white/30" />
         <div className="h-1.5 w-12 rounded-full bg-white/15" />
       </div>
@@ -62,12 +62,12 @@ function ScreenWireframe({ screen }: { screen: OrwixAppScreen }) {
   if (screen.layout === "onboarding") {
     return (
       <div className="flex h-full flex-col px-4 pt-4">
-        <div className="mb-4 h-28 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20" />
+        <div className="mb-4 h-28 rounded-2xl bg-gradient-to-br from-primary/30 to-primary/20" />
         <div className="mb-2 h-2.5 w-3/4 rounded-full bg-white/35" />
         <div className="mb-4 h-2 w-full rounded-full bg-white/15" />
         <div className="mb-1 h-2 w-full rounded-full bg-white/10" />
         <div className="h-2 w-5/6 rounded-full bg-white/10" />
-        <div className="mt-auto mb-3 h-8 rounded-xl bg-emerald-500/40" />
+        <div className="mt-auto mb-3 h-8 rounded-xl bg-primary/40" />
       </div>
     );
   }
@@ -79,7 +79,7 @@ function ScreenWireframe({ screen }: { screen: OrwixAppScreen }) {
           <div className="h-2 w-16 rounded-full bg-white/30" />
           <div className="size-5 rounded-full bg-white/20" />
         </div>
-        <div className="mb-3 h-16 rounded-xl bg-gradient-to-r from-emerald-500/25 to-cyan-500/15" />
+        <div className="mb-3 h-16 rounded-xl bg-gradient-to-r from-primary/25 to-primary/15" />
         <div className="grid grid-cols-2 gap-2">
           {[0, 1, 2, 3].map((i) => (
             <div
@@ -106,14 +106,14 @@ function ScreenWireframe({ screen }: { screen: OrwixAppScreen }) {
           <div className="size-4 rounded-md bg-white/15" />
           <div className="h-2 w-14 rounded-full bg-white/25" />
         </div>
-        <div className="mx-3 mt-3 h-24 rounded-xl bg-gradient-to-br from-violet-500/25 to-emerald-500/20" />
+        <div className="mx-3 mt-3 h-24 rounded-xl bg-gradient-to-br from-primary/25 to-primary/20" />
         <div className="space-y-2 px-3 pt-3">
           <div className="h-2.5 w-2/3 rounded-full bg-white/30" />
           <div className="h-2 w-full rounded-full bg-white/12" />
           <div className="h-2 w-full rounded-full bg-white/10" />
           <div className="h-2 w-5/6 rounded-full bg-white/10" />
         </div>
-        <div className="mx-3 mt-4 h-8 rounded-xl bg-emerald-500/35" />
+        <div className="mx-3 mt-4 h-8 rounded-xl bg-primary/35" />
       </div>
     );
   }
@@ -121,7 +121,7 @@ function ScreenWireframe({ screen }: { screen: OrwixAppScreen }) {
   return (
     <div className="flex h-full flex-col px-3 pt-4">
       <div className="mb-4 flex flex-col items-center">
-        <div className="mb-2 size-12 rounded-full bg-gradient-to-br from-emerald-400/40 to-cyan-400/30 ring-2 ring-white/10" />
+        <div className="mb-2 size-12 rounded-full bg-gradient-to-br from-primary/40 to-primary/20 ring-2 ring-white/10" />
         <div className="h-2 w-16 rounded-full bg-white/30" />
       </div>
       <div className="mb-3 grid grid-cols-3 gap-2">
@@ -165,7 +165,7 @@ export function OrwixAppStudio({ isLoading = false, className }: OrwixAppStudioP
   return (
     <div className={cn("orwix-app-studio", className)}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400/90">
+        <p className="text-xs font-semibold uppercase tracking-widest text-primary/90">
           {ORWIX_APP_STUDIO.label}
         </p>
         {isLoading ? (

@@ -44,7 +44,10 @@ export async function* createGeminiStream(
       prompt: request.prompt,
       model: request.model as GeminiModelId,
       systemInstruction: request.systemInstruction,
-      config: { temperature: request.temperature },
+      config: {
+        temperature: request.temperature,
+        maxOutputTokens: 1536,
+      },
     });
 
     for await (const chunk of stream) {

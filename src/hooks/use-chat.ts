@@ -6,6 +6,11 @@ import {
   generateGeminiResponse,
   streamGeminiResponse,
 } from "@/lib/api/gemini-client";
+import { getEasterEggReply } from "@/lib/chat/easter-eggs";
+import {
+  createStreamTypewriter,
+  typeText,
+} from "@/lib/chat/typewriter";
 import type { ChatStructuredResponse } from "@/server/schemas/chat-response.schema";
 import { useChatStore } from "@/stores/chat.store";
 import type { ChatMessage } from "@/types/chat.types";
@@ -62,6 +67,16 @@ export function useChat() {
       setLoading(true);
       setError(null);
 
+      const easterEgg = getEasterEggReply(trimmed);
+      if (easterEgg) {
+        try {
+          await typeText(easterEgg, updateLastAssistantMessage);
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       const payload = {
         prompt: trimmed,
         model: settings.model,
@@ -72,9 +87,11 @@ export function useChat() {
 
       try {
         if (settings.streaming && !settings.structuredOutput) {
+          const typewriter = createStreamTypewriter(updateLastAssistantMessage);
           await streamGeminiResponse(payload, (chunk) => {
-            updateLastAssistantMessage(chunk);
+            typewriter.push(chunk);
           });
+          await typewriter.done();
           return;
         }
 
@@ -82,13 +99,13 @@ export function useChat() {
 
         if (isStructuredData(response.structuredData)) {
           const structuredData = response.structuredData;
+          await typeText(structuredData.answer, updateLastAssistantMessage);
           useChatStore.setState((state) => {
             const updated = [...state.messages];
             const lastIndex = updated.length - 1;
             if (lastIndex >= 0) {
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                content: structuredData.answer,
                 structuredData,
               };
             }
@@ -97,17 +114,7 @@ export function useChat() {
           return;
         }
 
-        useChatStore.setState((state) => {
-          const updated = [...state.messages];
-          const lastIndex = updated.length - 1;
-          if (lastIndex >= 0) {
-            updated[lastIndex] = {
-              ...updated[lastIndex],
-              content: response.text,
-            };
-          }
-          return { messages: updated };
-        });
+        await typeText(response.text, updateLastAssistantMessage);
       } catch (err) {
         const message =
           err instanceof Error

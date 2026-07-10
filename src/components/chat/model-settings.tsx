@@ -37,12 +37,12 @@ export function ModelSettings({ settings, onChange }: ModelSettingsProps) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={GEMINI_MODELS.FLASH_LITE}>
-              gemini-2.5-flash-lite
+              gemini-flash-lite-latest
             </SelectItem>
             <SelectItem value={GEMINI_MODELS.FLASH}>
-              gemini-2.5-flash
+              gemini-flash-latest
             </SelectItem>
-            <SelectItem value={GEMINI_MODELS.PRO}>gemini-2.5-pro</SelectItem>
+            <SelectItem value={GEMINI_MODELS.PRO}>gemini-pro-latest</SelectItem>
           </SelectContent>
         </Select>
       </div>
