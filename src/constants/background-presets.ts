@@ -10,7 +10,7 @@ export const BACKGROUND_PRESET_IDS = [
 
 export type BackgroundPresetId = (typeof BACKGROUND_PRESET_IDS)[number];
 
-export const DEFAULT_BACKGROUND_PRESET: BackgroundPresetId = "cosmic";
+export const DEFAULT_BACKGROUND_PRESET: BackgroundPresetId = "ocean";
 
 export interface BackgroundPreset {
   id: BackgroundPresetId;
