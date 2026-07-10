@@ -37,9 +37,8 @@ export function parseStreamRequest(body: unknown): StreamApiRequest {
 export async function* createGeminiStream(
   request: StreamApiRequest,
 ): AsyncGenerator<string> {
-  const service = getGeminiService();
-
   try {
+    const service = getGeminiService();
     const stream = service.generateContentStream({
       prompt: request.prompt,
       model: request.model as GeminiModelId,

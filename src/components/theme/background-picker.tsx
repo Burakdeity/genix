@@ -96,7 +96,7 @@ export function BackgroundPicker({ className }: BackgroundPickerProps) {
           <Palette className="size-4" />
         </button>
         {open ? (
-          <div className="orwix-glass absolute right-0 top-full z-50 mt-2 w-[min(16rem,calc(100vw-1.5rem))] rounded-xl p-3 shadow-xl">
+          <div className="orwix-glass fixed left-3 right-3 top-[4.75rem] z-50 rounded-xl p-3 shadow-xl md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[min(16rem,calc(100vw-1.5rem))]">
             <p className="mb-2 text-xs font-semibold text-muted-foreground">
               Tema
             </p>
