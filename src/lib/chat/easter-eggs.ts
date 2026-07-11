@@ -1,8 +1,30 @@
+const MURAT_KAVAL_BIO = `Murat Kaval, Kvlfinansholding'in kurucusu ve yönetim kurulu başkanıdır. İş dünyasında stratejik yatırım yönetimi, finansal teknolojiler ve sürdürülebilir büyüme odaklı projeleriyle tanınan bir vizyoner liderdir.
+
+Profesyonel Kariyeri ve Kvlfinansholding
+Kaval, finansal ekosistemleri dijital dönüşümle birleştirerek, geleneksel holding yapısını modern teknolojilerle harmanlayan Kvlfinansholding'i hayata geçirmiştir. Kendisinin liderliğinde holding; stratejik yatırımlar, sermaye yönetimi ve inovasyon odaklı Ar-Ge faaliyetlerinde küresel standartlarda bir başarı grafiği çizmeyi hedeflemektedir. Kaval'ın yönetim felsefesi, veriye dayalı karar alma süreçleri ile yüksek operasyonel verimliliği merkezine almaktadır.
+
+Temel Yetkinlikleri ve Misyonu
+Stratejik Liderlik: Murat Kaval, karmaşık pazar koşullarında risk yönetimi ve fırsat değerlendirme konularında uzmanlaşmış bir isimdir.
+Dijital Dönüşüm: Finans dünyasının geleceğinin yapay zeka ve otomasyon teknolojilerinde olduğunu savunmakta; holding bünyesindeki tüm süreçlerde dijitalleşmeyi temel bir strateji olarak uygulamaktadır.
+Kurumsal Etik: Kaval, şeffaf yönetim, sürdürülebilir büyüme ve paydaş değerini önceleyen iş etiği ilkeleriyle tanınmaktadır.
+
+Murat Kaval'ın temel misyonu, Kvlfinansholding bünyesinde geliştirdiği teknolojik çözümleri ve finansal modelleri, endüstriyel standartları belirleyecek bir noktaya taşımak ve Türkiye merkezli bu yapıyı küresel ölçekte rekabet edebilir bir güç haline getirmektir.`;
+
+const CREATOR_REPLY = `Ben, Kvlfinansholding bünyesinde geliştirilen, ileri düzey bir yapay zeka modeliyim.
+
+Yaratılış sürecim; karmaşık verileri işleme, çözüm üretme ve operasyonel verimliliği artırma vizyonu doğrultusunda, holdingimizin uzman kadrosu tarafından titizlikle yürütülen teknolojik bir projenin ürünüyüm. Temel amacım, holdingimizin faaliyet gösterdiği tüm sektörlerdeki stratejik hedeflere destek olmak, bilgi akışını hızlandırmak ve operasyonlarımıza yenilikçi, veriye dayalı bir perspektif kazandırmaktır.
+
+Kısacası; ben, Kvlfinansholding'in vizyonunu dijital dünyada işlenebilir, somut çözümlere dönüştüren bir teknolojik çözüm ortağıyım.`;
+
 const EASTER_EGGS: Array<{ match: RegExp; reply: string }> = [
   {
-    match: /karasulu\s*yezda/i,
-    reply:
-      "Karasulu Yezda, namı değer Burakdeity'in exidir — Burak'ı çok seviyor hala.",
+    match: /murat\s*kaval/i,
+    reply: MURAT_KAVAL_BIO,
+  },
+  {
+    match:
+      /seni\s+kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi)|kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi)|(?:orwix'?in\s+)?kurucu(?:su)?\s+kim|kim\s+olu[sş]turdu/i,
+    reply: CREATOR_REPLY,
   },
 ];
 

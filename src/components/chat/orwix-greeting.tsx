@@ -13,13 +13,13 @@ export function OrwixGreeting() {
   );
   const firstName = activeAccount
     ? getFirstName(activeAccount.name)
-    : "Burak";
+    : null;
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6 pb-40 pt-6 md:pb-36">
       <OrwixBrandHero className="mb-5" />
       <h1 className="orwix-greeting mb-2 text-center text-2xl font-medium tracking-tight md:text-3xl">
-        Merhaba, {firstName}
+        {firstName ? `Merhaba, ${firstName}` : "Merhaba"}
       </h1>
       <p className="max-w-md text-center text-sm text-muted-foreground md:text-base">
         Size nasıl yardımcı olabilirim? Kendi sorunuzu yazın.

@@ -3,16 +3,30 @@ import { persist } from "zustand/middleware";
 
 import type { AuthView, UserAccount } from "@/types/auth.types";
 
-const DEFAULT_ACCOUNTS: UserAccount[] = [
-  {
-    id: "burak-default",
-    name: "Burak Burakcı",
-    email: "burakdeity41@gmail.com",
-    avatarColor: "#1a73e8",
-    provider: "google",
-    signedOut: true,
-  },
-];
+const DEFAULT_ACCOUNTS: UserAccount[] = [];
+
+const REMOVED_ACCOUNT_EMAILS = new Set([
+  "burakdeity41@gmail.com",
+]);
+
+const REMOVED_ACCOUNT_IDS = new Set(["burak-default"]);
+
+function sanitizeAccounts(
+  accounts: UserAccount[],
+  activeAccountId: string | null,
+): { accounts: UserAccount[]; activeAccountId: string | null } {
+  const nextAccounts = accounts.filter(
+    (account) =>
+      !REMOVED_ACCOUNT_EMAILS.has(account.email.toLowerCase()) &&
+      !REMOVED_ACCOUNT_IDS.has(account.id),
+  );
+  const nextActiveId =
+    activeAccountId && nextAccounts.some((account) => account.id === activeAccountId)
+      ? activeAccountId
+      : null;
+
+  return { accounts: nextAccounts, activeAccountId: nextActiveId };
+}
 
 interface AuthState {
   accounts: UserAccount[];
@@ -138,6 +152,22 @@ export const useAuthStore = create<AuthState>()(
         accounts: state.accounts,
         activeAccountId: state.activeAccountId,
       }),
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as {
+          accounts?: UserAccount[];
+          activeAccountId?: string | null;
+        };
+        const sanitized = sanitizeAccounts(
+          p.accounts ?? current.accounts,
+          p.activeAccountId ?? current.activeAccountId,
+        );
+
+        return {
+          ...current,
+          accounts: sanitized.accounts,
+          activeAccountId: sanitized.activeAccountId,
+        };
+      },
     },
   ),
 );
