@@ -167,10 +167,8 @@ export function OrwixHeader() {
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             <ContactMenu align="end" />
-            <ClientOnly
-              fallback={<div className="hidden size-9 shrink-0 sm:block" />}
-            >
-              <BackgroundPicker className="hidden sm:block" />
+            <ClientOnly fallback={<div className="size-9 shrink-0" />}>
+              <BackgroundPicker />
             </ClientOnly>
             <ClientOnly fallback={<div className="size-9 shrink-0" />}>
               <ThemeToggle />
