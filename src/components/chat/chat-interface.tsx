@@ -10,16 +10,18 @@ export function ChatInterface() {
     useChat();
 
   return (
-    <ErrorBoundary>
-      <OrwixAppShell
-        messages={messages}
-        isLoading={isLoading}
-        error={error}
-        onSend={sendMessage}
-        model={settings.model}
-        onModelChange={(model) => updateSettings({ model })}
-      />
+    <>
+      <ErrorBoundary>
+        <OrwixAppShell
+          messages={messages}
+          isLoading={isLoading}
+          error={error}
+          onSend={sendMessage}
+          model={settings.model}
+          onModelChange={(model) => updateSettings({ model })}
+        />
+      </ErrorBoundary>
       <AuthModal />
-    </ErrorBoundary>
+    </>
   );
 }

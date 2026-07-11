@@ -7,10 +7,23 @@ import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuthStore } from "@/stores/auth.store";
 
 export function GoogleOAuthSignInButton() {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  if (!clientId) {
+    return (
+      <p className="rounded-xl border border-[#f9ab00] bg-[#fff8e1] px-4 py-3 text-sm text-[#5f6368]">
+        Google Client ID tanımlı değil. `.env.local` dosyasına{" "}
+        <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> ekleyin.
+      </p>
+    );
+  }
+
+  return <GoogleOAuthSignInButtonInner />;
+}
+
+function GoogleOAuthSignInButtonInner() {
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const [error, setError] = useState<string | null>(null);
-
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   const login = useGoogleLogin({
     scope: "openid profile email",
@@ -58,15 +71,6 @@ export function GoogleOAuthSignInButton() {
       setError("Google ile giriş iptal edildi veya başarısız oldu.");
     },
   });
-
-  if (!clientId) {
-    return (
-      <p className="rounded-xl border border-[#f9ab00] bg-[#fff8e1] px-4 py-3 text-sm text-[#5f6368]">
-        Google Client ID tanımlı değil. `.env.local` dosyasına{" "}
-        <code>NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> ekleyin.
-      </p>
-    );
-  }
 
   return (
     <div className="space-y-3">

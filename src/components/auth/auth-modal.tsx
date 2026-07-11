@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { AccountPicker } from "@/components/auth/account-picker";
+import { GoogleAuthProvider } from "@/components/auth/google-auth-provider";
 import { SignInPanel } from "@/components/auth/sign-in-panel";
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
@@ -25,33 +26,37 @@ export function AuthModal() {
     return null;
   }
 
+  // Portal escapes layout stacking contexts; wrap again so OAuth hooks
+  // always have a provider even when rendered under document.body.
   return createPortal(
-    <div className="fixed inset-0 z-[300]">
-      {view === "sign-in" ? (
-        <SignInPanel
-          onBack={() => {
-            setSignInEmail(null);
-            setView("picker");
-          }}
-          onClose={closeAuthModal}
-        />
-      ) : (
-        <div className="relative min-h-[100dvh]">
-          <button
-            type="button"
-            onClick={closeAuthModal}
-            className={cn(
-              "absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full",
-              "bg-white/80 text-[#444746] shadow-sm hover:bg-white",
-            )}
-            aria-label="Kapat"
-          >
-            ✕
-          </button>
-          <AccountPicker />
-        </div>
-      )}
-    </div>,
+    <GoogleAuthProvider>
+      <div className="fixed inset-0 z-[300]">
+        {view === "sign-in" ? (
+          <SignInPanel
+            onBack={() => {
+              setSignInEmail(null);
+              setView("picker");
+            }}
+            onClose={closeAuthModal}
+          />
+        ) : (
+          <div className="relative min-h-[100dvh]">
+            <button
+              type="button"
+              onClick={closeAuthModal}
+              className={cn(
+                "absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full",
+                "bg-white/80 text-[#444746] shadow-sm hover:bg-white",
+              )}
+              aria-label="Kapat"
+            >
+              ✕
+            </button>
+            <AccountPicker />
+          </div>
+        )}
+      </div>
+    </GoogleAuthProvider>,
     document.body,
   );
 }
