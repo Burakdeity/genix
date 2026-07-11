@@ -11,12 +11,6 @@ export const ORWIX_BANNER =
 
 export const ORWIX_HEADER_NAV = {
   dropdowns: ["Özellikler", "Çözümler", "Kaynaklar"] as const,
-  contact: {
-    label: "İletişim",
-    name: "Murat Kaval",
-    phoneDisplay: "+90 538 764 21 51",
-    whatsappUrl: "https://wa.me/905387642151",
-  },
 } as const;
 
 export const ORWIX_HERO = {

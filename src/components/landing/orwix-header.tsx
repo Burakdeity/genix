@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronDown, MessageCircle } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 
 import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { BackgroundPicker } from "@/components/theme/background-picker";
@@ -35,89 +34,6 @@ function AuthButtons({ className }: { className?: string }) {
       >
         Kaydol
       </Button>
-    </div>
-  );
-}
-
-function ContactMenu({
-  align = "end",
-  className,
-}: {
-  align?: "start" | "center" | "end";
-  className?: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const { label, name, phoneDisplay, whatsappUrl } = ORWIX_HEADER_NAV.contact;
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className={cn("relative", className)}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="dialog"
-        aria-label={label}
-        onClick={() => setOpen((value) => !value)}
-        className={cn(
-          "orwix-nav-link inline-flex size-9 items-center justify-center gap-1 rounded-lg text-sm transition-all hover:bg-primary/10 sm:h-9 sm:w-auto sm:px-3",
-        )}
-      >
-        <MessageCircle className="size-4 shrink-0 text-primary" />
-        <span className="hidden font-medium sm:inline">{label}</span>
-        <ChevronDown
-          className={cn(
-            "hidden size-3.5 opacity-60 transition-transform sm:block",
-            open && "rotate-180",
-          )}
-        />
-      </button>
-
-      {open ? (
-        <div
-          className={cn(
-            "orwix-glass z-50 rounded-xl p-3 shadow-xl",
-            // Mobile: keep the panel fully inside the viewport
-            "fixed left-3 right-3 top-[4.75rem] w-auto sm:absolute sm:left-auto sm:right-auto sm:top-full sm:mt-2 sm:w-[min(18rem,calc(100vw-2rem))]",
-            align === "end" && "sm:right-0",
-            align === "start" && "sm:left-0",
-            align === "center" && "sm:left-1/2 sm:-translate-x-1/2",
-          )}
-        >
-          <p className="text-sm font-semibold text-foreground">{name}</p>
-          <p className="mt-1 text-xs text-muted-foreground">WhatsApp</p>
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2 flex min-h-11 items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-foreground transition-colors hover:bg-primary/10 active:bg-primary/15"
-            onClick={() => setOpen(false)}
-          >
-            <MessageCircle className="size-4 shrink-0 text-primary" />
-            <span className="break-all">{phoneDisplay}</span>
-          </a>
-        </div>
-      ) : null}
     </div>
   );
 }
@@ -166,7 +82,6 @@ export function OrwixHeader() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-            <ContactMenu align="end" />
             <ClientOnly fallback={<div className="size-9 shrink-0" />}>
               <BackgroundPicker />
             </ClientOnly>
