@@ -95,7 +95,11 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   }));
 
   const last = contents[contents.length - 1];
-  const lastText = last?.parts.find((part) => "text" in part && part.text)?.text;
+  const lastTextPart = last?.parts.find(
+    (part): part is { text: string } =>
+      "text" in part && typeof part.text === "string",
+  );
+  const lastText = lastTextPart?.text;
 
   if (
     !last ||
