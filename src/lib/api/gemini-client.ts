@@ -42,6 +42,37 @@ function parseStreamEvent(line: string): StreamEventPayload | null {
   }
 }
 
+function isNetworkFetchError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    error.name === "TypeError" ||
+    message.includes("load failed") ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("network request failed") ||
+    message.includes("fetch failed")
+  );
+}
+
+function toFriendlyNetworkError(error: unknown): ClientApiError {
+  const raw =
+    error instanceof Error && error.message.trim()
+      ? error.message
+      : "Bağlantı hatası";
+
+  // Safari/iOS often surfaces a bare "Load failed".
+  if (isNetworkFetchError(error)) {
+    return new ClientApiError(
+      "Bağlantı kurulamadı. www.orwixai.com adresinden deneyin veya ağı kontrol edip tekrar deneyin.",
+      "NETWORK_ERROR",
+      0,
+    );
+  }
+
+  return new ClientApiError(raw, "NETWORK_ERROR", 0);
+}
+
 async function parseApiResponse(
   response: Response,
 ): Promise<GeminiGenerateResponse> {
@@ -69,46 +100,31 @@ async function parseApiResponse(
 export async function generateGeminiResponse(
   payload: GeneratePayload,
 ): Promise<GeminiGenerateResponse> {
-  const response = await fetch("/api/gemini/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("/api/gemini/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      redirect: "follow",
+    });
+  } catch (error) {
+    throw toFriendlyNetworkError(error);
+  }
 
   return parseApiResponse(response);
 }
 
-export async function streamGeminiResponse(
-  payload: Omit<GeneratePayload, "structured">,
+async function readGeminiStream(
+  response: Response,
   onChunk: (text: string) => void,
 ): Promise<void> {
-  const response = await fetch("/api/gemini/stream", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok || !response.body) {
-    let error = {
-      code: "INTERNAL_ERROR",
-      message: "Akış başlatılamadı.",
-      statusCode: response.status,
-    };
-
-    try {
-      const errorBody: ApiResponse<GeminiGenerateResponse> =
-        await response.json();
-      if (!errorBody.success) {
-        error = errorBody.error;
-      }
-    } catch {
-      // Response body may not be JSON.
-    }
-
+  if (!response.body) {
     throw new ClientApiError(
-      error.message,
-      error.code,
-      error.statusCode,
+      "Akış başlatılamadı.",
+      "INTERNAL_ERROR",
+      response.status,
     );
   }
 
@@ -162,5 +178,78 @@ export async function streamGeminiResponse(
       "EMPTY_RESPONSE",
       502,
     );
+  }
+}
+
+export async function streamGeminiResponse(
+  payload: Omit<GeneratePayload, "structured">,
+  onChunk: (text: string) => void,
+): Promise<void> {
+  let response: Response;
+
+  try {
+    response = await fetch("/api/gemini/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      redirect: "follow",
+    });
+  } catch (error) {
+    // Mobile Safari frequently fails SSE/fetch streams with "Load failed".
+    // Fall back to the non-streaming endpoint.
+    const fallback = await generateGeminiResponse({
+      ...payload,
+      structured: false,
+    });
+    if (fallback.text) {
+      onChunk(fallback.text);
+      return;
+    }
+    throw toFriendlyNetworkError(error);
+  }
+
+  if (!response.ok) {
+    let error = {
+      code: "INTERNAL_ERROR",
+      message: "Akış başlatılamadı.",
+      statusCode: response.status,
+    };
+
+    try {
+      const errorBody: ApiResponse<GeminiGenerateResponse> =
+        await response.json();
+      if (!errorBody.success) {
+        error = errorBody.error;
+      }
+    } catch {
+      // Response body may not be JSON.
+    }
+
+    throw new ClientApiError(
+      error.message,
+      error.code,
+      error.statusCode,
+    );
+  }
+
+  try {
+    await readGeminiStream(response, onChunk);
+  } catch (error) {
+    if (error instanceof ClientApiError) {
+      throw error;
+    }
+
+    if (isNetworkFetchError(error)) {
+      const fallback = await generateGeminiResponse({
+        ...payload,
+        structured: false,
+      });
+      if (fallback.text) {
+        onChunk(fallback.text);
+        return;
+      }
+    }
+
+    throw toFriendlyNetworkError(error);
   }
 }

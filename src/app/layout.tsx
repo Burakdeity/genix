@@ -4,6 +4,7 @@ import Script from "next/script";
 
 import { GoogleAuthProvider } from "@/components/auth/google-auth-provider";
 import { StoreHydration } from "@/components/providers/store-hydration";
+import { PreferWwwRedirect } from "@/components/pwa/prefer-www-redirect";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { ORWIX_META } from "@/content/orwix-content";
 import "./globals.css";
@@ -67,6 +68,7 @@ export default function RootLayout({
       </head>
       <body className="app-bg flex min-h-full flex-col">
         <StoreHydration>
+          <PreferWwwRedirect />
           <GoogleAuthProvider>{children}</GoogleAuthProvider>
         </StoreHydration>
         <ServiceWorkerRegister />

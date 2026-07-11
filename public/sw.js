@@ -1,4 +1,4 @@
-const CACHE_NAME = "orwix-v1";
+const CACHE_NAME = "orwix-v2";
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -8,13 +8,30 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  );
 });
 
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
+  // Never intercept API or non-GET — mobile Safari streaming breaks otherwise.
   if (request.method !== "GET") {
+    return;
+  }
+
+  const url = new URL(request.url);
+  if (url.pathname.startsWith("/api/")) {
     return;
   }
 
