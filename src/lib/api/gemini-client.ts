@@ -2,7 +2,9 @@ import type {
   ApiResponse,
   GeminiGenerateResponse,
   GeneratePayload,
+  ImageGeneratePayload,
 } from "@/types/chat.types";
+import type { GeminiImageGenerateResponse } from "@/server/types/gemini.types";
 
 export class ClientApiError extends Error {
   readonly code: string;
@@ -114,6 +116,45 @@ export async function generateGeminiResponse(
   }
 
   return parseApiResponse(response);
+}
+
+async function parseImageApiResponse(
+  response: Response,
+): Promise<GeminiImageGenerateResponse> {
+  const data: ApiResponse<GeminiImageGenerateResponse> = await response.json();
+
+  if (!response.ok || !data.success) {
+    const error = data.success
+      ? {
+          code: "INTERNAL_ERROR",
+          message: "Beklenmeyen bir hata oluştu.",
+          statusCode: response.status,
+        }
+      : data.error;
+
+    throw new ClientApiError(error.message, error.code, error.statusCode);
+  }
+
+  return data.data;
+}
+
+export async function generateGeminiImage(
+  payload: ImageGeneratePayload,
+): Promise<GeminiImageGenerateResponse> {
+  let response: Response;
+
+  try {
+    response = await fetch("/api/gemini/image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      redirect: "follow",
+    });
+  } catch (error) {
+    throw toFriendlyNetworkError(error);
+  }
+
+  return parseImageApiResponse(response);
 }
 
 async function readGeminiStream(

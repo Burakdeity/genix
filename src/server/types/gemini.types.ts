@@ -8,6 +8,40 @@ export const GEMINI_MODELS = {
 
 export type GeminiModelId = (typeof GEMINI_MODELS)[keyof typeof GEMINI_MODELS];
 
+export const GEMINI_IMAGE_MODELS = {
+  FLASH: "gemini-2.5-flash-image",
+  FLASH_NEW: "gemini-3.1-flash-image",
+  PRO: "gemini-3-pro-image",
+} as const;
+
+export type GeminiImageModelId =
+  (typeof GEMINI_IMAGE_MODELS)[keyof typeof GEMINI_IMAGE_MODELS];
+
+export type GeminiImageAspectRatio =
+  | "1:1"
+  | "3:2"
+  | "2:3"
+  | "3:4"
+  | "4:3"
+  | "4:5"
+  | "5:4"
+  | "9:16"
+  | "16:9"
+  | "21:9";
+
+export interface GeminiGeneratedImage {
+  mimeType: string;
+  /** Raw base64 without data: prefix */
+  data: string;
+  dataUrl: string;
+}
+
+export interface GeminiImageGenerateResponse {
+  text: string;
+  images: GeminiGeneratedImage[];
+  model: string;
+}
+
 export interface GeminiGenerationConfig {
   temperature?: number;
   maxOutputTokens?: number;
@@ -27,10 +61,26 @@ export interface GeminiGenerateRequest {
     role: "user" | "assistant";
     content: string;
   }>;
+  /** Optional images attached to the current user prompt */
+  images?: Array<{
+    mimeType: string;
+    data: string;
+  }>;
   model?: GeminiModelId;
   systemInstruction?: string;
   config?: GeminiGenerationConfig;
   structuredOutput?: GeminiStructuredOutputConfig;
+}
+
+export interface GeminiImageGenerateRequest {
+  prompt: string;
+  model?: GeminiImageModelId;
+  aspectRatio?: GeminiImageAspectRatio;
+  /** Optional reference images for edit / guided generation */
+  images?: Array<{
+    mimeType: string;
+    data: string;
+  }>;
 }
 
 export interface GeminiGenerateResponse {

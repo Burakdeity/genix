@@ -13,7 +13,7 @@ import { OrwixHero } from "@/components/landing/orwix-hero";
 import { OrwixMetaBanner } from "@/components/landing/orwix-meta-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import type { ChatMessage, ChatSettings } from "@/types/chat.types";
+import type { ChatAttachment, ChatMessage, ChatSettings } from "@/types/chat.types";
 
 interface PromptRequest {
   id: number;
@@ -24,7 +24,10 @@ interface OrwixAppShellProps {
   messages: ChatMessage[];
   isLoading: boolean;
   error: string | null;
-  onSend: (message: string) => Promise<void>;
+  onSend: (
+    message: string,
+    attachments?: ChatAttachment[],
+  ) => Promise<void>;
   model: ChatSettings["model"];
   onModelChange: (model: ChatSettings["model"]) => void;
 }

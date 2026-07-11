@@ -7,9 +7,13 @@ import {
   type ChatStructuredResponse,
 } from "@/server/schemas/chat-response.schema";
 import {
+  GEMINI_IMAGE_MODELS,
   GEMINI_MODELS,
   type GeminiGenerateRequest,
   type GeminiGenerateResponse,
+  type GeminiGeneratedImage,
+  type GeminiImageGenerateRequest,
+  type GeminiImageGenerateResponse,
   type GeminiModelId,
   type GeminiStreamChunk,
 } from "@/server/types/gemini.types";
@@ -21,11 +25,21 @@ const STREAM_FALLBACK_MODELS = [
   GEMINI_MODELS.FLASH_LITE,
 ] as const;
 
+const IMAGE_FALLBACK_MODELS = [
+  GEMINI_IMAGE_MODELS.FLASH,
+  GEMINI_IMAGE_MODELS.FLASH_NEW,
+  GEMINI_IMAGE_MODELS.PRO,
+] as const;
+
 const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
+
+type GeminiPart =
+  | { text: string }
+  | { inlineData: { mimeType: string; data: string } };
 
 type GeminiContent = {
   role: "user" | "model";
-  parts: Array<{ text: string }>;
+  parts: GeminiPart[];
 };
 
 function createGeminiClient(): GoogleGenAI {
@@ -43,11 +57,36 @@ function getFallbackModels(primary: GeminiModelId): string[] {
   return [...new Set(ordered)];
 }
 
+function buildImageParts(
+  images?: Array<{ mimeType: string; data: string }>,
+): GeminiPart[] {
+  if (!images?.length) return [];
+  return images.map((image) => ({
+    inlineData: {
+      mimeType: image.mimeType,
+      data: image.data,
+    },
+  }));
+}
+
 function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string {
   const history = request.history?.filter((item) => item.content.trim()) ?? [];
+  const imageParts = buildImageParts(request.images);
+  const promptText =
+    request.prompt.trim() ||
+    (imageParts.length > 0 ? "Bu görseli incele ve yardımcı ol." : "");
+
+  if (history.length === 0 && imageParts.length === 0) {
+    return promptText;
+  }
 
   if (history.length === 0) {
-    return request.prompt;
+    return [
+      {
+        role: "user",
+        parts: [{ text: promptText }, ...imageParts],
+      },
+    ];
   }
 
   const contents: GeminiContent[] = history.map((item) => ({
@@ -56,10 +95,17 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   }));
 
   const last = contents[contents.length - 1];
-  if (!last || last.role !== "user" || last.parts[0]?.text !== request.prompt) {
+  const lastText = last?.parts.find((part) => "text" in part && part.text)?.text;
+
+  if (
+    !last ||
+    last.role !== "user" ||
+    lastText !== promptText ||
+    imageParts.length > 0
+  ) {
     contents.push({
       role: "user",
-      parts: [{ text: request.prompt }],
+      parts: [{ text: promptText }, ...imageParts],
     });
   }
 
@@ -195,6 +241,94 @@ export class GeminiService {
     }
 
     throw lastMapped;
+  }
+
+  async generateImage(
+    request: GeminiImageGenerateRequest,
+  ): Promise<GeminiImageGenerateResponse> {
+    const primary = request.model ?? GEMINI_IMAGE_MODELS.FLASH;
+    const models = [
+      primary,
+      ...IMAGE_FALLBACK_MODELS.filter((model) => model !== primary),
+    ];
+    let lastError: unknown;
+
+    for (const model of models) {
+      try {
+        return await withRetry(
+          async () => {
+            const response = await this.client.models.generateContent({
+              model,
+              contents: request.images?.length
+                ? [
+                    {
+                      role: "user",
+                      parts: [
+                        {
+                          text:
+                            request.prompt.trim() ||
+                            "Bu görselleri referans alarak yeni bir görsel üret.",
+                        },
+                        ...buildImageParts(request.images),
+                      ],
+                    },
+                  ]
+                : request.prompt,
+              config: {
+                responseModalities: ["TEXT", "IMAGE"],
+                ...(request.aspectRatio
+                  ? {
+                      imageConfig: {
+                        aspectRatio: request.aspectRatio,
+                      },
+                    }
+                  : {}),
+              },
+            });
+
+            const parts = response.candidates?.[0]?.content?.parts ?? [];
+            const images: GeminiGeneratedImage[] = [];
+            const textParts: string[] = [];
+
+            for (const part of parts) {
+              if (part.text) {
+                textParts.push(part.text);
+              }
+
+              const inline = part.inlineData;
+              if (inline?.data) {
+                const mimeType = inline.mimeType || "image/png";
+                images.push({
+                  mimeType,
+                  data: inline.data,
+                  dataUrl: `data:${mimeType};base64,${inline.data}`,
+                });
+              }
+            }
+
+            if (images.length === 0) {
+              throw new Error(
+                "Gemini görsel üretemedi. Promptu daha net deneyin veya modeli değiştirin.",
+              );
+            }
+
+            return {
+              text: textParts.join("\n").trim(),
+              images,
+              model,
+            };
+          },
+          { maxAttempts: 2, baseDelayMs: 500 },
+        );
+      } catch (error) {
+        lastError = error;
+        if (!isRetryableError(error)) {
+          throw mapGeminiError(error);
+        }
+      }
+    }
+
+    throw mapGeminiError(lastError);
   }
 }
 

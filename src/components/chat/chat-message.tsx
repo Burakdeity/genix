@@ -56,6 +56,23 @@ export function ChatMessageItem({
             ) : null}
           </p>
 
+          {message.images && message.images.length > 0 ? (
+            <div className="mt-3 grid gap-3">
+              {message.images.map((image, index) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={`${message.id}-image-${index}`}
+                  src={image.dataUrl}
+                  alt={isUser ? "Yüklenen görsel" : "Üretilen görsel"}
+                  className={cn(
+                    "rounded-xl border border-border/70 object-contain bg-muted/30",
+                    isUser ? "max-h-40" : "max-h-[28rem] w-full",
+                  )}
+                />
+              ))}
+            </div>
+          ) : null}
+
           {message.structuredData ? (
             <div className="mt-3 space-y-2 rounded-xl border border-border bg-muted/50 p-3 text-xs">
               <p className="text-muted-foreground">

@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthModal } from "@/components/auth/auth-modal";
+import { ProPlanModal } from "@/components/billing/pro-plan-modal";
 import { OrwixAppShell } from "@/components/landing/orwix-app-shell";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useChat } from "@/hooks/use-chat";
@@ -22,6 +23,7 @@ export function ChatInterface() {
         />
       </ErrorBoundary>
       <AuthModal />
+      <ProPlanModal />
     </>
   );
 }
