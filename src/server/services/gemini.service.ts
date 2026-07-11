@@ -16,21 +16,54 @@ import {
 import { isRetryableError, withRetry } from "@/server/utils/retry";
 
 const STREAM_FALLBACK_MODELS = [
-  GEMINI_MODELS.FLASH_LITE,
+  GEMINI_MODELS.PRO,
   GEMINI_MODELS.FLASH,
+  GEMINI_MODELS.FLASH_LITE,
 ] as const;
 
+const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
+
+type GeminiContent = {
+  role: "user" | "model";
+  parts: Array<{ text: string }>;
+};
+
 function createGeminiClient(): GoogleGenAI {
-  const { GEMINI_API_KEY } = getServerEnv();
-  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+  const apiKey = process.env.GEMINI_API_KEY?.trim() || getServerEnv().GEMINI_API_KEY;
+  return new GoogleGenAI({ apiKey });
 }
 
 function resolveModel(model?: GeminiModelId): GeminiModelId {
-  return model ?? GEMINI_MODELS.FLASH_LITE;
+  return model ?? GEMINI_MODELS.PRO;
 }
 
 function getFallbackModels(primary: GeminiModelId): string[] {
-  return [...new Set([primary, ...STREAM_FALLBACK_MODELS])];
+  // Prefer stronger models first when falling back.
+  const ordered = [primary, ...STREAM_FALLBACK_MODELS];
+  return [...new Set(ordered)];
+}
+
+function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string {
+  const history = request.history?.filter((item) => item.content.trim()) ?? [];
+
+  if (history.length === 0) {
+    return request.prompt;
+  }
+
+  const contents: GeminiContent[] = history.map((item) => ({
+    role: item.role === "assistant" ? "model" : "user",
+    parts: [{ text: item.content }],
+  }));
+
+  const last = contents[contents.length - 1];
+  if (!last || last.role !== "user" || last.parts[0]?.text !== request.prompt) {
+    contents.push({
+      role: "user",
+      parts: [{ text: request.prompt }],
+    });
+  }
+
+  return contents;
 }
 
 function buildGenerateConfig(request: GeminiGenerateRequest) {
@@ -38,12 +71,8 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
 
   return {
     ...(systemInstruction ? { systemInstruction } : {}),
-    ...(config?.temperature !== undefined
-      ? { temperature: config.temperature }
-      : {}),
-    ...(config?.maxOutputTokens !== undefined
-      ? { maxOutputTokens: config.maxOutputTokens }
-      : {}),
+    temperature: config?.temperature ?? 0.7,
+    maxOutputTokens: config?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
     ...(config?.topP !== undefined ? { topP: config.topP } : {}),
     ...(config?.topK !== undefined ? { topK: config.topK } : {}),
     ...(structuredOutput
@@ -72,6 +101,7 @@ export class GeminiService {
   ): Promise<GeminiGenerateResponse> {
     const models = getFallbackModels(resolveModel(request.model));
     let lastError: unknown;
+    const contents = buildContents(request);
 
     for (const model of models) {
       try {
@@ -79,7 +109,7 @@ export class GeminiService {
           async () => {
             const response = await this.client.models.generateContent({
               model,
-              contents: request.prompt,
+              contents,
               config: buildGenerateConfig(request),
             });
 
@@ -120,14 +150,14 @@ export class GeminiService {
     let lastMapped = mapGeminiError(
       new Error("Gemini API isteği başarısız oldu."),
     );
+    const contents = buildContents(request);
 
     for (const model of models) {
-      // One quick retry, then switch model — avoids long waits on overloaded models.
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         try {
           const stream = await this.client.models.generateContentStream({
             model,
-            contents: request.prompt,
+            contents,
             config: buildGenerateConfig(request),
           });
 

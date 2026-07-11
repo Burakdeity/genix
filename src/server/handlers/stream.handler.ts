@@ -4,8 +4,14 @@ import { AppError, toApiErrorResponse } from "@/server/errors/api-error";
 import { getGeminiService } from "@/server/services/gemini.service";
 import { GEMINI_MODELS, type GeminiModelId } from "@/server/types/gemini.types";
 
+const historyItemSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(12000),
+});
+
 const streamRequestSchema = z.object({
   prompt: z.string().min(1, "Prompt boş olamaz.").max(8000),
+  history: z.array(historyItemSchema).max(40).optional().default([]),
   model: z
     .enum([
       GEMINI_MODELS.FLASH_LITE,
@@ -13,7 +19,7 @@ const streamRequestSchema = z.object({
       GEMINI_MODELS.PRO,
     ])
     .optional()
-    .default(GEMINI_MODELS.FLASH_LITE),
+    .default(GEMINI_MODELS.PRO),
   systemInstruction: z.string().max(4000).optional(),
   temperature: z.number().min(0).max(2).optional().default(0.7),
 });
@@ -41,11 +47,12 @@ export async function* createGeminiStream(
     const service = getGeminiService();
     const stream = service.generateContentStream({
       prompt: request.prompt,
+      history: request.history,
       model: request.model as GeminiModelId,
       systemInstruction: request.systemInstruction,
       config: {
         temperature: request.temperature,
-        maxOutputTokens: 1536,
+        maxOutputTokens: 8192,
       },
     });
 

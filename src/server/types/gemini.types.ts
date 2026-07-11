@@ -22,6 +22,11 @@ export interface GeminiStructuredOutputConfig {
 
 export interface GeminiGenerateRequest {
   prompt: string;
+  /** Prior turns + current user message for multi-turn chat */
+  history?: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
   model?: GeminiModelId;
   systemInstruction?: string;
   config?: GeminiGenerationConfig;

@@ -25,6 +25,10 @@ export interface ChatSettings {
 
 export interface GeneratePayload {
   prompt: string;
+  history?: Array<{
+    role: "user" | "assistant";
+    content: string;
+  }>;
   model: GeminiModelId;
   systemInstruction?: string;
   temperature: number;

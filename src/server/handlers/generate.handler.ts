@@ -10,8 +10,14 @@ import {
   type GeminiModelId,
 } from "@/server/types/gemini.types";
 
+const historyItemSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1).max(12000),
+});
+
 const generateRequestSchema = z.object({
   prompt: z.string().min(1, "Prompt boş olamaz.").max(8000),
+  history: z.array(historyItemSchema).max(40).optional().default([]),
   model: z
     .enum([
       GEMINI_MODELS.FLASH_LITE,
@@ -19,7 +25,7 @@ const generateRequestSchema = z.object({
       GEMINI_MODELS.PRO,
     ])
     .optional()
-    .default(GEMINI_MODELS.FLASH_LITE),
+    .default(GEMINI_MODELS.PRO),
   systemInstruction: z.string().max(4000).optional(),
   temperature: z.number().min(0).max(2).optional().default(0.7),
   structured: z.boolean().optional().default(false),
@@ -52,15 +58,16 @@ export async function handleGenerateRequest(
       );
     }
 
-    const { prompt, model, systemInstruction, temperature, structured } =
+    const { prompt, history, model, systemInstruction, temperature, structured } =
       parsed.data;
 
     const service = getGeminiService();
     const data = await service.generateContent({
       prompt,
+      history,
       model: model as GeminiModelId,
       systemInstruction,
-      config: { temperature, maxOutputTokens: 1536 },
+      config: { temperature, maxOutputTokens: 8192 },
       ...(structured
         ? {
             structuredOutput: {

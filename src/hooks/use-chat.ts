@@ -77,8 +77,20 @@ export function useChat() {
         return;
       }
 
+      const history = [
+        ...messages
+          .filter((message) => message.content.trim().length > 0)
+          .slice(-30)
+          .map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+        { role: "user" as const, content: trimmed },
+      ];
+
       const payload = {
         prompt: trimmed,
+        history,
         model: settings.model,
         systemInstruction: settings.systemInstruction || undefined,
         temperature: settings.temperature,
@@ -144,6 +156,7 @@ export function useChat() {
     [
       addMessage,
       isLoading,
+      messages,
       setError,
       setLoading,
       settings,

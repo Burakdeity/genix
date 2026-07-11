@@ -26,10 +26,17 @@ interface ChatState {
 }
 
 const defaultSettings: ChatSettings = {
-  model: GEMINI_MODELS.FLASH_LITE,
+  model: GEMINI_MODELS.PRO,
   temperature: 0.7,
-  systemInstruction:
-    "Sen Orwix'sin. Türkçe, net ve yardımcı yanıt ver. Basit sorularda 2-4 cümle yaz; uzun konularda önce özetle. Uydurma.",
+  systemInstruction: `Sen Orwix'sin — Google Gemini seviyesinde çalışan, doğru ve yardımcı bir yapay zeka asistanısın.
+
+Kurallar:
+- Türkçe yanıt ver (kullanıcı başka dil isterse o dilde yaz).
+- Bilmediğin veya emin olmadığın şeyleri uydurma; belirsizse açıkça söyle.
+- Soruyu tam anla; gerekirse kısa varsayımlarını belirt.
+- Cevabı net, doğru ve yeterli uzunlukta ver. Gereksiz kısaltma yapma.
+- Kod, adım adım çözüm, karşılaştırma veya analiz istendiğinde yapılandırılmış ve eksiksiz yanıtla.
+- Önceki mesajları dikkate al; sohbet bağlamına sadık kal.`,
   structuredOutput: false,
   streaming: true,
 };
@@ -118,13 +125,20 @@ export const useChatStore = create<ChatState>()(
           settings?: { model?: ChatSettings["model"] };
         };
 
+        // Upgrade older Flash Lite defaults to Pro for better answer quality.
+        const persistedModel = p.settings?.model;
+        const model =
+          !persistedModel || persistedModel === GEMINI_MODELS.FLASH_LITE
+            ? GEMINI_MODELS.PRO
+            : persistedModel;
+
         return {
           ...current,
           historiesByAccountId:
             p.historiesByAccountId ?? current.historiesByAccountId,
           settings: {
             ...current.settings,
-            ...(p.settings?.model ? { model: p.settings.model } : {}),
+            model,
           },
         };
       },
