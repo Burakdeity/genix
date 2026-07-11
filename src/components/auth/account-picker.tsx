@@ -4,6 +4,7 @@ import { Minus, Plus, UserRound } from "lucide-react";
 
 import { AccountAvatar } from "@/components/auth/account-avatar";
 import { AuthFooter } from "@/components/auth/auth-footer";
+import { GoogleOAuthSignInButton } from "@/components/auth/google-oauth-sign-in-button";
 import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ export function AccountPicker() {
   const setSignInEmail = useAuthStore((state) => state.setSignInEmail);
 
   const isRemoveMode = view === "remove";
+  const hasAccounts = accounts.length > 0;
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#f0f4f9]">
@@ -26,16 +28,39 @@ export function AccountPicker() {
             <section className="border-b border-[#dadce0] px-8 py-10 md:border-r md:border-b-0 md:px-10 md:py-14">
               <OrwixWordmark className="mb-10 text-3xl font-bold" />
               <h1 className="text-[2rem] leading-tight font-normal text-[#1f1f1f] md:text-[2.75rem]">
-                {isRemoveMode ? "Hesabı kaldırma" : "Bir hesap seçin"}
+                {isRemoveMode
+                  ? "Hesabı kaldırma"
+                  : hasAccounts
+                    ? "Bir hesap seçin"
+                    : "Oturum açın"}
               </h1>
               <p className="mt-4 text-[15px] leading-relaxed text-[#444746]">
                 {isRemoveMode
                   ? "Bu cihazdan kaldırmak istediğiniz hesabı seçin."
-                  : "Orwix'e devam etmek için bir hesap seçin"}
+                  : hasAccounts
+                    ? "Orwix'e devam etmek için bir hesap seçin"
+                    : "Orwix'e devam etmek için Google hesabınızla oturum açın"}
               </p>
             </section>
 
             <section className="flex flex-col">
+              {!isRemoveMode ? (
+                <div className="space-y-3 px-6 py-6 md:px-8">
+                  <GoogleOAuthSignInButton />
+                  <p className="text-center text-xs leading-relaxed text-[#444746]">
+                    Devam ederek Orwix&apos;in{" "}
+                    <a href="#" className="text-[#0b57d0] hover:underline">
+                      Hizmet Şartları
+                    </a>{" "}
+                    ve{" "}
+                    <a href="#" className="text-[#0b57d0] hover:underline">
+                      Gizlilik Politikası
+                    </a>
+                    &apos;nı kabul etmiş olursunuz.
+                  </p>
+                </div>
+              ) : null}
+
               {accounts.map((account, index) => (
                 <button
                   key={account.id}
@@ -51,8 +76,8 @@ export function AccountPicker() {
                     signInWithAccount(account.id);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-[#f8f9fa] md:px-8",
-                    index > 0 && "border-t border-[#dadce0]",
+                    "flex w-full items-center gap-4 border-t border-[#dadce0] px-6 py-4 text-left transition-colors hover:bg-[#f8f9fa] md:px-8",
+                    index === 0 && isRemoveMode && "border-t-0",
                   )}
                 >
                   <AccountAvatar
