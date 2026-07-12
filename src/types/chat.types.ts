@@ -55,6 +55,7 @@ export interface ImageGeneratePayload {
   prompt: string;
   model?: string;
   aspectRatio?: string;
+  imageSize?: "1K" | "2K" | "4K" | "512";
   images?: Array<{
     mimeType: string;
     data: string;

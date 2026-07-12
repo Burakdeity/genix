@@ -26,9 +26,9 @@ const STREAM_FALLBACK_MODELS = [
 ] as const;
 
 const IMAGE_FALLBACK_MODELS = [
+  GEMINI_IMAGE_MODELS.PRO,
   GEMINI_IMAGE_MODELS.FLASH_NEW,
   GEMINI_IMAGE_MODELS.FLASH,
-  GEMINI_IMAGE_MODELS.PRO,
 ] as const;
 
 const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
@@ -296,7 +296,7 @@ export class GeminiService {
   async generateImage(
     request: GeminiImageGenerateRequest,
   ): Promise<GeminiImageGenerateResponse> {
-    const primary = request.model ?? GEMINI_IMAGE_MODELS.FLASH_NEW;
+    const primary = request.model ?? GEMINI_IMAGE_MODELS.PRO;
     const models = [
       primary,
       ...IMAGE_FALLBACK_MODELS.filter((model) => model !== primary),
@@ -331,6 +331,12 @@ export class GeminiService {
     ];
 
     for (const model of models) {
+      const preferLarge =
+        model === GEMINI_IMAGE_MODELS.PRO ||
+        model === GEMINI_IMAGE_MODELS.FLASH_NEW;
+      const imageSize =
+        request.imageSize ?? (preferLarge ? "2K" : undefined);
+
       for (const responseModalities of modalityAttempts) {
         try {
           const response = await this.client.models.generateContent({
@@ -338,13 +344,12 @@ export class GeminiService {
             contents,
             config: {
               responseModalities,
-              ...(request.aspectRatio
-                ? {
-                    imageConfig: {
-                      aspectRatio: request.aspectRatio,
-                    },
-                  }
-                : {}),
+              imageConfig: {
+                ...(request.aspectRatio
+                  ? { aspectRatio: request.aspectRatio }
+                  : {}),
+                ...(imageSize ? { imageSize } : {}),
+              },
             },
           });
 
@@ -400,7 +405,8 @@ export class GeminiService {
             message.includes("görsel üretemedi") ||
             message.includes("not found") ||
             message.includes("no longer available") ||
-            message.includes("not supported");
+            message.includes("not supported") ||
+            message.includes("invalid");
 
           if (!shouldFallback) {
             throw mapGeminiError(error);

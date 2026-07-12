@@ -20,7 +20,8 @@ const imageRequestSchema = z
         GEMINI_IMAGE_MODELS.PRO,
       ])
       .optional()
-      .default(GEMINI_IMAGE_MODELS.FLASH_NEW),
+      .default(GEMINI_IMAGE_MODELS.PRO),
+    imageSize: z.enum(["1K", "2K", "4K", "512"]).optional().default("2K"),
     aspectRatio: z
       .enum([
         "1:1",
@@ -73,12 +74,13 @@ export async function handleImageGenerateRequest(
       );
     }
 
-    const { prompt, model, aspectRatio, images } = parsed.data;
+    const { prompt, model, aspectRatio, images, imageSize } = parsed.data;
     const service = getGeminiService();
     const data = await service.generateImage({
       prompt,
       model,
       aspectRatio,
+      imageSize,
       images: images.map(({ mimeType, data }) => ({ mimeType, data })),
     });
 

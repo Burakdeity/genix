@@ -112,10 +112,10 @@ export function useChat() {
         if (!quota.canGenerate(accountId)) {
           if (!accountId) {
             await typeText(
-              `Ücretsiz görsel hakkınızı (${GUEST_IMAGE_LIMIT}) kullandınız. Daha fazla görsel üretmek için giriş yapın — giriş sonrası ${FREE_SIGNED_IN_IMAGE_LIMIT} hak daha açılır.`,
+              `Ücretsiz görsel hakkın (${GUEST_IMAGE_LIMIT}) bitti. Giriş yaparsan hemen ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı daha tanınır.`,
               updateLastAssistantMessage,
             );
-            useAuthStore.getState().openAuthModal("picker");
+            quota.openLoginModal();
           } else {
             await typeText(
               `Ücretsiz görsel hakkınız (${FREE_SIGNED_IN_IMAGE_LIMIT}) doldu. Sınırsız üretim için Pro plana geçin.`,

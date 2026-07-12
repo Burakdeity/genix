@@ -1,13 +1,19 @@
 export const ORWIX_META = {
-  title: "Orwix: Yapay Zeka ile Uygulamalı",
+  title: "Orwix: Yapay Zeka ile Görsel, Web ve Uygulama",
   description:
-    "Orwix, görevleri yerine getiren, iş akışlarını otomatikleştiren ve insan kapasitenizi genişleten, cevapların ötesine geçen bir eylem motorudur.",
+    "Orwix ile stüdyo kalitesinde görseller üretin; web sitesi, slayt ve uygulamaları tek komutla hayata geçirin.",
 } as const;
 
-export type OrwixMode = "general" | "website" | "slides" | "design" | "apps";
+export type OrwixMode =
+  | "general"
+  | "image"
+  | "website"
+  | "slides"
+  | "design"
+  | "apps";
 
 export const ORWIX_BANNER =
-  "Orwix — Yapay zeka ile slayt, web sitesi ve uygulama geliştirin.";
+  "Orwix — Stüdyo kalitesinde görsel üretin; slayt, web ve uygulama geliştirin.";
 
 export const ORWIX_HEADER_NAV = {
   dropdowns: ["Özellikler", "Çözümler", "Kaynaklar"] as const,
@@ -16,11 +22,13 @@ export const ORWIX_HEADER_NAV = {
 export const ORWIX_HERO = {
   title: "Sizin için ne yapabilirim?",
   composerLabel: "Ne inşa etmek istersiniz?",
-  referenceButton: "Web sitesi referansı ekle",
+  referenceButton: "Referans görsel ekle",
   figmaImport: "Figma'dan içe aktar",
   language: "Türkçe",
   placeholders: {
     general: "Bir görev atayın veya herhangi bir şey sorun",
+    image:
+      "Üretmek istediğiniz görseli detaylı anlatın (ör. sinematik ürün fotoğrafı, logo, poster)",
     website: "Oluşturmak istediğiniz web sitesini tanımlayın",
     slides: "Oluşturmak istediğiniz slaytları tanımlayın",
     design: "Oluşturmak istediğiniz tasarımı tanımlayın",
@@ -28,6 +36,7 @@ export const ORWIX_HERO = {
   },
   modeLabels: {
     general: null,
+    image: "Görsel",
     website: "Web Sitesi",
     slides: "Slaytlar",
     design: "Tasarım",
@@ -38,8 +47,9 @@ export const ORWIX_HERO = {
 export const ORWIX_SUGGESTIONS: ReadonlyArray<{
   label: string;
   mode: OrwixMode;
-  icon: "slides" | "website" | "design" | "apps";
+  icon: "image" | "slides" | "website" | "design" | "apps";
 }> = [
+  { label: "Görsel oluştur", mode: "image", icon: "image" },
   { label: "Slaytlar oluştur", mode: "slides", icon: "slides" },
   { label: "Web sitesi oluştur", mode: "website", icon: "website" },
   { label: "Tasarım", mode: "design", icon: "design" },
@@ -53,6 +63,39 @@ export const ORWIX_MORE_SUGGESTIONS = [
   "Veri analizi",
   "E-posta yaz",
   "Çeviri yap",
+] as const;
+
+export const ORWIX_IMAGE_TEMPLATES = [
+  {
+    primary: "Logo",
+    prompt:
+      "Modern minimal bir teknoloji markası için vektörel logo oluştur. Temiz, premium, beyaz arka plan.",
+  },
+  {
+    primary: "Ürün fotoğrafı",
+    prompt:
+      "Lüks bir ürün için stüdyo kalitesinde sinematik ürün fotoğrafı oluştur. Softbox ışık, yüksek detay.",
+  },
+  {
+    primary: "Poster",
+    prompt:
+      "Cesur tipografi ve güçlü kompozisyonla 9:16 dikey etkinlik posteri oluştur.",
+  },
+  {
+    primary: "Karakter",
+    prompt:
+      "Yüksek detaylı 3D karakter illüstrasyonu oluştur. Sinematik ışık, premium render.",
+  },
+  {
+    primary: "Kapak",
+    prompt:
+      "16:9 yatay dergi kapağı görseli oluştur. Editorial fotoğraf dili, keskin kompozisyon.",
+  },
+  {
+    primary: "İkon seti",
+    prompt:
+      "Aynı stilde 4 adet uygulama ikonu içeren bir grid görseli oluştur. Minimal, tutarlı çizgi kalınlığı.",
+  },
 ] as const;
 
 export const ORWIX_TEMPLATES = [
@@ -83,6 +126,7 @@ export const ORWIX_FOOTER = {
 } as const;
 
 export const ORWIX_SURPRISE_PROMPTS = [
+  "Neon ışıklı yağmurlu bir şehirde duran futuristik spor araba, sinematik gece fotoğrafı oluştur.",
   "Sıcak ve davetkar bir kahve dükkanı web sitesi tasarla. Menü, konum ve online sipariş bölümleri olsun.",
   "Yatırımcılara yönelik etkileyici bir sunum hazırla. Problem, çözüm, pazar, iş modeli ve yol haritası slaytları olsun.",
   "Modern bir startup için logo ve marka kiti oluştur. Renk paleti, tipografi ve kullanım örnekleri dahil olsun.",
@@ -90,7 +134,6 @@ export const ORWIX_SURPRISE_PROMPTS = [
   "Erken aşama bir SaaS startup için yüksek dönüşümlü landing page tasarla. Hero, özellikler ve CTA bölümleri olsun.",
   "Tarayıcıda oynanabilir basit bir mini oyun fikri geliştir. Oynanış mekaniği, skor sistemi ve arayüz taslağı olsun.",
   "Analitik odaklı bir yönetim paneli tasarla. KPI kartları, grafikler ve filtreleme alanı olsun.",
-  "Müşteri desteği için akıllı chatbot akışı tasarla. Karşılama, SSS ve canlı destek yönlendirmesi olsun.",
 ] as const;
 
 export const ORWIX_COOKIE = {

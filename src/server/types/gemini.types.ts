@@ -76,6 +76,8 @@ export interface GeminiImageGenerateRequest {
   prompt: string;
   model?: GeminiImageModelId;
   aspectRatio?: GeminiImageAspectRatio;
+  /** Optional output size for Pro image models: 1K | 2K | 4K */
+  imageSize?: "1K" | "2K" | "4K" | "512";
   /** Optional reference images for edit / guided generation */
   images?: Array<{
     mimeType: string;

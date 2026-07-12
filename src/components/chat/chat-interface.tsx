@@ -1,6 +1,8 @@
 "use client";
 
 import { AuthModal } from "@/components/auth/auth-modal";
+import { ImageLoginBonusSync } from "@/components/billing/image-login-bonus-sync";
+import { ImageLoginModal } from "@/components/billing/image-login-modal";
 import { ProPlanModal } from "@/components/billing/pro-plan-modal";
 import { OrwixAppShell } from "@/components/landing/orwix-app-shell";
 import { ErrorBoundary } from "@/components/error-boundary";
@@ -23,6 +25,8 @@ export function ChatInterface() {
         />
       </ErrorBoundary>
       <AuthModal />
+      <ImageLoginModal />
+      <ImageLoginBonusSync />
       <ProPlanModal />
     </>
   );

@@ -8,7 +8,13 @@ interface ImageQuotaState {
   guestUsed: number;
   usedByAccountId: Record<string, number>;
   proAccountIds: string[];
+  /** Shown when guest quota is exhausted — ask user to sign in */
+  loginModalOpen: boolean;
   proModalOpen: boolean;
+  /** After guest limit: grant fresh signed-in credits on next login */
+  awaitingLoginBonus: boolean;
+  openLoginModal: () => void;
+  closeLoginModal: () => void;
   openProModal: () => void;
   closeProModal: () => void;
   isPro: (accountId: string | null) => boolean;
@@ -16,6 +22,12 @@ interface ImageQuotaState {
   canGenerate: (accountId: string | null) => boolean;
   consume: (accountId: string | null) => void;
   activatePro: (accountId: string) => void;
+  /**
+   * Call after sign-in when guest quota was exhausted.
+   * Ensures the account has a full free signed-in allowance (5).
+   * Returns true if bonus was applied.
+   */
+  claimLoginBonus: (accountId: string) => boolean;
 }
 
 export const useImageQuotaStore = create<ImageQuotaState>()(
@@ -24,9 +36,20 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
       guestUsed: 0,
       usedByAccountId: {},
       proAccountIds: [],
+      loginModalOpen: false,
       proModalOpen: false,
+      awaitingLoginBonus: false,
 
-      openProModal: () => set({ proModalOpen: true }),
+      openLoginModal: () =>
+        set({
+          loginModalOpen: true,
+          proModalOpen: false,
+          awaitingLoginBonus: true,
+        }),
+      closeLoginModal: () => set({ loginModalOpen: false }),
+
+      openProModal: () =>
+        set({ proModalOpen: true, loginModalOpen: false }),
       closeProModal: () => set({ proModalOpen: false }),
 
       isPro: (accountId) => {
@@ -77,7 +100,31 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
             ? state.proAccountIds
             : [...state.proAccountIds, accountId],
           proModalOpen: false,
+          loginModalOpen: false,
         }));
+      },
+
+      claimLoginBonus: (accountId) => {
+        const state = get();
+        if (!state.awaitingLoginBonus) return false;
+        if (state.proAccountIds.includes(accountId)) {
+          set({
+            awaitingLoginBonus: false,
+            loginModalOpen: false,
+          });
+          return false;
+        }
+
+        // Fresh free signed-in allowance after guest limit
+        set((prev) => ({
+          awaitingLoginBonus: false,
+          loginModalOpen: false,
+          usedByAccountId: {
+            ...prev.usedByAccountId,
+            [accountId]: 0,
+          },
+        }));
+        return true;
       },
     }),
     {
@@ -87,6 +134,7 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
         guestUsed: state.guestUsed,
         usedByAccountId: state.usedByAccountId,
         proAccountIds: state.proAccountIds,
+        awaitingLoginBonus: state.awaitingLoginBonus,
       }),
     },
   ),
