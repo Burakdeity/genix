@@ -957,6 +957,11 @@
     color: var(--accent-foreground);
   }
 
+  .orwix-footer-copyright {
+    color: rgba(236, 254, 255, 0.9);
+    letter-spacing: 0.02em;
+  }
+
   .orwix-surprise-btn {
     border-radius: 9999px;
     border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);

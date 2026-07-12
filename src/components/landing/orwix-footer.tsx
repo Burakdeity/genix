@@ -44,7 +44,7 @@ export function OrwixFooter({ onSelectPrompt }: OrwixFooterProps) {
           </button>
         </div>
 
-        <p className="mt-12 text-center text-sm text-muted-foreground">
+        <p className="orwix-footer-copyright mt-12 text-center text-sm">
           {ORWIX_FOOTER.copyright}
         </p>
       </div>
