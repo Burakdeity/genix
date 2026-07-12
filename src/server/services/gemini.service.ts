@@ -26,8 +26,8 @@ const STREAM_FALLBACK_MODELS = [
 ] as const;
 
 const IMAGE_FALLBACK_MODELS = [
-  GEMINI_IMAGE_MODELS.FLASH,
   GEMINI_IMAGE_MODELS.FLASH_NEW,
+  GEMINI_IMAGE_MODELS.FLASH,
   GEMINI_IMAGE_MODELS.PRO,
 ] as const;
 
@@ -296,84 +296,115 @@ export class GeminiService {
   async generateImage(
     request: GeminiImageGenerateRequest,
   ): Promise<GeminiImageGenerateResponse> {
-    const primary = request.model ?? GEMINI_IMAGE_MODELS.FLASH;
+    const primary = request.model ?? GEMINI_IMAGE_MODELS.FLASH_NEW;
     const models = [
       primary,
       ...IMAGE_FALLBACK_MODELS.filter((model) => model !== primary),
     ];
     let lastError: unknown;
 
+    const promptText =
+      request.prompt.trim() ||
+      (request.images?.length
+        ? "Bu görselleri referans alarak yeni bir görsel üret."
+        : "Yüksek kaliteli bir görsel oluştur.");
+
+    const reinforcedPrompt = `${promptText}
+
+Önemli: Yanıtında mutlaka bir görsel üret. Sadece metin açıklaması yazma.`;
+
+    const contents = request.images?.length
+      ? [
+          {
+            role: "user" as const,
+            parts: [
+              { text: reinforcedPrompt },
+              ...buildImageParts(request.images),
+            ],
+          },
+        ]
+      : reinforcedPrompt;
+
+    const modalityAttempts: Array<Array<"TEXT" | "IMAGE">> = [
+      ["IMAGE"],
+      ["TEXT", "IMAGE"],
+    ];
+
     for (const model of models) {
-      try {
-        return await withRetry(
-          async () => {
-            const response = await this.client.models.generateContent({
-              model,
-              contents: request.images?.length
-                ? [
-                    {
-                      role: "user",
-                      parts: [
-                        {
-                          text:
-                            request.prompt.trim() ||
-                            "Bu görselleri referans alarak yeni bir görsel üret.",
-                        },
-                        ...buildImageParts(request.images),
-                      ],
+      for (const responseModalities of modalityAttempts) {
+        try {
+          const response = await this.client.models.generateContent({
+            model,
+            contents,
+            config: {
+              responseModalities,
+              ...(request.aspectRatio
+                ? {
+                    imageConfig: {
+                      aspectRatio: request.aspectRatio,
                     },
-                  ]
-                : request.prompt,
-              config: {
-                responseModalities: ["TEXT", "IMAGE"],
-                ...(request.aspectRatio
-                  ? {
-                      imageConfig: {
-                        aspectRatio: request.aspectRatio,
-                      },
-                    }
-                  : {}),
-              },
-            });
+                  }
+                : {}),
+            },
+          });
 
-            const parts = response.candidates?.[0]?.content?.parts ?? [];
-            const images: GeminiGeneratedImage[] = [];
-            const textParts: string[] = [];
+          const candidate = response.candidates?.[0];
+          const finishReason = candidate?.finishReason;
+          const parts = candidate?.content?.parts ?? [];
+          const images: GeminiGeneratedImage[] = [];
+          const textParts: string[] = [];
 
-            for (const part of parts) {
-              if (part.text) {
-                textParts.push(part.text);
-              }
-
-              const inline = part.inlineData;
-              if (inline?.data) {
-                const mimeType = inline.mimeType || "image/png";
-                images.push({
-                  mimeType,
-                  data: inline.data,
-                  dataUrl: `data:${mimeType};base64,${inline.data}`,
-                });
-              }
+          for (const part of parts) {
+            if (part.text && !part.thought) {
+              textParts.push(part.text);
             }
 
-            if (images.length === 0) {
-              throw new Error(
-                "Gemini görsel üretemedi. Promptu daha net deneyin veya modeli değiştirin.",
-              );
+            const inline = part.inlineData;
+            if (inline?.data) {
+              const mimeType = inline.mimeType || "image/png";
+              images.push({
+                mimeType,
+                data: inline.data,
+                dataUrl: `data:${mimeType};base64,${inline.data}`,
+              });
             }
+          }
 
+          if (images.length > 0) {
             return {
               text: textParts.join("\n").trim(),
               images,
               model,
             };
-          },
-          { maxAttempts: 2, baseDelayMs: 500 },
-        );
-      } catch (error) {
-        lastError = error;
-        if (!isRetryableError(error)) {
-          throw mapGeminiError(error);
+          }
+
+          if (
+            finishReason === "SAFETY" ||
+            finishReason === "BLOCKLIST" ||
+            finishReason === "PROHIBITED_CONTENT"
+          ) {
+            throw new Error(
+              "Görsel güvenlik filtresine takıldı. Promptu daha nötr deneyin.",
+            );
+          }
+
+          throw new Error(
+            `Gemini görsel üretemedi (${model}, ${responseModalities.join("+")}).`,
+          );
+        } catch (error) {
+          lastError = error;
+          const message =
+            error instanceof Error ? error.message.toLowerCase() : "";
+          const shouldFallback =
+            isRetryableError(error) ||
+            message.includes("görsel üretemedi") ||
+            message.includes("not found") ||
+            message.includes("no longer available") ||
+            message.includes("not supported");
+
+          if (!shouldFallback) {
+            throw mapGeminiError(error);
+          }
         }
       }
     }

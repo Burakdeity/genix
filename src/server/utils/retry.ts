@@ -32,6 +32,7 @@ export function isRetryableError(error: unknown): boolean {
     message.includes("boş yanıt") ||
     message.includes("boş akış") ||
     message.includes("empty response") ||
+    message.includes("görsel üretemedi") ||
     message.includes("no longer available") ||
     message.includes("not found")
   );

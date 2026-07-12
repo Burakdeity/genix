@@ -20,7 +20,7 @@ const imageRequestSchema = z
         GEMINI_IMAGE_MODELS.PRO,
       ])
       .optional()
-      .default(GEMINI_IMAGE_MODELS.FLASH),
+      .default(GEMINI_IMAGE_MODELS.FLASH_NEW),
     aspectRatio: z
       .enum([
         "1:1",
