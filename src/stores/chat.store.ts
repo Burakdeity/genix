@@ -131,12 +131,14 @@ export const useChatStore = create<ChatState>()(
         };
 
         const legacyModelMap: Record<string, ChatSettings["model"]> = {
-          "gemini-pro-latest": GEMINI_MODELS.PRO,
-          "gemini-flash-latest": GEMINI_MODELS.FLASH,
-          "gemini-flash-lite-latest": GEMINI_MODELS.FLASH_LITE,
           "gemini-2.5-pro": GEMINI_MODELS.PRO,
           "gemini-2.5-flash": GEMINI_MODELS.FLASH,
           "gemini-2.5-flash-lite": GEMINI_MODELS.FLASH_LITE,
+          "gemini-2.5-pro-latest": GEMINI_MODELS.PRO,
+          "gemini-2.5-flash-latest": GEMINI_MODELS.FLASH,
+          "gemini-pro-latest": GEMINI_MODELS.PRO,
+          "gemini-flash-latest": GEMINI_MODELS.FLASH,
+          "gemini-flash-lite-latest": GEMINI_MODELS.FLASH_LITE,
         };
 
         const persistedModel = p.settings?.model;
