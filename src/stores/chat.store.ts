@@ -127,15 +127,27 @@ export const useChatStore = create<ChatState>()(
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as {
           historiesByAccountId?: Record<string, ChatMessage[]>;
-          settings?: { model?: ChatSettings["model"] };
+          settings?: { model?: string };
         };
 
-        // Upgrade older Flash Lite defaults to Pro for better answer quality.
+        const legacyModelMap: Record<string, ChatSettings["model"]> = {
+          "gemini-pro-latest": GEMINI_MODELS.PRO,
+          "gemini-flash-latest": GEMINI_MODELS.FLASH,
+          "gemini-flash-lite-latest": GEMINI_MODELS.FLASH_LITE,
+          "gemini-2.5-pro": GEMINI_MODELS.PRO,
+          "gemini-2.5-flash": GEMINI_MODELS.FLASH,
+          "gemini-2.5-flash-lite": GEMINI_MODELS.FLASH_LITE,
+        };
+
         const persistedModel = p.settings?.model;
+        const mapped =
+          (persistedModel && legacyModelMap[persistedModel]) ||
+          (persistedModel as ChatSettings["model"] | undefined);
+
         const model =
-          !persistedModel || persistedModel === GEMINI_MODELS.FLASH_LITE
+          !mapped || mapped === GEMINI_MODELS.FLASH_LITE
             ? GEMINI_MODELS.PRO
-            : persistedModel;
+            : mapped;
 
         return {
           ...current,

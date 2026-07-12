@@ -1,9 +1,9 @@
 import type { Schema } from "@google/genai";
 
 export const GEMINI_MODELS = {
-  FLASH_LITE: "gemini-flash-lite-latest",
-  FLASH: "gemini-flash-latest",
-  PRO: "gemini-pro-latest",
+  FLASH_LITE: "gemini-2.5-flash-lite",
+  FLASH: "gemini-2.5-flash",
+  PRO: "gemini-2.5-pro",
 } as const;
 
 export type GeminiModelId = (typeof GEMINI_MODELS)[keyof typeof GEMINI_MODELS];

@@ -134,6 +134,37 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
   };
 }
 
+function extractResponseText(response: {
+  text?: string;
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string; thought?: boolean }>;
+    };
+  }>;
+}): string {
+  const direct = response.text?.trim() ?? "";
+  if (direct) return direct;
+
+  const parts = response.candidates?.[0]?.content?.parts ?? [];
+  return parts
+    .filter((part) => !part.thought && typeof part.text === "string")
+    .map((part) => part.text!.trim())
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
+function extractChunkText(chunk: {
+  text?: string;
+  candidates?: Array<{
+    content?: {
+      parts?: Array<{ text?: string; thought?: boolean }>;
+    };
+  }>;
+}): string {
+  return extractResponseText(chunk);
+}
+
 function parseStructuredResponse(text: string): ChatStructuredResponse {
   const parsed: unknown = JSON.parse(text);
   return chatStructuredResponseSchema.parse(parsed);
@@ -163,7 +194,7 @@ export class GeminiService {
               config: buildGenerateConfig(request),
             });
 
-            const text = response.text ?? "";
+            const text = extractResponseText(response);
 
             if (!text) {
               throw new Error("Gemini API boş yanıt döndürdü.");
@@ -184,7 +215,15 @@ export class GeminiService {
         );
       } catch (error) {
         lastError = error;
-        if (!isRetryableError(error)) {
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : "";
+        const shouldFallback =
+          isRetryableError(error) ||
+          message.includes("boş yanıt") ||
+          message.includes("not found") ||
+          message.includes("no longer available");
+
+        if (!shouldFallback) {
           throw mapGeminiError(error);
         }
       }
@@ -214,7 +253,7 @@ export class GeminiService {
           let hasContent = false;
 
           for await (const chunk of stream) {
-            const text = chunk.text ?? "";
+            const text = extractChunkText(chunk);
             if (text) {
               hasContent = true;
               yield { text, done: false };
@@ -230,8 +269,15 @@ export class GeminiService {
         } catch (error) {
           const mapped = mapGeminiError(error);
           lastMapped = mapped;
+          const message =
+            error instanceof Error ? error.message.toLowerCase() : "";
+          const shouldFallback =
+            isRetryableError(mapped) ||
+            message.includes("boş akış") ||
+            message.includes("not found") ||
+            message.includes("no longer available");
 
-          if (!isRetryableError(mapped)) {
+          if (!shouldFallback) {
             throw mapped;
           }
 

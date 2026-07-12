@@ -116,8 +116,24 @@ export function mapGeminiError(error: unknown): AppError {
     );
   }
 
+  if (
+    normalized.includes("boş yanıt") ||
+    normalized.includes("boş akış") ||
+    normalized.includes("empty response")
+  ) {
+    return new AppError(
+      "Model boş yanıt döndürdü. Başka modele geçiliyor veya tekrar deneyin.",
+      "GEMINI_API_ERROR",
+      502,
+    );
+  }
+
+  const detail = message.replace(/\s+/g, " ").trim().slice(0, 180);
+
   return new AppError(
-    "Gemini API isteği başarısız oldu. Lütfen tekrar deneyin.",
+    detail
+      ? `Gemini API isteği başarısız oldu: ${detail}`
+      : "Gemini API isteği başarısız oldu. Lütfen tekrar deneyin.",
     "GEMINI_API_ERROR",
     status ?? 502,
   );

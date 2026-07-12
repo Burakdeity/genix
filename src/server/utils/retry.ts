@@ -28,7 +28,12 @@ export function isRetryableError(error: unknown): boolean {
     message.includes("overloaded") ||
     message.includes("fetch failed") ||
     message.includes("econnreset") ||
-    message.includes("etimedout")
+    message.includes("etimedout") ||
+    message.includes("boş yanıt") ||
+    message.includes("boş akış") ||
+    message.includes("empty response") ||
+    message.includes("no longer available") ||
+    message.includes("not found")
   );
 }
 
