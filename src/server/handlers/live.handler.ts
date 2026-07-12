@@ -60,6 +60,7 @@ async function createLiveToken(
             voiceConfig: {
               prebuiltVoiceConfig: { voiceName },
             },
+            languageCode: "tr-TR",
           },
           inputAudioTranscription: {},
           outputAudioTranscription: {},

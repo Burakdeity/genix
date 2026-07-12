@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { GoogleGenAI, Modality } from "@google/genai";
 
 import type { LiveSessionResponse } from "@/server/types/live.types";
 import {
@@ -48,6 +49,47 @@ function closeReasonMessage(event: { code?: number; reason?: string } | unknown)
     return `Canlı ses bağlantısı kapandı (kod ${record.code}).`;
   }
   return "Canlı ses bağlantısı kapandı.";
+}
+
+function microphoneErrorMessage(error: unknown): string {
+  if (!(error instanceof Error)) {
+    return "Mikrofon başlatılamadı. Tarayıcı izinlerini kontrol edin.";
+  }
+
+  const name = error.name;
+  if (name === "NotAllowedError" || name === "PermissionDeniedError") {
+    return "Mikrofon izni reddedildi. Tarayıcı ayarlarından mikrofona izin verin.";
+  }
+  if (name === "NotFoundError" || name === "DevicesNotFoundError") {
+    return "Mikrofon bulunamadı. Bağlı bir mikrofon olduğundan emin olun.";
+  }
+  if (name === "NotReadableError") {
+    return "Mikrofon kullanılamıyor. Başka bir uygulama kullanıyor olabilir.";
+  }
+
+  return error.message || "Mikrofon başlatılamadı.";
+}
+
+function releaseAudioBundle(bundle: {
+  capture: AudioContext;
+  playback: AudioContext;
+  stream: MediaStream;
+}): void {
+  bundle.stream.getTracks().forEach((track) => track.stop());
+  void bundle.capture.close();
+  void bundle.playback.close();
+}
+
+async function acquireVoiceAudio(): Promise<{
+  capture: AudioContext;
+  playback: AudioContext;
+  stream: MediaStream;
+}> {
+  const primed = takePrimedVoiceAudio();
+  if (primed) return primed;
+
+  await primeVoiceAudio();
+  return takePrimedVoiceAudio() ?? (await primeVoiceAudio());
 }
 
 export function useGeminiLive(voiceProfile: VoiceProfileId) {
@@ -155,18 +197,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
 
   const startMicrophone = useCallback(
     async (session: LiveSession, connectId: number) => {
-      const primed = takePrimedVoiceAudio();
-      const audio =
-        primed ??
-        (await primeVoiceAudio().then((bundle) => {
-          // take ownership from prime helpers
-          return takePrimedVoiceAudio() ?? bundle;
-        }));
+      const audio = await acquireVoiceAudio();
 
       if (connectId !== connectIdRef.current) {
-        audio.stream.getTracks().forEach((track) => track.stop());
-        void audio.capture.close();
-        void audio.playback.close();
+        releaseAudioBundle(audio);
         return;
       }
 
@@ -246,9 +280,6 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         );
       }
 
-      const { GoogleGenAI, Modality } = await import("@google/genai");
-      if (connectId !== connectIdRef.current) return;
-
       const ai = new GoogleGenAI({
         apiKey: payload.data.token,
         httpOptions: { apiVersion: payload.data.apiVersion },
@@ -320,9 +351,11 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       releasePrimedVoiceAudio();
       sessionRef.current = null;
       const message =
-        err instanceof Error
-          ? err.message
-          : "Ses modu başlatılamadı. Mikrofon iznini kontrol edin.";
+        err instanceof DOMException || (err instanceof Error && err.name.includes("Error"))
+          ? microphoneErrorMessage(err)
+          : err instanceof Error
+            ? err.message
+            : "Ses modu başlatılamadı. Mikrofon iznini kontrol edin.";
       setError(message);
       setStatus("error");
     }
