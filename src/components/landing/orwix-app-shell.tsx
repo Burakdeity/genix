@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { AlertCircle } from "lucide-react";
 
+import { ChatHistoryList } from "@/components/chat/chat-history-panel";
 import { ChatMessageItem } from "@/components/chat/chat-message";
 import { ChatScrollArea } from "@/components/chat/chat-scroll-area";
 import { OrwixBackground } from "@/components/landing/orwix-background";
@@ -13,7 +14,13 @@ import { OrwixHeader } from "@/components/landing/orwix-header";
 import { OrwixHero } from "@/components/landing/orwix-hero";
 import { OrwixMetaBanner } from "@/components/landing/orwix-meta-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ClientOnly } from "@/components/ui/client-only";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import {
+  GUEST_CHAT_ACCOUNT_ID,
+  useChatStore,
+} from "@/stores/chat.store";
 import type {
   ChatAttachment,
   ChatMessage,
@@ -50,6 +57,11 @@ export function OrwixAppShell({
   const hasMessages = messages.length > 0;
   const [promptRequest, setPromptRequest] = useState<PromptRequest | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const accountId =
+    useAuthStore((state) => state.activeAccountId) ?? GUEST_CHAT_ACCOUNT_ID;
+  const hasSavedSessions = useChatStore(
+    (state) => (state.sessionsByAccountId[accountId] ?? []).length > 0,
+  );
 
   const handleSelectPrompt = (text: string) => {
     setPromptRequest({ id: Date.now(), text });
@@ -133,7 +145,16 @@ export function OrwixAppShell({
         </main>
 
         {!hasMessages ? (
-          <OrwixFooter onSelectPrompt={handleSelectPrompt} />
+          <>
+            {hasSavedSessions ? (
+              <ClientOnly>
+                <section className="mx-auto w-full max-w-xl px-5 pb-8 md:px-6">
+                  <ChatHistoryList limit={12} />
+                </section>
+              </ClientOnly>
+            ) : null}
+            <OrwixFooter onSelectPrompt={handleSelectPrompt} />
+          </>
         ) : null}
         <OrwixCookieConsent />
       </div>

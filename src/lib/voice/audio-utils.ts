@@ -1,0 +1,107 @@
+export const LIVE_INPUT_SAMPLE_RATE = 16_000;
+export const LIVE_OUTPUT_SAMPLE_RATE = 24_000;
+
+export function float32ToInt16(input: Float32Array): Int16Array {
+  const output = new Int16Array(input.length);
+  for (let i = 0; i < input.length; i += 1) {
+    const sample = Math.max(-1, Math.min(1, input[i] ?? 0));
+    output[i] = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+  }
+  return output;
+}
+
+export function int16ToFloat32(input: Int16Array): Float32Array {
+  const output = new Float32Array(input.length);
+  for (let i = 0; i < input.length; i += 1) {
+    output[i] = (input[i] ?? 0) / 0x8000;
+  }
+  return output;
+}
+
+export function base64ToInt16(base64: string): Int16Array {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Int16Array(bytes.buffer);
+}
+
+export function int16ToBase64(input: Int16Array): string {
+  const bytes = new Uint8Array(input.buffer, input.byteOffset, input.byteLength);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 1) {
+    binary += String.fromCharCode(bytes[i] ?? 0);
+  }
+  return btoa(binary);
+}
+
+export function downsampleTo16k(
+  input: Float32Array,
+  inputSampleRate: number,
+): Float32Array {
+  if (inputSampleRate === LIVE_INPUT_SAMPLE_RATE) {
+    return input;
+  }
+
+  const ratio = inputSampleRate / LIVE_INPUT_SAMPLE_RATE;
+  const outputLength = Math.floor(input.length / ratio);
+  const output = new Float32Array(outputLength);
+
+  for (let i = 0; i < outputLength; i += 1) {
+    const start = Math.floor(i * ratio);
+    const end = Math.min(Math.floor((i + 1) * ratio), input.length);
+    let sum = 0;
+    for (let j = start; j < end; j += 1) {
+      sum += input[j] ?? 0;
+    }
+    output[i] = sum / Math.max(1, end - start);
+  }
+
+  return output;
+}
+
+export class PcmPlaybackQueue {
+  private readonly context: AudioContext;
+  private nextStartTime = 0;
+  private activeSources = new Set<AudioBufferSourceNode>();
+
+  constructor(context: AudioContext) {
+    this.context = context;
+    this.nextStartTime = context.currentTime;
+  }
+
+  enqueuePcm16(base64: string, sampleRate = LIVE_OUTPUT_SAMPLE_RATE): void {
+    const pcm = base64ToInt16(base64);
+    if (pcm.length === 0) return;
+
+    const floats = int16ToFloat32(pcm);
+    const buffer = this.context.createBuffer(1, floats.length, sampleRate);
+    buffer.copyToChannel(new Float32Array(floats), 0);
+
+    const source = this.context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(this.context.destination);
+
+    const startAt = Math.max(this.context.currentTime, this.nextStartTime);
+    source.start(startAt);
+    this.nextStartTime = startAt + buffer.duration;
+
+    this.activeSources.add(source);
+    source.onended = () => {
+      this.activeSources.delete(source);
+    };
+  }
+
+  flush(): void {
+    for (const source of this.activeSources) {
+      try {
+        source.stop();
+      } catch {
+        // already stopped
+      }
+    }
+    this.activeSources.clear();
+    this.nextStartTime = this.context.currentTime;
+  }
+}

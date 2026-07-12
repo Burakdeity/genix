@@ -4,7 +4,9 @@ import { AuthModal } from "@/components/auth/auth-modal";
 import { ImageLoginBonusSync } from "@/components/billing/image-login-bonus-sync";
 import { ImageLoginModal } from "@/components/billing/image-login-modal";
 import { ProPlanModal } from "@/components/billing/pro-plan-modal";
+import { ChatHistoryPanel } from "@/components/chat/chat-history-panel";
 import { OrwixAppShell } from "@/components/landing/orwix-app-shell";
+import { VoiceModePanel } from "@/components/voice/voice-mode-panel";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useChat } from "@/hooks/use-chat";
 
@@ -24,10 +26,12 @@ export function ChatInterface() {
           onModelChange={(model) => updateSettings({ model })}
         />
       </ErrorBoundary>
+      <ChatHistoryPanel />
       <AuthModal />
       <ImageLoginModal />
       <ImageLoginBonusSync />
       <ProPlanModal />
+      <VoiceModePanel />
     </>
   );
 }

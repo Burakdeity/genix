@@ -16,6 +16,7 @@ import {
 } from "@/stores/background.store";
 import { useChatStore } from "@/stores/chat.store";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
+import { useVideoQuotaStore } from "@/stores/video-quota.store";
 import { applyThemeToDocument, useThemeStore } from "@/stores/theme.store";
 import { useVoiceStore } from "@/stores/voice.store";
 import { ChatAccountSync } from "@/components/chat/chat-account-sync";
@@ -27,6 +28,7 @@ const persistApis = [
   useVoiceStore.persist,
   useChatStore.persist,
   useImageQuotaStore.persist,
+  useVideoQuotaStore.persist,
 ] as const;
 
 const StoresHydrationContext = createContext(false);

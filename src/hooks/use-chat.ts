@@ -10,10 +10,14 @@ import {
 } from "@/lib/api/gemini-client";
 import { getEasterEggReply } from "@/lib/chat/easter-eggs";
 import {
+  collectPriorReferenceImages,
   detectAspectRatio,
+  enhanceImageEditPrompt,
   enhanceImagePrompt,
   isImageGenerationPrompt,
+  shouldRouteToImageEdit,
 } from "@/lib/chat/image-prompt";
+import { cacheMessageImages } from "@/lib/chat/session-image-cache";
 import {
   buildSystemInstruction,
   shouldEnableCodeExecution,
@@ -35,17 +39,29 @@ import {
   GUEST_IMAGE_LIMIT,
   useImageQuotaStore,
 } from "@/stores/image-quota.store";
+import {
+  FREE_SIGNED_IN_VIDEO_LIMIT,
+  GUEST_VIDEO_LIMIT,
+  useVideoQuotaStore,
+} from "@/stores/video-quota.store";
 import type {
   ChatAttachment,
   ChatMessage,
   SendMessageOptions,
 } from "@/types/chat.types";
 import type { OrwixMode } from "@/content/orwix-content";
-import { GEMINI_MODELS, GEMINI_VIDEO_MODELS } from "@/server/types/gemini.types";
+import {
+  GEMINI_IMAGE_MODELS,
+  GEMINI_MODELS,
+  GEMINI_VIDEO_MODELS,
+} from "@/server/types/gemini.types";
 
 function createMessageId(): string {
   return crypto.randomUUID();
 }
+
+const IMAGE_ONLY_PROMPT = "Bu görseli incele.";
+const MEDIA_STATUS_RE = /(üretiliyor|üretim|bekleyin|sürebilir)/i;
 
 function isStructuredData(value: unknown): value is ChatStructuredResponse {
   if (!value || typeof value !== "object") return false;
@@ -57,6 +73,29 @@ function isStructuredData(value: unknown): value is ChatStructuredResponse {
   );
 }
 
+function removeFailedAssistantTurn() {
+  useChatStore.setState((state) => {
+    const next = [...state.messages];
+    const lastIndex = next.length - 1;
+    const lastMessage = next[lastIndex];
+
+    if (lastIndex < 0 || lastMessage.role !== "assistant") {
+      return { messages: next };
+    }
+
+    const content = lastMessage.content.trim();
+    const hasMedia =
+      Boolean(lastMessage.images?.length) || Boolean(lastMessage.videos?.length);
+    const isPlaceholder = !content || MEDIA_STATUS_RE.test(content);
+
+    if (!hasMedia && isPlaceholder) {
+      return { messages: next.slice(0, -1) };
+    }
+
+    return { messages: next };
+  });
+}
+
 export function useChat() {
   const {
     messages,
@@ -65,6 +104,7 @@ export function useChat() {
     error,
     addMessage,
     updateLastAssistantMessage,
+    setLastAssistantContent,
     setLoading,
     setError,
     updateSettings,
@@ -78,7 +118,12 @@ export function useChat() {
       options: SendMessageOptions = {},
     ) => {
       const trimmed = prompt.trim();
-      if ((!trimmed && attachments.length === 0) || isLoading) return;
+      if (
+        (!trimmed && attachments.length === 0) ||
+        useChatStore.getState().isLoading
+      ) {
+        return;
+      }
 
       const mode: OrwixMode = options.mode ?? "general";
       const apiImages = attachments.map(({ mimeType, data, name }) => ({
@@ -90,7 +135,8 @@ export function useChat() {
       const userMessage: ChatMessage = {
         id: createMessageId(),
         role: "user",
-        content: trimmed || (attachments.length > 0 ? "Görsel ekledim" : ""),
+        content:
+          trimmed || (attachments.length > 0 ? IMAGE_ONLY_PROMPT : ""),
         images: attachments.map(({ mimeType, dataUrl }) => ({
           mimeType,
           dataUrl,
@@ -105,10 +151,15 @@ export function useChat() {
         createdAt: Date.now(),
       };
 
-      addMessage(userMessage);
-      addMessage(assistantMessage);
+      // Lock before mutating so rapid double-submit cannot race.
       setLoading(true);
       setError(null);
+      addMessage(userMessage);
+      addMessage(assistantMessage);
+
+      if (userMessage.images?.length) {
+        cacheMessageImages(userMessage.id, userMessage.images);
+      }
 
       const easterEgg = trimmed ? getEasterEggReply(trimmed) : null;
       if (easterEgg && attachments.length === 0) {
@@ -124,10 +175,27 @@ export function useChat() {
         mode === "video" || isVideoGenerationPrompt(trimmed);
 
       if (wantsVideo) {
+        const accountId = useAuthStore.getState().activeAccountId;
+        const videoQuota = useVideoQuotaStore.getState();
+
+        if (!videoQuota.canGenerate(accountId)) {
+          if (!accountId) {
+            setLastAssistantContent(
+              `Ücretsiz video hakkın (${GUEST_VIDEO_LIMIT}) bitti. Giriş yaparsan ${FREE_SIGNED_IN_VIDEO_LIMIT} video hakkı daha tanınır.`,
+            );
+            useImageQuotaStore.getState().openLoginModal();
+          } else {
+            setLastAssistantContent(
+              `Ücretsiz video hakkınız (${FREE_SIGNED_IN_VIDEO_LIMIT}) doldu.`,
+            );
+          }
+          setLoading(false);
+          return;
+        }
+
         try {
-          await typeText(
-            "Video üretiliyor (Veo)… Bu 1–2 dakika sürebilir.\n",
-            updateLastAssistantMessage,
+          setLastAssistantContent(
+            "Video üretiliyor (Veo)… Bu 1–2 dakika sürebilir.",
           );
 
           const videoResult = await generateGeminiVideo({
@@ -141,10 +209,16 @@ export function useChat() {
               : "16:9",
           });
 
-          await typeText(
-            videoResult.text.trim() || "Video hazır.",
-            updateLastAssistantMessage,
-          );
+          videoQuota.consume(accountId);
+          const remaining = useVideoQuotaStore
+            .getState()
+            .getRemaining(accountId);
+          const remainingLabel = Number.isFinite(remaining)
+            ? ` Kalan video hakkı: ${remaining}.`
+            : "";
+
+          const caption =
+            (videoResult.text.trim() || "Video hazır.") + remainingLabel;
 
           useChatStore.setState((state) => {
             const updated = [...state.messages];
@@ -152,6 +226,7 @@ export function useChat() {
             if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
               updated[lastIndex] = {
                 ...updated[lastIndex],
+                content: caption,
                 videos: videoResult.videos.map((video) => ({
                   mimeType: video.mimeType,
                   dataUrl: video.dataUrl,
@@ -166,35 +241,24 @@ export function useChat() {
               ? err.message
               : "Video üretilirken bir hata oluştu.";
           setError(message);
-
-          useChatStore.setState((state) => {
-            const next = [...state.messages];
-            const lastIndex = next.length - 1;
-            const lastMessage = next[lastIndex];
-
-            if (
-              lastIndex >= 0 &&
-              lastMessage.role === "assistant" &&
-              !lastMessage.content.trim()
-            ) {
-              return { messages: next.slice(0, -1) };
-            }
-
-            return { messages: next };
-          });
+          removeFailedAssistantTurn();
         } finally {
           setLoading(false);
         }
         return;
       }
 
+      const priorReferenceImages = collectPriorReferenceImages(messages);
+
+      const wantsImageEdit = shouldRouteToImageEdit(trimmed, {
+        hasPriorImages: priorReferenceImages.length > 0,
+        hasAttachments: attachments.length > 0,
+      });
+
       const wantsImage =
         mode === "image" ||
         isImageGenerationPrompt(trimmed) ||
-        (attachments.length > 0 &&
-          /\b(düzenle|edit|değiştir|varyasyon|yeniden\s+çiz|bu\s+görsel)\b/i.test(
-            trimmed,
-          ));
+        wantsImageEdit;
 
       if (wantsImage) {
         const accountId = useAuthStore.getState().activeAccountId;
@@ -202,15 +266,13 @@ export function useChat() {
 
         if (!quota.canGenerate(accountId)) {
           if (!accountId) {
-            await typeText(
+            updateLastAssistantMessage(
               `Ücretsiz görsel hakkın (${GUEST_IMAGE_LIMIT}) bitti. Giriş yaparsan hemen ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı daha tanınır.`,
-              updateLastAssistantMessage,
             );
             quota.openLoginModal();
           } else {
-            await typeText(
+            updateLastAssistantMessage(
               `Ücretsiz görsel hakkınız (${FREE_SIGNED_IN_IMAGE_LIMIT}) doldu. Sınırsız üretim için Pro plana geçin.`,
-              updateLastAssistantMessage,
             );
             quota.openProModal();
           }
@@ -218,15 +280,29 @@ export function useChat() {
           return;
         }
 
+        const preferQuality = settings.model === GEMINI_MODELS.PRO;
+        const referenceImages =
+          apiImages.length > 0
+            ? apiImages
+            : priorReferenceImages.length > 0
+              ? priorReferenceImages
+              : undefined;
+
         try {
+          setLastAssistantContent("Görsel üretiliyor…");
+
+          const promptForApi = referenceImages?.length
+            ? enhanceImageEditPrompt(trimmed)
+            : enhanceImagePrompt(trimmed || "Kaliteli bir görsel üret.");
+
           const imageResult = await generateGeminiImage({
-            prompt: enhanceImagePrompt(
-              trimmed ||
-                "Bu görselleri referans alarak kaliteli bir görsel üret.",
-            ),
+            prompt: promptForApi,
+            model: preferQuality
+              ? GEMINI_IMAGE_MODELS.PRO
+              : GEMINI_IMAGE_MODELS.FLASH_NEW,
             aspectRatio: detectAspectRatio(trimmed),
-            imageSize: "2K",
-            images: apiImages,
+            imageSize: preferQuality ? "2K" : "1K",
+            images: referenceImages,
           });
 
           quota.consume(accountId);
@@ -240,18 +316,22 @@ export function useChat() {
               "Görsel hazır. İstersen başka bir varyasyon da üretebilirim.") +
             remainingLabel;
 
-          await typeText(caption, updateLastAssistantMessage);
-
           useChatStore.setState((state) => {
             const updated = [...state.messages];
             const lastIndex = updated.length - 1;
             if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+              const assistantId = updated[lastIndex].id;
+              const nextImages = imageResult.images.map((image) => ({
+                mimeType: image.mimeType,
+                dataUrl: image.dataUrl,
+              }));
+
+              cacheMessageImages(assistantId, nextImages);
+
               updated[lastIndex] = {
                 ...updated[lastIndex],
-                images: imageResult.images.map((image) => ({
-                  mimeType: image.mimeType,
-                  dataUrl: image.dataUrl,
-                })),
+                content: caption,
+                images: nextImages,
               };
             }
             return { messages: updated };
@@ -262,41 +342,32 @@ export function useChat() {
               ? err.message
               : "Görsel üretilirken bir hata oluştu.";
           setError(message);
-
-          useChatStore.setState((state) => {
-            const next = [...state.messages];
-            const lastIndex = next.length - 1;
-            const lastMessage = next[lastIndex];
-
-            if (
-              lastIndex >= 0 &&
-              lastMessage.role === "assistant" &&
-              !lastMessage.content.trim()
-            ) {
-              return { messages: next.slice(0, -1) };
-            }
-
-            return { messages: next };
-          });
+          removeFailedAssistantTurn();
         } finally {
           setLoading(false);
         }
         return;
       }
 
+      // Exclude the just-added user + empty assistant so we don't duplicate the turn.
+      const prior = useChatStore
+        .getState()
+        .messages.slice(0, -2)
+        .filter((message) => message.content.trim().length > 0)
+        .slice(-8)
+        .map((message) => ({
+          role: message.role,
+          content:
+            message.content.length > 2500
+              ? `${message.content.slice(0, 2500)}…`
+              : message.content,
+        }));
+
       const history = [
-        ...messages
-          .filter((message) => message.content.trim().length > 0)
-          .slice(-30)
-          .map((message) => ({
-            role: message.role,
-            content: message.content,
-          })),
+        ...prior,
         {
           role: "user" as const,
-          content:
-            trimmed ||
-            (attachments.length > 0 ? "Bu görseli incele." : trimmed),
+          content: trimmed || (attachments.length > 0 ? IMAGE_ONLY_PROMPT : trimmed),
         },
       ];
 
@@ -305,13 +376,19 @@ export function useChat() {
         mode,
       );
 
+      // Pro = kalite. Diğer her şey = Flash-Lite (3.5 Flash şu an yavaş/503).
+      const chatModel =
+        settings.model === GEMINI_MODELS.PRO
+          ? GEMINI_MODELS.PRO
+          : GEMINI_MODELS.FLASH_LITE;
+
       const payload = {
-        prompt: trimmed,
+        prompt: trimmed || (attachments.length > 0 ? IMAGE_ONLY_PROMPT : ""),
         history,
         images: apiImages,
-        model: settings.model,
-        systemInstruction: systemInstruction || undefined,
+        model: chatModel,
         temperature: settings.temperature,
+        systemInstruction: systemInstruction || undefined,
         structured: settings.structuredOutput,
         enableSearch: shouldEnableSearch(trimmed, mode),
         enableCodeExecution: shouldEnableCodeExecution(trimmed, mode),
@@ -343,7 +420,10 @@ export function useChat() {
           return;
         }
 
-        const response = await generateGeminiResponse(payload);
+        const response = await generateGeminiResponse({
+          ...payload,
+          temperature: settings.temperature,
+        });
 
         if (isStructuredData(response.structuredData)) {
           const structuredData = response.structuredData;
@@ -385,31 +465,16 @@ export function useChat() {
             ? err.message
             : "Mesaj gönderilirken bir hata oluştu.";
         setError(message);
-
-        useChatStore.setState((state) => {
-          const next = [...state.messages];
-          const lastIndex = next.length - 1;
-          const lastMessage = next[lastIndex];
-
-          if (
-            lastIndex >= 0 &&
-            lastMessage.role === "assistant" &&
-            !lastMessage.content.trim()
-          ) {
-            return { messages: next.slice(0, -1) };
-          }
-
-          return { messages: next };
-        });
+        removeFailedAssistantTurn();
       } finally {
         setLoading(false);
       }
     },
     [
       addMessage,
-      isLoading,
       messages,
       setError,
+      setLastAssistantContent,
       setLoading,
       settings,
       updateLastAssistantMessage,

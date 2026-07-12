@@ -20,8 +20,8 @@ const imageRequestSchema = z
         GEMINI_IMAGE_MODELS.PRO,
       ])
       .optional()
-      .default(GEMINI_IMAGE_MODELS.PRO),
-    imageSize: z.enum(["1K", "2K", "4K", "512"]).optional().default("2K"),
+      .default(GEMINI_IMAGE_MODELS.FLASH_NEW),
+    imageSize: z.enum(["1K", "2K", "4K", "512"]).optional().default("1K"),
     aspectRatio: z
       .enum([
         "1:1",

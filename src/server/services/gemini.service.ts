@@ -14,6 +14,7 @@ import {
   type GeminiGenerateResponse,
   type GeminiGeneratedImage,
   type GeminiGeneratedVideo,
+  type GeminiGenerationConfig,
   type GeminiGroundingSource,
   type GeminiImageGenerateRequest,
   type GeminiImageGenerateResponse,
@@ -23,12 +24,6 @@ import {
   type GeminiVideoGenerateResponse,
 } from "@/server/types/gemini.types";
 import { isRetryableError, withRetry } from "@/server/utils/retry";
-
-const STREAM_FALLBACK_MODELS = [
-  GEMINI_MODELS.PRO,
-  GEMINI_MODELS.FLASH,
-  GEMINI_MODELS.FLASH_LITE,
-] as const;
 
 const IMAGE_FALLBACK_MODELS = [
   GEMINI_IMAGE_MODELS.PRO,
@@ -42,7 +37,7 @@ const VIDEO_FALLBACK_MODELS = [
   GEMINI_VIDEO_MODELS.LITE,
 ] as const;
 
-const DEFAULT_MAX_OUTPUT_TOKENS = 16384;
+const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
 
 type GeminiPart =
   | { text: string }
@@ -59,13 +54,58 @@ function createGeminiClient(): GoogleGenAI {
 }
 
 function resolveModel(model?: GeminiModelId): GeminiModelId {
-  return model ?? GEMINI_MODELS.PRO;
+  return model ?? GEMINI_MODELS.FLASH_LITE;
 }
 
 function getFallbackModels(primary: GeminiModelId): string[] {
-  // Prefer stronger models first when falling back.
-  const ordered = [primary, ...STREAM_FALLBACK_MODELS];
-  return [...new Set(ordered)];
+  // Never fall back TO 3.5 Flash — it is slower and often 503 under load.
+  // Prefer Flash-Lite as the recovery model for speed.
+  if (primary === GEMINI_MODELS.FLASH_LITE) {
+    return [primary];
+  }
+  if (primary === GEMINI_MODELS.FLASH) {
+    return [primary, GEMINI_MODELS.FLASH_LITE];
+  }
+  if (primary === GEMINI_MODELS.PRO) {
+    return [primary, GEMINI_MODELS.FLASH_LITE];
+  }
+  return [primary];
+}
+
+/**
+ * Speed path: thinkingBudget 0 (measured ~0.4s TTFT on Flash-Lite).
+ * Pro: thinkingLevel low. Never send both — API returns 400.
+ */
+function buildThinkingConfig(
+  model: GeminiModelId,
+  config?: GeminiGenerationConfig,
+): { thinkingBudget: number; includeThoughts: false } | {
+  thinkingLevel: "minimal" | "low" | "medium" | "high";
+  includeThoughts: false;
+} {
+  if (model === GEMINI_MODELS.PRO) {
+    const level = config?.thinkingLevel;
+    return {
+      thinkingLevel:
+        level === "high" || level === "medium" || level === "low"
+          ? level
+          : "low",
+      includeThoughts: false,
+    };
+  }
+
+  if (typeof config?.thinkingBudget === "number") {
+    return {
+      thinkingBudget: config.thinkingBudget,
+      includeThoughts: false,
+    };
+  }
+
+  // Flash / Flash-Lite: disable thinking for lowest latency.
+  return {
+    thinkingBudget: 0,
+    includeThoughts: false,
+  };
 }
 
 function buildImageParts(
@@ -85,7 +125,7 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   const imageParts = buildImageParts(request.images);
   const promptText =
     request.prompt.trim() ||
-    (imageParts.length > 0 ? "Bu görseli incele ve yardımcı ol." : "");
+    (imageParts.length > 0 ? "Bu görseli incele." : "");
 
   if (history.length === 0 && imageParts.length === 0) {
     return promptText;
@@ -115,13 +155,15 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   if (
     !last ||
     last.role !== "user" ||
-    lastText !== promptText ||
-    imageParts.length > 0
+    lastText !== promptText
   ) {
     contents.push({
       role: "user",
       parts: [{ text: promptText }, ...imageParts],
     });
+  } else if (imageParts.length > 0) {
+    // Same user text already in history — attach images to that turn (no duplicate).
+    last.parts = [{ text: promptText }, ...imageParts];
   }
 
   return contents;
@@ -129,6 +171,7 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
 
 function buildGenerateConfig(request: GeminiGenerateRequest) {
   const { config, structuredOutput, systemInstruction } = request;
+  const model = resolveModel(request.model);
   const tools: Array<Record<string, object>> = [];
 
   // Structured JSON and tools conflict on many Gemini endpoints.
@@ -141,12 +184,17 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
     }
   }
 
+  // Cast: SDK ThinkingLevel enum vs lowercase API strings ("minimal"/"low"/…).
   return {
     ...(systemInstruction ? { systemInstruction } : {}),
-    temperature: config?.temperature ?? 0.7,
+    // Omit temperature unless explicitly set — Gemini 3.x prefers model defaults
+    ...(config?.temperature !== undefined
+      ? { temperature: config.temperature }
+      : {}),
     maxOutputTokens: config?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
     ...(config?.topP !== undefined ? { topP: config.topP } : {}),
     ...(config?.topK !== undefined ? { topK: config.topK } : {}),
+    thinkingConfig: buildThinkingConfig(model, config),
     ...(tools.length > 0 ? { tools } : {}),
     ...(structuredOutput
       ? {
@@ -154,7 +202,9 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
           responseJsonSchema: structuredOutput.responseJsonSchema,
         }
       : {}),
-  };
+  } as Parameters<
+    GoogleGenAI["models"]["generateContent"]
+  >[0]["config"];
 }
 
 type ResponsePart = {
@@ -330,7 +380,10 @@ export class GeminiService {
             const response = await this.client.models.generateContent({
               model,
               contents,
-              config: buildGenerateConfig(request),
+              config: buildGenerateConfig({
+                ...request,
+                model: model as GeminiModelId,
+              }),
             });
 
             const text = extractResponseText(response);
@@ -387,6 +440,7 @@ export class GeminiService {
                   contents,
                   config: buildGenerateConfig({
                     ...request,
+                    model: model as GeminiModelId,
                     enableSearch: false,
                     enableCodeExecution: false,
                   }),
@@ -422,12 +476,23 @@ export class GeminiService {
     const contents = buildContents(request);
 
     for (const model of models) {
-      for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const attempts: Array<{ stripTools: boolean }> = [{ stripTools: false }];
+      if (request.enableSearch || request.enableCodeExecution) {
+        attempts.push({ stripTools: true });
+      }
+
+      for (const attempt of attempts) {
         try {
           const stream = await this.client.models.generateContentStream({
             model,
             contents,
-            config: buildGenerateConfig(request),
+            config: buildGenerateConfig({
+              ...request,
+              model: model as GeminiModelId,
+              ...(attempt.stripTools
+                ? { enableSearch: false, enableCodeExecution: false }
+                : {}),
+            }),
           });
 
           let hasContent = false;
@@ -460,6 +525,17 @@ export class GeminiService {
           lastMapped = mapped;
           const message =
             error instanceof Error ? error.message.toLowerCase() : "";
+
+          const isToolError =
+            message.includes("tool") ||
+            message.includes("google_search") ||
+            message.includes("code_execution");
+
+          // First attempt + tool error → try same model without tools.
+          if (!attempt.stripTools && isToolError && attempts.length > 1) {
+            continue;
+          }
+
           const shouldFallback =
             isRetryableError(mapped) ||
             message.includes("boş akış") ||
@@ -470,11 +546,7 @@ export class GeminiService {
             throw mapped;
           }
 
-          if (attempt < 2) {
-            await new Promise((resolve) => {
-              setTimeout(resolve, 350);
-            });
-          }
+          break; // next model
         }
       }
     }
@@ -485,38 +557,34 @@ export class GeminiService {
   async generateImage(
     request: GeminiImageGenerateRequest,
   ): Promise<GeminiImageGenerateResponse> {
-    const primary = request.model ?? GEMINI_IMAGE_MODELS.PRO;
-    const models = [
-      primary,
-      ...IMAGE_FALLBACK_MODELS.filter((model) => model !== primary),
-    ];
+    const primary = request.model ?? GEMINI_IMAGE_MODELS.FLASH_NEW;
+    const fallback = IMAGE_FALLBACK_MODELS.find((model) => model !== primary);
+    // Cap to primary + one fallback to avoid long sequential chains
+    const models = fallback ? [primary, fallback] : [primary];
     let lastError: unknown;
 
     const promptText =
       request.prompt.trim() ||
       (request.images?.length
-        ? "Bu görselleri referans alarak yeni bir görsel üret."
+        ? "Bu görselleri referans alarak istenen değişikliği uygula."
         : "Yüksek kaliteli bir görsel oluştur.");
-
-    const reinforcedPrompt = `${promptText}
-
-Önemli: Yanıtında mutlaka bir görsel üret. Sadece metin açıklaması yazma.`;
 
     const contents = request.images?.length
       ? [
           {
             role: "user" as const,
             parts: [
-              { text: reinforcedPrompt },
+              { text: promptText },
               ...buildImageParts(request.images),
             ],
           },
         ]
-      : reinforcedPrompt;
+      : promptText;
 
+    // TEXT+IMAGE first — IMAGE-only often fails and wastes a full round-trip
     const modalityAttempts: Array<Array<"TEXT" | "IMAGE">> = [
-      ["IMAGE"],
       ["TEXT", "IMAGE"],
+      ["IMAGE"],
     ];
 
     for (const model of models) {
@@ -524,7 +592,7 @@ export class GeminiService {
         model === GEMINI_IMAGE_MODELS.PRO ||
         model === GEMINI_IMAGE_MODELS.FLASH_NEW;
       const imageSize =
-        request.imageSize ?? (preferLarge ? "2K" : undefined);
+        request.imageSize ?? (preferLarge ? "1K" : undefined);
 
       for (const responseModalities of modalityAttempts) {
         try {
@@ -558,7 +626,7 @@ export class GeminiService {
               const mimeType = inline.mimeType || "image/png";
               images.push({
                 mimeType,
-                data: inline.data,
+                data: "",
                 dataUrl: `data:${mimeType};base64,${inline.data}`,
               });
             }
@@ -595,7 +663,8 @@ export class GeminiService {
             message.includes("not found") ||
             message.includes("no longer available") ||
             message.includes("not supported") ||
-            message.includes("invalid");
+            message.includes("invalid argument") ||
+            message.includes("unsupported");
 
           if (!shouldFallback) {
             throw mapGeminiError(error);

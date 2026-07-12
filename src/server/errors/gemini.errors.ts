@@ -77,9 +77,20 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("temporarily")
   ) {
     return new AppError(
-      "Model şu an yoğun. Birkaç saniye içinde otomatik yeniden denenecek; olmazsa tekrar deneyin.",
+      "Model şu an yoğun. Birkaç saniye sonra tekrar deneyin.",
       "RATE_LIMIT",
       503,
+    );
+  }
+
+  if (
+    normalized.includes("thinking") &&
+    (normalized.includes("budget") || normalized.includes("level"))
+  ) {
+    return new AppError(
+      "Model düşünme ayarı reddedildi. Sayfayı yenileyip tekrar deneyin.",
+      "GEMINI_API_ERROR",
+      400,
     );
   }
 

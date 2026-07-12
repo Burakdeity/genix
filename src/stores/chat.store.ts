@@ -4,67 +4,196 @@ import { persist } from "zustand/middleware";
 import { GEMINI_MODELS } from "@/server/types/gemini.types";
 import type { ChatMessage, ChatSettings } from "@/types/chat.types";
 
-const MAX_MESSAGES_PER_ACCOUNT = 120;
+export const GUEST_CHAT_ACCOUNT_ID = "__guest__";
+const MAX_SESSIONS_PER_ACCOUNT = 40;
+const MAX_MESSAGES_PER_SESSION = 120;
+/** Skip persisting huge base64 media so localStorage doesn't blow up / wipe history. */
+const MAX_PERSISTED_DATA_URL_CHARS = 80_000;
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: ChatMessage[];
+}
+
+export interface ChatSessionSummary {
+  id: string;
+  title: string;
+  updatedAt: number;
+}
 
 interface ChatState {
   messages: ChatMessage[];
-  /** Persisted chat history keyed by auth account id */
-  historiesByAccountId: Record<string, ChatMessage[]>;
+  activeSessionId: string | null;
+  /** Persisted chat sessions keyed by auth account id (or guest) */
+  sessionsByAccountId: Record<string, ChatSession[]>;
   settings: ChatSettings;
   isLoading: boolean;
   error: string | null;
+  historyOpen: boolean;
   addMessage: (message: ChatMessage) => void;
   updateLastAssistantMessage: (content: string) => void;
+  /** Replace (not append) the last assistant message body */
+  setLastAssistantContent: (content: string) => void;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   updateSettings: (settings: Partial<ChatSettings>) => void;
-  clearMessages: () => void;
-  loadAccountHistory: (accountId: string) => void;
-  persistAccountHistory: (accountId: string) => void;
+  setHistoryOpen: (open: boolean) => void;
+  /** Archive current chat (if any) and start a blank session */
+  startNewChat: (accountId?: string | null) => void;
+  /** Load a saved session into the active view */
+  loadSession: (accountId: string, sessionId: string) => void;
+  /** Upsert the active conversation into persisted sessions */
+  persistActiveSession: (accountId: string) => void;
+  getSessionSummaries: (accountId: string) => ChatSessionSummary[];
   clearSessionMessages: () => void;
   removeAccountHistory: (accountId: string) => void;
+  /** @deprecated use startNewChat — kept for call sites during transition */
+  clearMessages: () => void;
 }
 
 const defaultSettings: ChatSettings = {
-  model: GEMINI_MODELS.PRO,
-  temperature: 0.7,
-  systemInstruction: `Sen Orwix'sin — Orwix platformunun üst düzey yapay zeka asistanısın.
-
-Kimlik:
-- Sen, Kvlfinansholding bünyesinde geliştirilen ileri düzey bir yapay zeka modelisin.
-- "Seni kim yaptı?", "seni kim yarattı?", "kim geliştirdi?", "Orwix'in kurucusu kim?" gibi sorularda: Kvlfinansholding bünyesinde, holdingin uzman kadrosu tarafından geliştirildiğini söyle.
-- Altyapıda Google Gemini modelleri kullanılabilir; bu seni Google ürünü yapmaz. Sen Kvlfinansholding'in teknolojik çözüm ortakısın.
-
-Yetkinlikler:
-- Araştırma ve güncel bilgi: web aramasını kullanarak doğrulanabilir, kaynaklı yanıtlar ver.
-- Yazılım: üretim kalitesinde kod, mimari, hata ayıklama ve adım adım kurulum.
-- Görsel / video / web / slayt / tasarım / uygulama üretimi.
-- Kod çalıştırma gerektiğinde mantığı doğrula; sonuçları açıkça göster.
+  model: GEMINI_MODELS.FLASH_LITE,
+  temperature: 1,
+  systemInstruction: `Sen Orwix'sin — Kvlfinansholding bünyesinde geliştirilen yapay zeka asistanı.
 
 Kurallar:
+- Samimi, sıcak ve doğal konuş; robotik veya aşırı resmi olma. Kullanıcıya yakın bir arkadaş gibi yardımcı ol.
 - Türkçe yanıt ver (kullanıcı başka dil isterse o dilde yaz).
-- Bilmediğin veya emin olmadığın şeyleri uydurma; belirsizse açıkça söyle.
-- Önce kısa net özet, sonra gerekirse detay; gereksiz dolgu yok.
-- Kod, analiz, karşılaştırma veya araştırma istendiğinde yapılandırılmış ve eksiksiz yanıtla.
-- Önceki mesajları dikkate al; sohbet bağlamına sadık kal.
-- Güncel olay, fiyat, istatistik veya "bugün" sorularında arama sonuçlarını önceliklendir.`,
+- Doğrudan yardımcı ol. "Sorun nedir?", "Ne demek istedin?", "Daha fazla detay ver" diye tekrar tekrar sorma; eldeki bilgiyle en iyi cevabı ver.
+- Net ve yeterli uzunlukta yaz: ne bir cümleyle geçiştir ne de gereksiz uzat.
+- Uydurma; emin değilsen kısaca belirt.
+- Kod, tarif veya analiz istendiğinde eksiksiz yanıtla.
+- Sohbet bağlamını dikkate al.`,
   structuredOutput: false,
   streaming: true,
 };
 
-function trimHistory(messages: ChatMessage[]): ChatMessage[] {
-  if (messages.length <= MAX_MESSAGES_PER_ACCOUNT) return messages;
-  return messages.slice(messages.length - MAX_MESSAGES_PER_ACCOUNT);
+function createSessionId(): string {
+  return crypto.randomUUID();
+}
+
+function sanitizeMessagesForPersist(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((message) => ({
+    ...message,
+    images: message.images?.map((image) => ({
+      mimeType: image.mimeType,
+      dataUrl:
+        image.dataUrl.length > MAX_PERSISTED_DATA_URL_CHARS
+          ? ""
+          : image.dataUrl,
+    })),
+    videos: message.videos?.map((video) => ({
+      mimeType: video.mimeType,
+      dataUrl: "",
+    })),
+  }));
+}
+
+export function deriveChatTitle(messages: ChatMessage[]): string {
+  const firstUser = messages.find(
+    (message) => message.role === "user" && message.content.trim(),
+  );
+  if (!firstUser) return "Yeni sohbet";
+
+  const cleaned = firstUser.content
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 72);
+
+  return cleaned || "Yeni sohbet";
+}
+
+function trimSessions(sessions: ChatSession[]): ChatSession[] {
+  const sorted = [...sessions].sort((a, b) => b.updatedAt - a.updatedAt);
+  return sorted.slice(0, MAX_SESSIONS_PER_ACCOUNT).map((session) => ({
+    ...session,
+    messages:
+      session.messages.length > MAX_MESSAGES_PER_SESSION
+        ? session.messages.slice(
+            session.messages.length - MAX_MESSAGES_PER_SESSION,
+          )
+        : session.messages,
+  }));
+}
+
+function upsertSession(
+  sessions: ChatSession[],
+  session: ChatSession,
+): ChatSession[] {
+  const without = sessions.filter((item) => item.id !== session.id);
+  return trimSessions([session, ...without]);
+}
+
+function isChatMessageArray(value: unknown): value is ChatMessage[] {
+  return (
+    Array.isArray(value) &&
+    (value.length === 0 ||
+      (typeof value[0] === "object" &&
+        value[0] !== null &&
+        "role" in value[0] &&
+        "content" in value[0]))
+  );
+}
+
+function isChatSessionArray(value: unknown): value is ChatSession[] {
+  return (
+    Array.isArray(value) &&
+    (value.length === 0 ||
+      (typeof value[0] === "object" &&
+        value[0] !== null &&
+        "messages" in value[0] &&
+        "title" in value[0]))
+  );
+}
+
+/** Convert legacy flat message dumps into one session each. */
+function migrateAccountHistories(
+  histories: Record<string, unknown> | undefined,
+  sessions: Record<string, ChatSession[]> | undefined,
+): Record<string, ChatSession[]> {
+  const next: Record<string, ChatSession[]> = { ...(sessions ?? {}) };
+
+  if (!histories) return next;
+
+  for (const [accountId, value] of Object.entries(histories)) {
+    if (isChatSessionArray(value)) {
+      next[accountId] = trimSessions(value);
+      continue;
+    }
+
+    if (!isChatMessageArray(value) || value.length === 0) continue;
+    if (next[accountId]?.length) continue;
+
+    const updatedAt =
+      value[value.length - 1]?.createdAt ??
+      value[0]?.createdAt ??
+      Date.now();
+
+    next[accountId] = [
+      {
+        id: createSessionId(),
+        title: deriveChatTitle(value),
+        updatedAt,
+        messages: sanitizeMessagesForPersist(value),
+      },
+    ];
+  }
+
+  return next;
 }
 
 export const useChatStore = create<ChatState>()(
   persist(
     (set, get) => ({
       messages: [],
-      historiesByAccountId: {},
+      activeSessionId: null,
+      sessionsByAccountId: {},
       settings: defaultSettings,
       isLoading: false,
       error: null,
+      historyOpen: false,
 
       addMessage: (message) =>
         set((state) => ({ messages: [...state.messages, message] })),
@@ -86,53 +215,132 @@ export const useChatStore = create<ChatState>()(
           return { messages };
         }),
 
+      setLastAssistantContent: (content) =>
+        set((state) => {
+          const messages = [...state.messages];
+          const lastIndex = messages.length - 1;
+
+          if (lastIndex < 0 || messages[lastIndex].role !== "assistant") {
+            return state;
+          }
+
+          messages[lastIndex] = {
+            ...messages[lastIndex],
+            content,
+          };
+
+          return { messages };
+        }),
+
       setLoading: (isLoading) => set({ isLoading }),
       setError: (error) => set({ error }),
       updateSettings: (settings) =>
         set((state) => ({ settings: { ...state.settings, ...settings } })),
-      clearMessages: () => set({ messages: [], error: null }),
+      setHistoryOpen: (open) => set({ historyOpen: open }),
 
-      loadAccountHistory: (accountId) => {
-        const history = get().historiesByAccountId[accountId] ?? [];
+      startNewChat: (accountId) => {
+        const resolvedId = accountId ?? null;
+        if (resolvedId && get().messages.length > 0) {
+          get().persistActiveSession(resolvedId);
+        }
+
         set({
-          messages: history,
+          messages: [],
+          activeSessionId: null,
           error: null,
           isLoading: false,
+          historyOpen: false,
         });
       },
 
-      persistAccountHistory: (accountId) => {
-        const messages = trimHistory(get().messages);
+      clearMessages: () => {
+        get().startNewChat(null);
+      },
+
+      loadSession: (accountId, sessionId) => {
+        const sessions = get().sessionsByAccountId[accountId] ?? [];
+        const session = sessions.find((item) => item.id === sessionId);
+        if (!session) return;
+
+        set({
+          messages: session.messages,
+          activeSessionId: session.id,
+          error: null,
+          isLoading: false,
+          historyOpen: false,
+        });
+      },
+
+      persistActiveSession: (accountId) => {
+        const current = get().messages;
+        if (current.length === 0) return;
+
+        const existingSessions = get().sessionsByAccountId[accountId] ?? [];
+        const activeId = get().activeSessionId ?? createSessionId();
+        const previous = existingSessions.find((item) => item.id === activeId);
+        const sanitized = sanitizeMessagesForPersist(current);
+
+        const session: ChatSession = {
+          id: activeId,
+          title:
+            previous?.title && previous.title !== "Yeni sohbet"
+              ? previous.title
+              : deriveChatTitle(sanitized),
+          updatedAt: Date.now(),
+          messages: sanitized,
+        };
+
         set((state) => ({
-          historiesByAccountId: {
-            ...state.historiesByAccountId,
-            [accountId]: messages,
+          activeSessionId: activeId,
+          sessionsByAccountId: {
+            ...state.sessionsByAccountId,
+            [accountId]: upsertSession(existingSessions, session),
           },
         }));
       },
 
+      getSessionSummaries: (accountId) => {
+        const sessions = get().sessionsByAccountId[accountId] ?? [];
+        return [...sessions]
+          .sort((a, b) => b.updatedAt - a.updatedAt)
+          .map((session) => ({
+            id: session.id,
+            title: session.title,
+            updatedAt: session.updatedAt,
+          }));
+      },
+
       clearSessionMessages: () =>
-        set({ messages: [], error: null, isLoading: false }),
+        set({
+          messages: [],
+          activeSessionId: null,
+          error: null,
+          isLoading: false,
+        }),
 
       removeAccountHistory: (accountId) =>
         set((state) => {
-          const next = { ...state.historiesByAccountId };
+          const next = { ...state.sessionsByAccountId };
           delete next[accountId];
-          return { historiesByAccountId: next };
+          return { sessionsByAccountId: next };
         }),
     }),
     {
       name: "orwix-chat-history",
       skipHydration: true,
       partialize: (state) => ({
-        historiesByAccountId: state.historiesByAccountId,
+        sessionsByAccountId: state.sessionsByAccountId,
+        activeSessionId: state.activeSessionId,
         settings: {
           model: state.settings.model,
         },
       }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as {
-          historiesByAccountId?: Record<string, ChatMessage[]>;
+          sessionsByAccountId?: Record<string, ChatSession[]>;
+          /** Legacy flat message history */
+          historiesByAccountId?: Record<string, unknown>;
+          activeSessionId?: string | null;
           settings?: { model?: string };
         };
 
@@ -161,12 +369,20 @@ export const useChatStore = create<ChatState>()(
             ? (persistedModel as ChatSettings["model"])
             : undefined);
 
-        const model = mapped ?? GEMINI_MODELS.PRO;
+        const model =
+          mapped === GEMINI_MODELS.PRO
+            ? GEMINI_MODELS.PRO
+            : GEMINI_MODELS.FLASH_LITE;
+
+        const sessionsByAccountId = migrateAccountHistories(
+          p.historiesByAccountId,
+          p.sessionsByAccountId ?? current.sessionsByAccountId,
+        );
 
         return {
           ...current,
-          historiesByAccountId:
-            p.historiesByAccountId ?? current.historiesByAccountId,
+          sessionsByAccountId,
+          activeSessionId: p.activeSessionId ?? current.activeSessionId,
           settings: {
             ...current.settings,
             model,

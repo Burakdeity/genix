@@ -24,11 +24,13 @@ export function GoogleOAuthSignInButton() {
 function GoogleOAuthSignInButtonInner() {
   const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const login = useGoogleLogin({
     scope: "openid profile email",
     onSuccess: async (tokenResponse) => {
       setError(null);
+      setLoading(true);
 
       try {
         const response = await fetch(
@@ -65,16 +67,28 @@ function GoogleOAuthSignInButtonInner() {
             ? fetchError.message
             : "Google ile giriş başarısız oldu.",
         );
+      } finally {
+        setLoading(false);
       }
     },
     onError: () => {
-      setError("Google ile giriş iptal edildi veya başarısız oldu.");
+      setLoading(false);
+      setError(
+        "Google ile giriş iptal edildi veya engellendi. Pop-up iznini kontrol edip tekrar deneyin.",
+      );
     },
   });
 
   return (
     <div className="space-y-3">
-      <GoogleSignInButton onClick={() => login()} />
+      <GoogleSignInButton
+        onClick={() => {
+          setError(null);
+          setLoading(true);
+          login();
+        }}
+        label={loading ? "Google bağlanıyor…" : "Google ile oturum açın"}
+      />
       {error ? (
         <p className="text-center text-sm text-[#d93025]">{error}</p>
       ) : null}

@@ -11,22 +11,22 @@ export interface VoiceProfile {
 export const VOICE_PROFILES: VoiceProfile[] = [
   {
     id: "juniper",
-    name: "Juniper",
-    description: "Açık fikirli ve neşeli",
+    name: "Ada",
+    description: "Sıcak ve neşeli Orwix sesi",
     pitch: 1.05,
     rate: 1,
   },
   {
     id: "ember",
-    name: "Ember",
-    description: "Kendinden emin ve iyimser",
+    name: "Kaan",
+    description: "Sakin ve net Orwix sesi",
     pitch: 0.92,
     rate: 0.95,
   },
   {
     id: "breeze",
-    name: "Breeze",
-    description: "Canlı ve içten",
+    name: "Ela",
+    description: "Canlı ve içten Orwix sesi",
     pitch: 1.12,
     rate: 1.05,
   },

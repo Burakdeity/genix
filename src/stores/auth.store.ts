@@ -5,29 +5,6 @@ import type { AuthView, UserAccount } from "@/types/auth.types";
 
 const DEFAULT_ACCOUNTS: UserAccount[] = [];
 
-const REMOVED_ACCOUNT_EMAILS = new Set([
-  "burakdeity41@gmail.com",
-]);
-
-const REMOVED_ACCOUNT_IDS = new Set(["burak-default"]);
-
-function sanitizeAccounts(
-  accounts: UserAccount[],
-  activeAccountId: string | null,
-): { accounts: UserAccount[]; activeAccountId: string | null } {
-  const nextAccounts = accounts.filter(
-    (account) =>
-      !REMOVED_ACCOUNT_EMAILS.has(account.email.toLowerCase()) &&
-      !REMOVED_ACCOUNT_IDS.has(account.id),
-  );
-  const nextActiveId =
-    activeAccountId && nextAccounts.some((account) => account.id === activeAccountId)
-      ? activeAccountId
-      : null;
-
-  return { accounts: nextAccounts, activeAccountId: nextActiveId };
-}
-
 interface AuthState {
   accounts: UserAccount[];
   activeAccountId: string | null;
@@ -77,17 +54,30 @@ export const useAuthStore = create<AuthState>()(
           return;
         }
 
-        set({ activeAccountId: accountId, view: "picker", authModalOpen: false });
+        set({
+          activeAccountId: accountId,
+          view: "picker",
+          authModalOpen: false,
+        });
       },
 
       signInWithGoogle: (name, email, picture) => {
-        const existing = get().accounts.find((item) => item.email === email);
+        const normalizedEmail = email.trim().toLowerCase();
+        const existing = get().accounts.find(
+          (item) => item.email.toLowerCase() === normalizedEmail,
+        );
 
         if (existing) {
           set({
             accounts: get().accounts.map((item) =>
               item.id === existing.id
-                ? { ...item, name, picture, signedOut: false }
+                ? {
+                    ...item,
+                    name,
+                    email: normalizedEmail,
+                    picture,
+                    signedOut: false,
+                  }
                 : item,
             ),
             activeAccountId: existing.id,
@@ -101,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
         const newAccount: UserAccount = {
           id: crypto.randomUUID(),
           name,
-          email,
+          email: normalizedEmail,
           avatarColor: "#1a73e8",
           picture,
           provider: "google",
@@ -152,22 +142,6 @@ export const useAuthStore = create<AuthState>()(
         accounts: state.accounts,
         activeAccountId: state.activeAccountId,
       }),
-      merge: (persisted, current) => {
-        const p = (persisted ?? {}) as {
-          accounts?: UserAccount[];
-          activeAccountId?: string | null;
-        };
-        const sanitized = sanitizeAccounts(
-          p.accounts ?? current.accounts,
-          p.activeAccountId ?? current.activeAccountId,
-        );
-
-        return {
-          ...current,
-          accounts: sanitized.accounts,
-          activeAccountId: sanitized.activeAccountId,
-        };
-      },
     },
   ),
 );

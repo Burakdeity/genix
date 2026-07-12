@@ -8,12 +8,13 @@ import { cn } from "@/lib/utils";
 
 export type QualityMode = "speed" | "quality";
 
-export function modelToQualityMode(model: ChatSettings["model"]): QualityMode {
-  return model === GEMINI_MODELS.PRO ? "quality" : "speed";
+export function qualityModeToModel(mode: QualityMode): ChatSettings["model"] {
+  // Hız = Flash-Lite (en düşük latency). Kalite = Pro.
+  return mode === "speed" ? GEMINI_MODELS.FLASH_LITE : GEMINI_MODELS.PRO;
 }
 
-export function qualityModeToModel(mode: QualityMode): ChatSettings["model"] {
-  return mode === "speed" ? GEMINI_MODELS.FLASH : GEMINI_MODELS.PRO;
+export function modelToQualityMode(model: ChatSettings["model"]): QualityMode {
+  return model === GEMINI_MODELS.PRO ? "quality" : "speed";
 }
 
 interface QualityModeToggleProps {

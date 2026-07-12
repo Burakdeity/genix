@@ -107,7 +107,7 @@ export function WebsitePreview({ html, className }: WebsitePreviewProps) {
               key={previewUrl}
               title="Web sitesi canlı önizleme"
               src={previewUrl}
-              sandbox="allow-scripts allow-forms allow-modals allow-popups allow-same-origin"
+              sandbox="allow-scripts allow-forms allow-modals allow-popups"
               referrerPolicy="no-referrer"
               className={cn(
                 "block w-full border-0 bg-white",

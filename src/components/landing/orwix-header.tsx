@@ -1,22 +1,51 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Clock, SquarePen } from "lucide-react";
 
+import { ProfileMenu } from "@/components/auth/profile-menu";
 import { OrwixWordmark } from "@/components/brand/orwix-logo";
 import { BackgroundPicker } from "@/components/theme/background-picker";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ClientOnly } from "@/components/ui/client-only";
 import { Button } from "@/components/ui/button";
 import { ORWIX_HEADER_NAV } from "@/content/orwix-content";
+import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
 import { useAuthStore } from "@/stores/auth.store";
-import { useChatStore } from "@/stores/chat.store";
+import {
+  GUEST_CHAT_ACCOUNT_ID,
+  useChatStore,
+} from "@/stores/chat.store";
 import { cn } from "@/lib/utils";
 
 function AuthButtons({ className }: { className?: string }) {
+  const hydrated = useStoresHydrated();
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
+  if (!hydrated) {
+    return (
+      <div
+        className={cn(
+          "h-9 w-[148px] shrink-0 rounded-full bg-muted/40",
+          className,
+        )}
+        aria-hidden
+      />
+    );
+  }
+
+  if (activeAccountId) {
+    return (
+      <div className={cn("flex shrink-0 items-center", className)}>
+        <ProfileMenu align="header" />
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex shrink-0 items-center gap-0.5 sm:gap-2", className)}>
+    <div
+      className={cn("flex shrink-0 items-center gap-0.5 sm:gap-2", className)}
+    >
       <Button
         type="button"
         variant="ghost"
@@ -39,10 +68,12 @@ function AuthButtons({ className }: { className?: string }) {
 }
 
 export function OrwixHeader() {
-  const clearMessages = useChatStore((state) => state.clearMessages);
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const startNewChat = useChatStore((state) => state.startNewChat);
+  const setHistoryOpen = useChatStore((state) => state.setHistoryOpen);
 
   const goHome = () => {
-    clearMessages();
+    startNewChat(activeAccountId ?? GUEST_CHAT_ACCOUNT_ID);
     if (typeof window !== "undefined" && window.location.pathname !== "/") {
       window.location.assign("/");
       return;
@@ -82,6 +113,24 @@ export function OrwixHeader() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+            <button
+              type="button"
+              onClick={goHome}
+              title="Yeni sohbet"
+              aria-label="Yeni sohbet"
+              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+            >
+              <SquarePen className="size-4" strokeWidth={1.75} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setHistoryOpen(true)}
+              title="Geçmiş"
+              aria-label="Sohbet geçmişi"
+              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+            >
+              <Clock className="size-4" strokeWidth={1.75} />
+            </button>
             <ClientOnly fallback={<div className="size-9 shrink-0" />}>
               <BackgroundPicker />
             </ClientOnly>

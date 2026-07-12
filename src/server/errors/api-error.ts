@@ -39,6 +39,18 @@ export function toApiErrorResponse(error: unknown): {
     };
   }
 
+  if (
+    error instanceof SyntaxError ||
+    (error instanceof Error &&
+      /json|unexpected token|in json/i.test(error.message))
+  ) {
+    return {
+      code: "VALIDATION_ERROR",
+      message: "Geçersiz istek gövdesi. JSON bekleniyor.",
+      statusCode: 400,
+    };
+  }
+
   return {
     code: "INTERNAL_ERROR",
     message: "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.",

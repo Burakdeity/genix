@@ -80,10 +80,28 @@ function toFriendlyNetworkError(error: unknown): ClientApiError {
   return new ClientApiError(raw, "NETWORK_ERROR", 0);
 }
 
+async function readJsonBody<T>(response: Response): Promise<T | null> {
+  try {
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+}
+
 async function parseApiResponse(
   response: Response,
 ): Promise<GeminiGenerateResponse> {
-  const data: ApiResponse<GeminiGenerateResponse> = await response.json();
+  const data = await readJsonBody<ApiResponse<GeminiGenerateResponse>>(response);
+
+  if (!data) {
+    throw new ClientApiError(
+      response.ok
+        ? "Sunucudan geçersiz yanıt alındı."
+        : `İstek başarısız oldu (${response.status}).`,
+      "INTERNAL_ERROR",
+      response.status || 502,
+    );
+  }
 
   if (!response.ok || !data.success) {
     const error = data.success
@@ -126,7 +144,18 @@ export async function generateGeminiResponse(
 async function parseImageApiResponse(
   response: Response,
 ): Promise<GeminiImageGenerateResponse> {
-  const data: ApiResponse<GeminiImageGenerateResponse> = await response.json();
+  const data =
+    await readJsonBody<ApiResponse<GeminiImageGenerateResponse>>(response);
+
+  if (!data) {
+    throw new ClientApiError(
+      response.ok
+        ? "Sunucudan geçersiz yanıt alındı."
+        : `Görsel isteği başarısız oldu (${response.status}).`,
+      "INTERNAL_ERROR",
+      response.status || 502,
+    );
+  }
 
   if (!response.ok || !data.success) {
     const error = data.success
@@ -165,7 +194,18 @@ export async function generateGeminiImage(
 async function parseVideoApiResponse(
   response: Response,
 ): Promise<GeminiVideoGenerateResponse> {
-  const data: ApiResponse<GeminiVideoGenerateResponse> = await response.json();
+  const data =
+    await readJsonBody<ApiResponse<GeminiVideoGenerateResponse>>(response);
+
+  if (!data) {
+    throw new ClientApiError(
+      response.ok
+        ? "Sunucudan geçersiz yanıt alındı."
+        : `Video isteği başarısız oldu (${response.status}).`,
+      "INTERNAL_ERROR",
+      response.status || 502,
+    );
+  }
 
   if (!response.ok || !data.success) {
     const error = data.success
@@ -307,14 +347,10 @@ export async function streamGeminiResponse(
       statusCode: response.status,
     };
 
-    try {
-      const errorBody: ApiResponse<GeminiGenerateResponse> =
-        await response.json();
-      if (!errorBody.success) {
-        error = errorBody.error;
-      }
-    } catch {
-      // Response body may not be JSON.
+    const errorBody =
+      await readJsonBody<ApiResponse<GeminiGenerateResponse>>(response);
+    if (errorBody && !errorBody.success) {
+      error = errorBody.error;
     }
 
     throw new ClientApiError(
@@ -324,14 +360,23 @@ export async function streamGeminiResponse(
     );
   }
 
+  let receivedText = false;
   try {
-    await readGeminiStream(response, onChunk, onSources);
+    await readGeminiStream(
+      response,
+      (chunk) => {
+        receivedText = true;
+        onChunk(chunk);
+      },
+      onSources,
+    );
   } catch (error) {
     if (error instanceof ClientApiError) {
       throw error;
     }
 
-    if (isNetworkFetchError(error)) {
+    // Only fall back when nothing was streamed yet — otherwise we duplicate text.
+    if (!receivedText && isNetworkFetchError(error)) {
       const fallback = await generateGeminiResponse({
         ...payload,
         structured: false,

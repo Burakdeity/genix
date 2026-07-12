@@ -1,90 +1,91 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Mic, MicOff, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Mic,
+  MicOff,
+  RefreshCw,
+  X,
+} from "lucide-react";
 
-import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
-import { useSpeechSynthesis } from "@/hooks/use-speech-synthesis";
+import { useGeminiLive } from "@/hooks/use-gemini-live";
 import { useVoiceStore } from "@/stores/voice.store";
 import {
+  getVoiceProfile,
   VOICE_PROFILES,
 } from "@/types/voice.types";
 import { Button } from "@/components/ui/button";
+import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { cn } from "@/lib/utils";
 
-interface VoiceModePanelProps {
-  onSend: (message: string) => Promise<void>;
-  isLoading: boolean;
-  lastAssistantText?: string;
+function statusLabel(
+  status: ReturnType<typeof useGeminiLive>["status"],
+  isMuted: boolean,
+): string {
+  if (isMuted) return "Mikrofon kapalı";
+  switch (status) {
+    case "connecting":
+      return "Bağlanıyor…";
+    case "listening":
+      return "Dinliyorum — konuşabilirsin";
+    case "speaking":
+      return "Konuşuyorum…";
+    case "error":
+      return "Bağlantı hatası";
+    default:
+      return "Canlı ses hazırlanıyor…";
+  }
 }
 
-export function VoiceModePanel({
-  onSend,
-  isLoading,
-  lastAssistantText,
-}: VoiceModePanelProps) {
+export function VoiceModePanel() {
   const isOpen = useVoiceStore((state) => state.isOpen);
   const close = useVoiceStore((state) => state.close);
   const profileId = useVoiceStore((state) => state.profileId);
   const setProfileId = useVoiceStore((state) => state.setProfileId);
-  const autoSpeak = useVoiceStore((state) => state.autoSpeak);
-
-  const [status, setStatus] = useState("Dinlemek için mikrofona dokunun");
-  const pendingRef = useRef("");
-  const spokeForRef = useRef<string | null>(null);
-
-  const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis(profileId);
 
   const {
-    isSupported,
-    isListening,
-    transcript,
+    status,
     error,
-    start,
-    stop,
-    resetTranscript,
-  } = useSpeechRecognition({
-    onInterimTranscript: (text) => {
-      setStatus(text);
-    },
-    onFinalTranscript: (text) => {
-      pendingRef.current = `${pendingRef.current} ${text}`.trim();
-      setStatus(pendingRef.current || "Dinliyorum...");
-    },
-  });
+    inputTranscript,
+    outputTranscript,
+    isMuted,
+    connect,
+    disconnect,
+    toggleMute,
+  } = useGeminiLive(profileId);
 
   useEffect(() => {
     if (!isOpen) {
-      stop();
-      stopSpeaking();
-      pendingRef.current = "";
-      resetTranscript();
-      setStatus("Dinlemek için mikrofona dokunun");
-    }
-  }, [isOpen, resetTranscript, stop, stopSpeaking]);
-
-  useEffect(() => {
-    if (
-      !autoSpeak ||
-      !lastAssistantText?.trim() ||
-      isLoading ||
-      isListening ||
-      spokeForRef.current === lastAssistantText
-    ) {
+      disconnect();
       return;
     }
 
-    spokeForRef.current = lastAssistantText;
-    speak(lastAssistantText);
-    setStatus("Yanıt okunuyor...");
-  }, [autoSpeak, isLoading, isListening, lastAssistantText, speak]);
+    void connect();
+  }, [isOpen, connect, disconnect]);
+
+  const previousProfileRef = useRef(profileId);
+
+  useEffect(() => {
+    if (!isOpen) {
+      previousProfileRef.current = profileId;
+      return;
+    }
+
+    if (previousProfileRef.current === profileId) return;
+
+    previousProfileRef.current = profileId;
+    disconnect();
+    void connect();
+  }, [profileId, isOpen, connect, disconnect]);
 
   if (!isOpen) return null;
 
   const profileIndex = VOICE_PROFILES.findIndex(
     (profile) => profile.id === profileId,
   );
-  const activeProfile = VOICE_PROFILES[profileIndex] ?? VOICE_PROFILES[0];
+  const activeProfile = getVoiceProfile(profileId);
 
   function selectProfile(offset: number) {
     const nextIndex =
@@ -92,37 +93,21 @@ export function VoiceModePanel({
     setProfileId(VOICE_PROFILES[nextIndex].id);
   }
 
-  async function handleMicToggle() {
-    if (isListening) {
-      stop();
-      const message = pendingRef.current.trim();
-      pendingRef.current = "";
-      resetTranscript();
-
-      if (!message) {
-        setStatus("Mesaj algılanmadı. Tekrar deneyin.");
-        return;
-      }
-
-      setStatus("Gönderiliyor...");
-      await onSend(message);
-      setStatus("Yanıt bekleniyor...");
-      return;
-    }
-
-    pendingRef.current = "";
-    resetTranscript();
-    setStatus("Dinliyorum...");
-    start();
+  function handleClose() {
+    disconnect();
+    close();
   }
+
+  const orbActive = status === "listening" || status === "connecting";
+  const orbSpeaking = status === "speaking";
 
   return (
     <div className="fixed inset-0 z-[400] flex flex-col bg-background">
       <div className="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
-        <p className="text-sm font-medium text-foreground">Ses modu</p>
+        <p className="text-sm font-medium text-foreground">Canlı ses</p>
         <button
           type="button"
-          onClick={close}
+          onClick={handleClose}
           className="flex size-10 items-center justify-center rounded-full hover:bg-muted"
           aria-label="Kapat"
         >
@@ -131,28 +116,56 @@ export function VoiceModePanel({
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center px-6">
-        <p className="mb-8 text-center text-lg font-semibold text-foreground">
-          Ses modunu dene
+        <p className="mb-2 text-center text-lg font-semibold text-foreground">
+          Orwix ile konuş
+        </p>
+        <p className="mb-8 text-center text-sm text-muted-foreground">
+          Doğal, kesintisiz sesli sohbet
         </p>
 
         <div
           className={cn(
-            "orwix-voice-orb mb-10",
-            isListening && "orwix-voice-orb-active",
-            (isLoading || isSpeaking) && "orwix-voice-orb-speaking",
+            "orwix-voice-orb mb-8",
+            orbActive && "orwix-voice-orb-active",
+            orbSpeaking && "orwix-voice-orb-speaking",
           )}
           aria-hidden
         />
 
-        <p className="mb-10 max-w-md text-center text-sm text-muted-foreground">
-          {error ?? status ?? transcript}
+        <p className="mb-6 text-center text-sm font-medium text-foreground">
+          {statusLabel(status, isMuted)}
         </p>
+
+        <div className="mb-8 w-full max-w-md space-y-3 text-center">
+          {inputTranscript ? (
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground/80">Sen: </span>
+              <MessageMarkdown
+                text={inputTranscript}
+                className="inline whitespace-pre-wrap"
+              />
+            </div>
+          ) : null}
+          {outputTranscript ? (
+            <div className="text-sm text-foreground">
+              <span className="font-medium text-muted-foreground">Orwix: </span>
+              <MessageMarkdown
+                text={outputTranscript}
+                className="inline whitespace-pre-wrap"
+              />
+            </div>
+          ) : null}
+          {error ? (
+            <p className="text-sm text-destructive">{error}</p>
+          ) : null}
+        </div>
 
         <div className="mb-10 flex w-full max-w-sm items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => selectProfile(-1)}
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+            disabled={status === "connecting"}
+            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-50"
             aria-label="Önceki ses"
           >
             <ChevronLeft className="size-5" />
@@ -170,36 +183,48 @@ export function VoiceModePanel({
           <button
             type="button"
             onClick={() => selectProfile(1)}
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+            disabled={status === "connecting"}
+            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-50"
             aria-label="Sonraki ses"
           >
             <ChevronRight className="size-5" />
           </button>
         </div>
 
-        <Button
-          type="button"
-          size="lg"
-          onClick={() => void handleMicToggle()}
-          disabled={!isSupported || isLoading}
-          className="h-14 w-14 rounded-full p-0"
-        >
-          {isListening ? (
-            <MicOff className="size-6" />
-          ) : (
-            <Mic className="size-6" />
-          )}
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button
+            type="button"
+            size="lg"
+            variant={isMuted ? "secondary" : "default"}
+            onClick={toggleMute}
+            disabled={status === "connecting" || status === "idle"}
+            className="h-14 w-14 rounded-full p-0"
+            aria-label={isMuted ? "Mikrofonu aç" : "Mikrofonu kapat"}
+          >
+            {isMuted ? (
+              <MicOff className="size-6" />
+            ) : (
+              <Mic className="size-6" />
+            )}
+          </Button>
 
-        {!isSupported ? (
-          <p className="mt-4 text-center text-xs text-destructive">
-            Canlı ses için Chrome veya Edge kullanın.
-          </p>
-        ) : (
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            Konuşmayı bitirince mikrofona tekrar dokunun
-          </p>
-        )}
+          {status === "error" ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void connect()}
+              className="gap-2"
+            >
+              <RefreshCw className="size-4" />
+              Tekrar bağlan
+            </Button>
+          ) : null}
+        </div>
+
+        <p className="mt-6 max-w-sm text-center text-xs text-muted-foreground">
+          Chrome veya Edge önerilir. Konuşmayı bitirmek için duraklayın; Orwix
+          otomatik cevaplar.
+        </p>
       </div>
     </div>
   );

@@ -3,39 +3,56 @@
 import { useEffect, useRef } from "react";
 
 import { useAuthStore } from "@/stores/auth.store";
-import { useChatStore } from "@/stores/chat.store";
+import {
+  GUEST_CHAT_ACCOUNT_ID,
+  useChatStore,
+} from "@/stores/chat.store";
+
+function resolveAccountId(accountId: string | null): string {
+  return accountId ?? GUEST_CHAT_ACCOUNT_ID;
+}
+
+function restoreActiveSession(accountId: string) {
+  const store = useChatStore.getState();
+  const sessions = store.sessionsByAccountId[accountId] ?? [];
+  const activeId = store.activeSessionId;
+  const match = activeId
+    ? sessions.find((session) => session.id === activeId)
+    : null;
+
+  if (match) {
+    store.loadSession(accountId, match.id);
+    return;
+  }
+
+  store.clearSessionMessages();
+}
 
 /**
- * Keeps chat messages in sync with the signed-in account:
- * - load history on login
- * - save history while chatting
+ * Keeps chat sessions in sync with the signed-in account:
+ * - restore the last open session on load
+ * - save active session while chatting
  * - clear the visible session on logout (history stays for next login)
+ * - persist guest sessions under a local guest key
  */
 export function ChatAccountSync({ hydrated }: { hydrated: boolean }) {
-  const previousAccountIdRef = useRef<string | null | undefined>(undefined);
   const skipNextMessagePersistRef = useRef(false);
 
   useEffect(() => {
     if (!hydrated) return;
 
     const activeId = useAuthStore.getState().activeAccountId;
-    previousAccountIdRef.current = activeId;
-
-    if (activeId) {
-      skipNextMessagePersistRef.current = true;
-      useChatStore.getState().loadAccountHistory(activeId);
-    } else {
-      useChatStore.getState().clearSessionMessages();
-    }
+    skipNextMessagePersistRef.current = true;
+    restoreActiveSession(resolveAccountId(activeId));
 
     const unsubAuth = useAuthStore.subscribe((state, prev) => {
       if (state.activeAccountId === prev.activeAccountId) {
-        // Prune chat history when an account is removed
         if (state.accounts.length < prev.accounts.length) {
           const remaining = new Set(state.accounts.map((a) => a.id));
           for (const id of Object.keys(
-            useChatStore.getState().historiesByAccountId,
+            useChatStore.getState().sessionsByAccountId,
           )) {
+            if (id === GUEST_CHAT_ACCOUNT_ID) continue;
             if (!remaining.has(id)) {
               useChatStore.getState().removeAccountHistory(id);
             }
@@ -48,25 +65,39 @@ export function ChatAccountSync({ hydrated }: { hydrated: boolean }) {
       const nextId = state.activeAccountId;
 
       if (prevId) {
-        useChatStore.getState().persistAccountHistory(prevId);
+        useChatStore.getState().persistActiveSession(prevId);
+      } else if (useChatStore.getState().messages.length > 0) {
+        useChatStore.getState().persistActiveSession(GUEST_CHAT_ACCOUNT_ID);
       }
 
-      previousAccountIdRef.current = nextId;
       skipNextMessagePersistRef.current = true;
 
       if (nextId) {
-        const history =
-          useChatStore.getState().historiesByAccountId[nextId] ?? [];
+        const guestSessions =
+          useChatStore.getState().sessionsByAccountId[
+            GUEST_CHAT_ACCOUNT_ID
+          ] ?? [];
         const currentMessages = useChatStore.getState().messages;
 
-        if (history.length === 0 && currentMessages.length > 0) {
-          // Keep in-progress guest chat as this account's first history
-          useChatStore.getState().persistAccountHistory(nextId);
-        } else {
-          useChatStore.getState().loadAccountHistory(nextId);
+        if (currentMessages.length > 0) {
+          useChatStore.getState().persistActiveSession(nextId);
+        } else if (guestSessions.length > 0) {
+          const accountSessions =
+            useChatStore.getState().sessionsByAccountId[nextId] ?? [];
+          if (accountSessions.length === 0) {
+            useChatStore.setState((store) => ({
+              sessionsByAccountId: {
+                ...store.sessionsByAccountId,
+                [nextId]: guestSessions,
+                [GUEST_CHAT_ACCOUNT_ID]: [],
+              },
+            }));
+          }
         }
+
+        restoreActiveSession(nextId);
       } else {
-        useChatStore.getState().clearSessionMessages();
+        restoreActiveSession(GUEST_CHAT_ACCOUNT_ID);
       }
     });
 
@@ -78,10 +109,13 @@ export function ChatAccountSync({ hydrated }: { hydrated: boolean }) {
         return;
       }
 
-      const accountId = useAuthStore.getState().activeAccountId;
-      if (!accountId) return;
+      if (state.messages.length === 0) return;
 
-      useChatStore.getState().persistAccountHistory(accountId);
+      const accountId = resolveAccountId(
+        useAuthStore.getState().activeAccountId,
+      );
+
+      useChatStore.getState().persistActiveSession(accountId);
     });
 
     return () => {

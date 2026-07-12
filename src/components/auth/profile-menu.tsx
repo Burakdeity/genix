@@ -10,7 +10,7 @@ import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
 
 interface ProfileMenuProps {
-  align?: "sidebar" | "drawer";
+  align?: "sidebar" | "drawer" | "header";
 }
 
 export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
@@ -55,6 +55,15 @@ export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
   function updateMenuPosition() {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return;
+
+    if (align === "header") {
+      const width = 240;
+      setMenuStyle({
+        top: rect.bottom + 8,
+        left: Math.max(8, rect.right - width),
+      });
+      return;
+    }
 
     if (align === "sidebar") {
       setMenuStyle({
@@ -107,14 +116,22 @@ export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
               transform: "translateY(-50%)",
               zIndex: 200,
             }
-          : {
-              position: "fixed",
-              top: menuStyle.top,
-              left: menuStyle.left,
-              transform: "translate(-0%, -100%)",
-              zIndex: 200,
-              width: buttonRef.current?.offsetWidth,
-            }
+          : align === "header"
+            ? {
+                position: "fixed",
+                top: menuStyle.top,
+                left: menuStyle.left,
+                zIndex: 200,
+                width: 240,
+              }
+            : {
+                position: "fixed",
+                top: menuStyle.top,
+                left: menuStyle.left,
+                transform: "translate(-0%, -100%)",
+                zIndex: 200,
+                width: buttonRef.current?.offsetWidth,
+              }
       }
       className="min-w-[220px] overflow-hidden rounded-2xl border border-border bg-popover shadow-xl"
       onClick={(event) => event.stopPropagation()}
@@ -178,9 +195,12 @@ export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
         className={cn(
           "flex items-center justify-center rounded-full transition-colors",
           align === "sidebar" && "size-8",
+          align === "header" &&
+            "size-9 ring-1 ring-border/70 hover:ring-primary/40",
           align === "drawer" &&
             "h-11 w-full justify-start gap-3 rounded-xl px-3 text-sm text-foreground hover:bg-muted",
-          align === "sidebar" && !activeAccount &&
+          align === "sidebar" &&
+            !activeAccount &&
             "border border-border text-muted-foreground",
           !activeAccount &&
             align === "sidebar" &&
@@ -193,7 +213,10 @@ export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
               name={activeAccount.name}
               color={activeAccount.avatarColor}
               picture={activeAccount.picture}
-              className="size-8 text-sm"
+              className={cn(
+                "text-sm",
+                align === "header" ? "size-9" : "size-8",
+              )}
             />
             {align === "drawer" ? (
               <span className="truncate font-medium">{activeAccount.name}</span>
@@ -204,7 +227,9 @@ export function ProfileMenu({ align = "sidebar" }: ProfileMenuProps) {
             <span
               className={cn(
                 "flex items-center justify-center rounded-full border border-border",
-                align === "sidebar" ? "size-8" : "size-8 shrink-0",
+                align === "sidebar" || align === "header"
+                  ? "size-8"
+                  : "size-8 shrink-0",
               )}
             >
               <UserRound className="size-4" strokeWidth={1.75} />

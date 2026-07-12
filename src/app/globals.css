@@ -1290,6 +1290,25 @@
     animation: orwix-caret-blink 1.05s ease-in-out infinite;
   }
 
+  .orwix-thinking-label {
+    animation: orwix-thinking-pulse 1.6s ease-in-out infinite;
+  }
+
+  .orwix-thinking-dots {
+    display: inline-block;
+    letter-spacing: 0.02em;
+  }
+
+  @keyframes orwix-thinking-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
   @keyframes orwix-caret-blink {
     0%,
     42% {
@@ -1324,6 +1343,22 @@
 
   .orwix-voice-orb-active {
     animation: orwix-voice-pulse 1.4s ease-in-out infinite;
+  }
+
+  .orwix-voice-orb-speaking {
+    animation: orwix-voice-speak 0.85s ease-in-out infinite;
+  }
+
+  @keyframes orwix-voice-speak {
+    0%,
+    100% {
+      transform: scale(1.02);
+      filter: brightness(1.05);
+    }
+    50% {
+      transform: scale(1.08);
+      filter: brightness(1.15);
+    }
   }
 
   @keyframes orwix-voice-pulse {

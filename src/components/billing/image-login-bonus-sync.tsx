@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
+import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
 import { useAuthStore } from "@/stores/auth.store";
 import { useChatStore } from "@/stores/chat.store";
 import {
@@ -14,13 +15,18 @@ import {
  * grant the free signed-in allowance and notify in chat.
  */
 export function ImageLoginBonusSync() {
+  const hydrated = useStoresHydrated();
   const activeAccountId = useAuthStore((state) => state.activeAccountId);
-  const prevAccountId = useRef<string | null>(null);
+  const prevAccountId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
+    if (!hydrated) return;
+
     const previous = prevAccountId.current;
     prevAccountId.current = activeAccountId;
 
+    // Skip the first hydrated snapshot so refresh doesn't re-grant
+    if (previous === undefined) return;
     if (!activeAccountId || previous === activeAccountId) return;
 
     const quota = useImageQuotaStore.getState();
@@ -39,7 +45,7 @@ export function ImageLoginBonusSync() {
       content: `Giriş başarılı. ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı tanındı. Kalan hak: ${remaining}. Yeni bir görsel isteği yazabilirsin.`,
       createdAt: Date.now(),
     });
-  }, [activeAccountId]);
+  }, [activeAccountId, hydrated]);
 
   return null;
 }

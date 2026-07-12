@@ -28,11 +28,11 @@ const generateRequestSchema = z
         GEMINI_MODELS.PRO,
       ])
       .optional()
-      .default(GEMINI_MODELS.PRO),
+      .default(GEMINI_MODELS.FLASH_LITE),
     systemInstruction: z.string().max(8000).optional(),
-    temperature: z.number().min(0).max(2).optional().default(0.7),
+    temperature: z.number().min(0).max(2).optional(),
     structured: z.boolean().optional().default(false),
-    enableSearch: z.boolean().optional().default(true),
+    enableSearch: z.boolean().optional().default(false),
     enableCodeExecution: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
@@ -84,6 +84,7 @@ export async function handleGenerateRequest(
       enableCodeExecution,
     } = parsed.data;
 
+    const isPro = model === GEMINI_MODELS.PRO;
     const service = getGeminiService();
     const data = await service.generateContent({
       prompt,
@@ -91,9 +92,13 @@ export async function handleGenerateRequest(
       images: images.map(({ mimeType, data }) => ({ mimeType, data })),
       model: model as GeminiModelId,
       systemInstruction,
-      enableSearch: structured ? false : enableSearch,
-      enableCodeExecution: structured ? false : enableCodeExecution,
-      config: { temperature, maxOutputTokens: 16384 },
+      enableSearch: structured ? false : enableSearch === true,
+      enableCodeExecution: structured ? false : enableCodeExecution === true,
+      config: {
+        ...(temperature !== undefined ? { temperature } : {}),
+        maxOutputTokens: isPro ? 8192 : 2048,
+        ...(isPro ? { thinkingLevel: "low" as const } : { thinkingBudget: 0 }),
+      },
       ...(structured
         ? {
             structuredOutput: {

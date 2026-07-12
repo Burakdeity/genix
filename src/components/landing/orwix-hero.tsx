@@ -8,6 +8,7 @@ import {
   Globe,
   ImageIcon,
   Loader2,
+  Mic,
   MonitorSmartphone,
   Plus,
   Presentation,
@@ -28,7 +29,10 @@ import {
   ORWIX_VIDEO_TEMPLATES,
   type OrwixMode,
 } from "@/content/orwix-content";
+import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { useVoiceStore } from "@/stores/voice.store";
 import type {
   ChatAttachment,
   ChatSettings,
@@ -169,6 +173,8 @@ function ComposerBlock({
   attachments: ChatAttachment[];
   onRemoveAttachment: (index: number) => void;
 }) {
+  const openVoiceMode = useVoiceStore((state) => state.open);
+
   return (
     <div className="orwix-composer-wrap w-full">
       <div className="orwix-composer w-full overflow-hidden">
@@ -219,11 +225,22 @@ function ComposerBlock({
                 disabled={isLoading}
               />
             </div>
-            <SendButton
-              canSend={canSend}
-              isLoading={isLoading}
-              onClick={() => void handleSubmit()}
-            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={openVoiceMode}
+                disabled={isLoading}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
+                aria-label="Canlı ses"
+              >
+                <Mic className="size-4" />
+              </button>
+              <SendButton
+                canSend={canSend}
+                isLoading={isLoading}
+                onClick={() => void handleSubmit()}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -259,6 +276,18 @@ export function OrwixHero({
       });
     });
   }, [promptRequest]);
+
+  const hydrated = useStoresHydrated();
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const accounts = useAuthStore((state) => state.accounts);
+  const activeAccount =
+    hydrated && activeAccountId
+      ? accounts.find((account) => account.id === activeAccountId) ?? null
+      : null;
+  const firstName = activeAccount?.name.trim().split(/\s+/)[0] ?? null;
+  const heroTitle = firstName
+    ? `Merhaba, ${firstName}`
+    : ORWIX_HERO.title;
 
   const placeholder = ORWIX_HERO.placeholders[mode];
   const modeLabel = ORWIX_HERO.modeLabels[mode];
@@ -359,7 +388,7 @@ export function OrwixHero({
             <OrwixLogo />
           </div>
           <h1 className="font-heading text-[2.75rem] leading-[1.05] tracking-tight md:text-6xl">
-            <span className="orwix-hero-title">{ORWIX_HERO.title}</span>
+            <span className="orwix-hero-title">{heroTitle}</span>
           </h1>
           <p className="orwix-hero-subtitle mx-auto mt-4 max-w-md text-base md:text-lg">
             Fikirden ürüne —{" "}

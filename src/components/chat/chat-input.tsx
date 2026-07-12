@@ -75,7 +75,11 @@ export function ChatInput({
         <ClientOnly
           fallback={
             <div className="hidden h-8 shrink-0 items-center px-2 text-xs text-muted-foreground md:flex">
-              {model === GEMINI_MODELS.PRO ? "Pro" : "Flash"}
+              {model === GEMINI_MODELS.PRO
+                ? "Pro"
+                : model === GEMINI_MODELS.FLASH
+                  ? "Flash+"
+                  : "Flash"}
             </div>
           }
         >
@@ -88,7 +92,11 @@ export function ChatInput({
             >
               <SelectTrigger className="h-8 w-auto gap-1 border-0 bg-transparent px-2 text-xs text-muted-foreground shadow-none hover:bg-muted hover:text-foreground focus:ring-0">
                 <SelectValue>
-                  {model === GEMINI_MODELS.PRO ? "Pro" : "Flash"}
+                  {model === GEMINI_MODELS.PRO
+                    ? "Pro"
+                    : model === GEMINI_MODELS.FLASH
+                      ? "Flash+"
+                      : "Flash"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent className="border-border bg-popover text-popover-foreground">

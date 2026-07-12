@@ -56,7 +56,7 @@ export interface GeneratePayload {
   }>;
   model: GeminiModelId;
   systemInstruction?: string;
-  temperature: number;
+  temperature?: number;
   structured: boolean;
   enableSearch?: boolean;
   enableCodeExecution?: boolean;
