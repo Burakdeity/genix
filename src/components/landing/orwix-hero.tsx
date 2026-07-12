@@ -173,7 +173,7 @@ function ComposerBlock({
   attachments: ChatAttachment[];
   onRemoveAttachment: (index: number) => void;
 }) {
-  const openVoiceMode = useVoiceStore((state) => state.open);
+  const openVoiceMode = useVoiceStore((state) => state.openLive);
 
   return (
     <div className="orwix-composer-wrap w-full">
@@ -228,7 +228,7 @@ function ComposerBlock({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={openVoiceMode}
+                onClick={() => void openVoiceMode()}
                 disabled={isLoading}
                 className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
                 aria-label="Canlı ses"

@@ -34,7 +34,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const [value, setValue] = useState("");
 
-  const openVoiceMode = useVoiceStore((state) => state.open);
+  const openVoiceMode = useVoiceStore((state) => state.openLive);
 
   const handleSubmit = async () => {
     const trimmed = value.trim();
@@ -110,7 +110,7 @@ export function ChatInput({
 
         <button
           type="button"
-          onClick={openVoiceMode}
+          onClick={() => void openVoiceMode()}
           className="flex size-9 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Ses modu"
         >

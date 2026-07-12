@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { useGeminiLive } from "@/hooks/use-gemini-live";
+import { primeVoiceAudio } from "@/lib/voice/audio-utils";
 import { useVoiceStore } from "@/stores/voice.store";
 import {
   getVoiceProfile,
@@ -56,14 +57,20 @@ export function VoiceModePanel() {
     toggleMute,
   } = useGeminiLive(profileId);
 
+  const connectRef = useRef(connect);
+  const disconnectRef = useRef(disconnect);
+  connectRef.current = connect;
+  disconnectRef.current = disconnect;
+
+  // Connect once when panel opens; avoid reconnect storms from callback identity churn.
   useEffect(() => {
     if (!isOpen) {
-      disconnect();
+      disconnectRef.current();
       return;
     }
 
-    void connect();
-  }, [isOpen, connect, disconnect]);
+    void connectRef.current();
+  }, [isOpen]);
 
   const previousProfileRef = useRef(profileId);
 
@@ -74,11 +81,11 @@ export function VoiceModePanel() {
     }
 
     if (previousProfileRef.current === profileId) return;
-
     previousProfileRef.current = profileId;
-    disconnect();
-    void connect();
-  }, [profileId, isOpen, connect, disconnect]);
+
+    disconnectRef.current();
+    void connectRef.current();
+  }, [profileId, isOpen]);
 
   if (!isOpen) return null;
 
@@ -96,6 +103,15 @@ export function VoiceModePanel() {
   function handleClose() {
     disconnect();
     close();
+  }
+
+  async function handleRetry() {
+    try {
+      await primeVoiceAudio();
+    } catch {
+      // connect() will surface mic errors
+    }
+    void connect();
   }
 
   const orbActive = status === "listening" || status === "connecting";
@@ -212,7 +228,7 @@ export function VoiceModePanel() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => void connect()}
+              onClick={() => void handleRetry()}
               className="gap-2"
             >
               <RefreshCw className="size-4" />
@@ -222,8 +238,8 @@ export function VoiceModePanel() {
         </div>
 
         <p className="mt-6 max-w-sm text-center text-xs text-muted-foreground">
-          Chrome veya Edge önerilir. Konuşmayı bitirmek için duraklayın; Orwix
-          otomatik cevaplar.
+          Chrome veya Edge önerilir. Kulaklık kullanmak yankıyı azaltır. Konuşmayı
+          bitirmek için duraklayın; Orwix otomatik cevaplar.
         </p>
       </div>
     </div>

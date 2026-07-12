@@ -24,7 +24,8 @@ export function base64ToInt16(base64: string): Int16Array {
   for (let i = 0; i < binary.length; i += 1) {
     bytes[i] = binary.charCodeAt(i);
   }
-  return new Int16Array(bytes.buffer);
+  const sampleCount = Math.floor(bytes.byteLength / 2);
+  return new Int16Array(bytes.buffer, bytes.byteOffset, sampleCount);
 }
 
 export function int16ToBase64(input: Int16Array): string {
@@ -71,9 +72,17 @@ export class PcmPlaybackQueue {
     this.nextStartTime = context.currentTime;
   }
 
+  async ensureRunning(): Promise<void> {
+    if (this.context.state === "suspended") {
+      await this.context.resume();
+    }
+  }
+
   enqueuePcm16(base64: string, sampleRate = LIVE_OUTPUT_SAMPLE_RATE): void {
     const pcm = base64ToInt16(base64);
     if (pcm.length === 0) return;
+
+    void this.ensureRunning();
 
     const floats = int16ToFloat32(pcm);
     const buffer = this.context.createBuffer(1, floats.length, sampleRate);
@@ -104,4 +113,91 @@ export class PcmPlaybackQueue {
     this.activeSources.clear();
     this.nextStartTime = this.context.currentTime;
   }
+}
+
+/**
+ * Keep AudioContext / mic stream primed from a user gesture so later async
+ * Live API setup does not leave audio suspended (silent mic + silent playback).
+ */
+let primedCapture: AudioContext | null = null;
+let primedPlayback: AudioContext | null = null;
+let primedStream: MediaStream | null = null;
+
+export async function primeVoiceAudio(): Promise<{
+  capture: AudioContext;
+  playback: AudioContext;
+  stream: MediaStream;
+}> {
+  if (!primedCapture || primedCapture.state === "closed") {
+    primedCapture = new AudioContext();
+  }
+  if (!primedPlayback || primedPlayback.state === "closed") {
+    primedPlayback = new AudioContext();
+  }
+
+  if (primedCapture.state === "suspended") {
+    await primedCapture.resume();
+  }
+  if (primedPlayback.state === "suspended") {
+    await primedPlayback.resume();
+  }
+
+  const liveTracks =
+    primedStream?.getAudioTracks().some((track) => track.readyState === "live") ??
+    false;
+
+  if (!primedStream || !liveTracks) {
+    primedStream?.getTracks().forEach((track) => track.stop());
+    primedStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        channelCount: 1,
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+  }
+
+  return {
+    capture: primedCapture,
+    playback: primedPlayback,
+    stream: primedStream,
+  };
+}
+
+export function takePrimedVoiceAudio(): {
+  capture: AudioContext;
+  playback: AudioContext;
+  stream: MediaStream;
+} | null {
+  if (
+    !primedCapture ||
+    primedCapture.state === "closed" ||
+    !primedPlayback ||
+    primedPlayback.state === "closed" ||
+    !primedStream
+  ) {
+    return null;
+  }
+
+  const bundle = {
+    capture: primedCapture,
+    playback: primedPlayback,
+    stream: primedStream,
+  };
+
+  // Ownership moves to the live session; do not close on next prime.
+  primedCapture = null;
+  primedPlayback = null;
+  primedStream = null;
+  return bundle;
+}
+
+export function releasePrimedVoiceAudio(): void {
+  primedStream?.getTracks().forEach((track) => track.stop());
+  primedStream = null;
+  void primedCapture?.close();
+  void primedPlayback?.close();
+  primedCapture = null;
+  primedPlayback = null;
 }

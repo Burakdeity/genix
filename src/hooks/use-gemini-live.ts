@@ -9,6 +9,9 @@ import {
   int16ToBase64,
   LIVE_INPUT_SAMPLE_RATE,
   PcmPlaybackQueue,
+  primeVoiceAudio,
+  releasePrimedVoiceAudio,
+  takePrimedVoiceAudio,
 } from "@/lib/voice/audio-utils";
 import type { VoiceProfileId } from "@/types/voice.types";
 
@@ -30,8 +33,22 @@ type LiveSession = {
   sendRealtimeInput: (params: {
     audio?: { data: string; mimeType: string };
     audioStreamEnd?: boolean;
+    text?: string;
   }) => void;
 };
+
+function closeReasonMessage(event: { code?: number; reason?: string } | unknown): string {
+  if (!event || typeof event !== "object") {
+    return "Canlı ses bağlantısı kapandı.";
+  }
+  const record = event as { code?: number; reason?: string };
+  const reason = record.reason?.trim();
+  if (reason) return reason;
+  if (record.code && record.code !== 1000) {
+    return `Canlı ses bağlantısı kapandı (kod ${record.code}).`;
+  }
+  return "Canlı ses bağlantısı kapandı.";
+}
 
 export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const [status, setStatus] = useState<GeminiLiveStatus>("idle");
@@ -47,7 +64,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
   const mutedRef = useRef(false);
-  const connectingRef = useRef(false);
+  const connectIdRef = useRef(0);
+  const voiceProfileRef = useRef(voiceProfile);
+
+  voiceProfileRef.current = voiceProfile;
 
   const cleanupMedia = useCallback(() => {
     processorRef.current?.disconnect();
@@ -57,8 +77,8 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       for (const track of mediaStreamRef.current.getTracks()) {
         track.stop();
       }
-      mediaStreamRef.current = null;
     }
+    mediaStreamRef.current = null;
 
     void captureContextRef.current?.close();
     captureContextRef.current = null;
@@ -70,134 +90,153 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   }, []);
 
   const disconnect = useCallback(() => {
-    connectingRef.current = false;
+    connectIdRef.current += 1;
     sessionRef.current?.close();
     sessionRef.current = null;
     cleanupMedia();
+    releasePrimedVoiceAudio();
     setStatus("idle");
   }, [cleanupMedia]);
 
-  const handleServerMessage = useCallback((message: {
-    serverContent?: {
-      interrupted?: boolean;
-      turnComplete?: boolean;
-      inputTranscription?: { text?: string };
-      outputTranscription?: { text?: string };
-      interimInputTranscription?: { text?: string };
-      modelTurn?: {
-        parts?: Array<{
-          inlineData?: { data?: string; mimeType?: string };
-        }>;
+  const handleServerMessage = useCallback(
+    (message: {
+      serverContent?: {
+        interrupted?: boolean;
+        turnComplete?: boolean;
+        inputTranscription?: { text?: string };
+        outputTranscription?: { text?: string };
+        modelTurn?: {
+          parts?: Array<{
+            inlineData?: { data?: string; mimeType?: string };
+            text?: string;
+          }>;
+        };
       };
-    };
-    data?: string;
-  }) => {
-    if (message.data) {
-      playbackQueueRef.current?.enqueuePcm16(message.data);
-      setStatus("speaking");
-    }
+    }) => {
+      const content = message.serverContent;
+      if (!content) return;
 
-    const content = message.serverContent;
-    if (!content) {
-      return;
-    }
-
-    if (content.interrupted) {
-      playbackQueueRef.current?.flush();
-      setStatus(mutedRef.current ? "listening" : "listening");
-    }
-
-    if (content.interimInputTranscription?.text) {
-      setInputTranscript(content.interimInputTranscription.text);
-    } else if (content.inputTranscription?.text) {
-      setInputTranscript(content.inputTranscription.text);
-    }
-
-    if (content.outputTranscription?.text) {
-      setOutputTranscript((prev) => {
-        const chunk = content.outputTranscription!.text!;
-        if (!chunk) return prev;
-        if (content.turnComplete) return chunk;
-        return prev.includes(chunk) ? prev : prev + chunk;
-      });
-    }
-
-    const parts = content.modelTurn?.parts ?? [];
-    for (const part of parts) {
-      const inline = part.inlineData;
-      if (inline?.data && inline.mimeType?.includes("audio")) {
-        playbackQueueRef.current?.enqueuePcm16(inline.data);
-        setStatus("speaking");
+      if (content.interrupted) {
+        playbackQueueRef.current?.flush();
+        setStatus("listening");
       }
-    }
 
-    if (content.turnComplete) {
-      setStatus(mutedRef.current ? "listening" : "listening");
-    }
-  }, []);
+      if (content.inputTranscription?.text) {
+        setInputTranscript(content.inputTranscription.text);
+      }
 
-  const startMicrophone = useCallback(async (session: LiveSession) => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        channelCount: 1,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true,
-      },
-    });
+      if (content.outputTranscription?.text) {
+        const chunk = content.outputTranscription.text;
+        setOutputTranscript((prev) => {
+          if (!chunk) return prev;
+          if (content.turnComplete) return chunk;
+          if (!prev) return chunk;
+          if (chunk.startsWith(prev)) return chunk;
+          if (prev.endsWith(chunk)) return prev;
+          return prev + chunk;
+        });
+      }
 
-    mediaStreamRef.current = stream;
+      const parts = content.modelTurn?.parts ?? [];
+      for (const part of parts) {
+        const inline = part.inlineData;
+        if (inline?.data && (!inline.mimeType || inline.mimeType.includes("audio"))) {
+          playbackQueueRef.current?.enqueuePcm16(inline.data);
+          setStatus("speaking");
+        }
+      }
 
-    const captureContext = new AudioContext();
-    captureContextRef.current = captureContext;
-    await captureContext.resume();
+      if (content.turnComplete) {
+        setStatus("listening");
+      }
+    },
+    [],
+  );
 
-    const playbackContext = new AudioContext();
-    playbackContextRef.current = playbackContext;
-    await playbackContext.resume();
-    playbackQueueRef.current = new PcmPlaybackQueue(playbackContext);
+  const startMicrophone = useCallback(
+    async (session: LiveSession, connectId: number) => {
+      const primed = takePrimedVoiceAudio();
+      const audio =
+        primed ??
+        (await primeVoiceAudio().then((bundle) => {
+          // take ownership from prime helpers
+          return takePrimedVoiceAudio() ?? bundle;
+        }));
 
-    const source = captureContext.createMediaStreamSource(stream);
-    const processor = captureContext.createScriptProcessor(4096, 1, 1);
-    processorRef.current = processor;
+      if (connectId !== connectIdRef.current) {
+        audio.stream.getTracks().forEach((track) => track.stop());
+        void audio.capture.close();
+        void audio.playback.close();
+        return;
+      }
 
-    processor.onaudioprocess = (event) => {
-      if (mutedRef.current || !sessionRef.current) return;
+      mediaStreamRef.current = audio.stream;
+      captureContextRef.current = audio.capture;
+      playbackContextRef.current = audio.playback;
 
-      const channel = event.inputBuffer.getChannelData(0);
-      const downsampled = downsampleTo16k(channel, captureContext.sampleRate);
-      const pcm = float32ToInt16(downsampled);
+      if (audio.capture.state === "suspended") {
+        await audio.capture.resume();
+      }
+      if (audio.playback.state === "suspended") {
+        await audio.playback.resume();
+      }
 
-      session.sendRealtimeInput({
-        audio: {
-          data: int16ToBase64(pcm),
-          mimeType: `audio/pcm;rate=${LIVE_INPUT_SAMPLE_RATE}`,
-        },
-      });
-    };
+      playbackQueueRef.current = new PcmPlaybackQueue(audio.playback);
+      await playbackQueueRef.current.ensureRunning();
 
-    const gain = captureContext.createGain();
-    gain.gain.value = 0;
-    source.connect(processor);
-    processor.connect(gain);
-    gain.connect(captureContext.destination);
-  }, []);
+      const source = audio.capture.createMediaStreamSource(audio.stream);
+      const processor = audio.capture.createScriptProcessor(4096, 1, 1);
+      processorRef.current = processor;
+
+      processor.onaudioprocess = (event) => {
+        if (mutedRef.current || !sessionRef.current) return;
+        if (connectId !== connectIdRef.current) return;
+
+        const channel = event.inputBuffer.getChannelData(0);
+        const downsampled = downsampleTo16k(channel, audio.capture.sampleRate);
+        if (downsampled.length === 0) return;
+
+        const pcm = float32ToInt16(downsampled);
+        try {
+          session.sendRealtimeInput({
+            audio: {
+              data: int16ToBase64(pcm),
+              mimeType: `audio/pcm;rate=${LIVE_INPUT_SAMPLE_RATE}`,
+            },
+          });
+        } catch {
+          // session may already be closed
+        }
+      };
+
+      const gain = audio.capture.createGain();
+      gain.gain.value = 0;
+      source.connect(processor);
+      processor.connect(gain);
+      gain.connect(audio.capture.destination);
+    },
+    [],
+  );
 
   const connect = useCallback(async () => {
-    if (connectingRef.current || sessionRef.current) return;
-
-    connectingRef.current = true;
+    const connectId = ++connectIdRef.current;
     setError(null);
     setInputTranscript("");
     setOutputTranscript("");
     setStatus("connecting");
 
     try {
+      // Prime mic/AudioContext as early as possible (ideally already primed on click).
+      await primeVoiceAudio();
+      if (connectId !== connectIdRef.current) return;
+
       const response = await fetch("/api/gemini/live/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voiceProfile }),
+        body: JSON.stringify({ voiceProfile: voiceProfileRef.current }),
       });
+
+      if (connectId !== connectIdRef.current) return;
 
       const payload = (await response.json()) as ApiSessionResponse;
       if (!response.ok || !payload.success || !payload.data) {
@@ -208,6 +247,8 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       }
 
       const { GoogleGenAI, Modality } = await import("@google/genai");
+      if (connectId !== connectIdRef.current) return;
+
       const ai = new GoogleGenAI({
         apiKey: payload.data.token,
         httpOptions: { apiVersion: payload.data.apiVersion },
@@ -215,34 +256,68 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
 
       const session = await ai.live.connect({
         model: payload.data.model,
+        // Config is locked by ephemeral token constraints — keep client setup minimal.
         config: {
           responseModalities: [Modality.AUDIO],
         },
         callbacks: {
           onopen: () => {
+            if (connectId !== connectIdRef.current) return;
             setStatus("listening");
           },
           onmessage: (message) => {
+            if (connectId !== connectIdRef.current) return;
             handleServerMessage(message);
           },
-          onerror: () => {
-            setError("Canlı ses bağlantısında hata oluştu.");
+          onerror: (event) => {
+            if (connectId !== connectIdRef.current) return;
+            const detail =
+              event && typeof event === "object" && "message" in event
+                ? String((event as { message?: string }).message ?? "")
+                : "";
+            setError(
+              detail ||
+                "Canlı ses bağlantısında hata oluştu. Tekrar deneyin.",
+            );
             setStatus("error");
           },
-          onclose: () => {
+          onclose: (event) => {
+            if (connectId !== connectIdRef.current) return;
             sessionRef.current = null;
             cleanupMedia();
+            const code =
+              event && typeof event === "object" && "code" in event
+                ? Number((event as { code?: number }).code)
+                : 1000;
+            if (code && code !== 1000) {
+              setError(closeReasonMessage(event));
+              setStatus("error");
+              return;
+            }
             setStatus("idle");
           },
         },
       });
 
+      if (connectId !== connectIdRef.current) {
+        session.close();
+        return;
+      }
+
       sessionRef.current = session as LiveSession;
-      await startMicrophone(session as LiveSession);
-      connectingRef.current = false;
+      await startMicrophone(session as LiveSession, connectId);
+
+      if (connectId !== connectIdRef.current) {
+        session.close();
+        cleanupMedia();
+        return;
+      }
+
+      setStatus("listening");
     } catch (err) {
-      connectingRef.current = false;
+      if (connectId !== connectIdRef.current) return;
       cleanupMedia();
+      releasePrimedVoiceAudio();
       sessionRef.current = null;
       const message =
         err instanceof Error
@@ -251,14 +326,18 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       setError(message);
       setStatus("error");
     }
-  }, [cleanupMedia, handleServerMessage, startMicrophone, voiceProfile]);
+  }, [cleanupMedia, handleServerMessage, startMicrophone]);
 
   const toggleMute = useCallback(() => {
     setIsMuted((prev) => {
       const next = !prev;
       mutedRef.current = next;
       if (next) {
-        sessionRef.current?.sendRealtimeInput({ audioStreamEnd: true });
+        try {
+          sessionRef.current?.sendRealtimeInput({ audioStreamEnd: true });
+        } catch {
+          // ignore
+        }
       }
       return next;
     });
@@ -286,3 +365,5 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
     isActive: status !== "idle" && status !== "error",
   };
 }
+
+export { primeVoiceAudio };

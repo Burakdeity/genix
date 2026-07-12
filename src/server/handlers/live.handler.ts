@@ -9,6 +9,7 @@ import type { ApiResponse } from "@/server/types/gemini.types";
 import { checkRateLimit } from "@/server/utils/rate-limit";
 import {
   GEMINI_LIVE_MODEL,
+  GEMINI_LIVE_MODEL_FALLBACK,
   getGeminiLiveVoiceName,
 } from "@/lib/voice/gemini-voice-map";
 import { LIVE_SYSTEM_INSTRUCTION } from "@/lib/voice/live-system-prompt";
@@ -28,6 +29,45 @@ function getClientKey(request: Request): string {
     return forwarded.split(",")[0]?.trim() ?? "unknown";
   }
   return request.headers.get("x-real-ip") ?? "local";
+}
+
+async function createLiveToken(
+  apiKey: string,
+  model: string,
+  voiceName: string,
+) {
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: { apiVersion: "v1alpha" },
+  });
+
+  const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+  const newSessionExpireTime = new Date(
+    Date.now() + 2 * 60 * 1000,
+  ).toISOString();
+
+  return ai.authTokens.create({
+    config: {
+      uses: 1,
+      expireTime,
+      newSessionExpireTime,
+      liveConnectConstraints: {
+        model,
+        config: {
+          responseModalities: [Modality.AUDIO],
+          systemInstruction: LIVE_SYSTEM_INSTRUCTION,
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName },
+            },
+          },
+          inputAudioTranscription: {},
+          outputAudioTranscription: {},
+        },
+      },
+      httpOptions: { apiVersion: "v1alpha" },
+    },
+  });
 }
 
 export async function handleLiveSessionRequest(
@@ -58,53 +98,49 @@ export async function handleLiveSessionRequest(
     const voiceName = getGeminiLiveVoiceName(voiceProfile);
     const { GEMINI_API_KEY } = getServerEnv();
 
-    const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+    const models = [GEMINI_LIVE_MODEL, GEMINI_LIVE_MODEL_FALLBACK];
+    let lastError: unknown;
 
-    const expireTime = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-    const newSessionExpireTime = new Date(
-      Date.now() + 2 * 60 * 1000,
-    ).toISOString();
+    for (const model of models) {
+      try {
+        const token = await createLiveToken(GEMINI_API_KEY, model, voiceName);
+        const tokenValue = token.name?.trim();
+        if (!tokenValue) {
+          throw new AppError(
+            "Ses oturumu anahtarı oluşturulamadı.",
+            "GEMINI_API_ERROR",
+            502,
+          );
+        }
 
-    const token = await ai.authTokens.create({
-      config: {
-        uses: 1,
-        expireTime,
-        newSessionExpireTime,
-        liveConnectConstraints: {
-          model: GEMINI_LIVE_MODEL,
-          config: {
-            responseModalities: [Modality.AUDIO],
-            systemInstruction: LIVE_SYSTEM_INSTRUCTION,
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName },
-              },
-              languageCode: "tr-TR",
-            },
-            inputAudioTranscription: {},
-            outputAudioTranscription: {},
+        return {
+          success: true,
+          data: {
+            token: tokenValue,
+            model,
+            apiVersion: "v1alpha",
+            voiceProfile,
           },
-        },
-      },
-    });
-
-    const tokenValue = token.name?.trim();
-    if (!tokenValue) {
-      throw new AppError(
-        "Ses oturumu anahtarı oluşturulamadı.",
-        "GEMINI_API_ERROR",
-        502,
-      );
+        };
+      } catch (error) {
+        lastError = error;
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : String(error);
+        const retryable =
+          message.includes("not found") ||
+          message.includes("not supported") ||
+          message.includes("invalid") ||
+          message.includes("thinking");
+        if (!retryable) break;
+      }
     }
 
+    if (lastError instanceof AppError) {
+      return { success: false, error: toApiErrorResponse(lastError) };
+    }
     return {
-      success: true,
-      data: {
-        token: tokenValue,
-        model: GEMINI_LIVE_MODEL,
-        apiVersion: "v1alpha",
-        voiceProfile,
-      },
+      success: false,
+      error: toApiErrorResponse(mapGeminiError(lastError)),
     };
   } catch (error) {
     if (error instanceof AppError) {
