@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowUp,
   Calendar,
+  Clapperboard,
   Globe,
-  Layers,
+  ImageIcon,
   Loader2,
   MonitorSmartphone,
-  Paperclip,
   Plus,
   Presentation,
+  Search,
   Sparkles,
   X,
 } from "lucide-react";
@@ -20,13 +21,19 @@ import { QualityModeToggle } from "@/components/chat/quality-mode-toggle";
 import { OrwixAppStudio } from "@/components/landing/orwix-app-studio";
 import {
   ORWIX_HERO,
+  ORWIX_IMAGE_TEMPLATES,
   ORWIX_MORE_SUGGESTIONS,
   ORWIX_SUGGESTIONS,
   ORWIX_TEMPLATES,
+  ORWIX_VIDEO_TEMPLATES,
   type OrwixMode,
 } from "@/content/orwix-content";
 import { cn } from "@/lib/utils";
-import type { ChatAttachment, ChatSettings } from "@/types/chat.types";
+import type {
+  ChatAttachment,
+  ChatSettings,
+  SendMessageOptions,
+} from "@/types/chat.types";
 
 const MAX_ATTACHMENTS = 4;
 const MAX_FILE_BYTES = 4 * 1024 * 1024;
@@ -90,7 +97,11 @@ function AttachmentPreview({
 }
 
 interface OrwixHeroProps {
-  onSend: (message: string, attachments?: ChatAttachment[]) => Promise<void>;
+  onSend: (
+    message: string,
+    attachments?: ChatAttachment[],
+    options?: SendMessageOptions,
+  ) => Promise<void>;
   isLoading: boolean;
   hasMessages: boolean;
   promptRequest?: { id: number; text: string } | null;
@@ -104,6 +115,9 @@ function SuggestionIcon({
   icon: (typeof ORWIX_SUGGESTIONS)[number]["icon"];
 }) {
   const className = "size-3.5";
+  if (icon === "image") return <ImageIcon className={className} />;
+  if (icon === "video") return <Clapperboard className={className} />;
+  if (icon === "research") return <Search className={className} />;
   if (icon === "slides") return <Presentation className={className} />;
   if (icon === "website") return <Calendar className={className} />;
   if (icon === "design") return <Sparkles className={className} />;
@@ -112,6 +126,9 @@ function SuggestionIcon({
 
 function ModeBadgeIcon({ mode }: { mode: OrwixMode }) {
   const className = "size-3.5";
+  if (mode === "image") return <ImageIcon className={className} />;
+  if (mode === "video") return <Clapperboard className={className} />;
+  if (mode === "research") return <Search className={className} />;
   if (mode === "website") return <Globe className={className} />;
   if (mode === "apps") return <MonitorSmartphone className={className} />;
   if (mode === "slides") return <Presentation className={className} />;
@@ -120,7 +137,6 @@ function ModeBadgeIcon({ mode }: { mode: OrwixMode }) {
 }
 
 function ComposerBlock({
-  isWebsiteMode,
   value,
   setValue,
   isLoading,
@@ -130,7 +146,6 @@ function ComposerBlock({
   setMode,
   canSend,
   handleSubmit,
-  applyPrompt,
   fileInputRef,
   textareaRef,
   model,
@@ -138,7 +153,6 @@ function ComposerBlock({
   attachments,
   onRemoveAttachment,
 }: {
-  isWebsiteMode: boolean;
   value: string;
   setValue: (value: string) => void;
   isLoading: boolean;
@@ -148,7 +162,6 @@ function ComposerBlock({
   setMode: (mode: OrwixMode) => void;
   canSend: boolean;
   handleSubmit: () => Promise<void>;
-  applyPrompt: (prompt: string) => void;
   fileInputRef: RefObject<HTMLInputElement | null>;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   model: ChatSettings["model"];
@@ -159,174 +172,60 @@ function ComposerBlock({
   return (
     <div className="orwix-composer-wrap w-full">
       <div className="orwix-composer w-full overflow-hidden">
-        {isWebsiteMode ? (
-          <>
-            <div className="px-5 pb-2 pt-5">
-              <textarea
-                ref={textareaRef}
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
-                disabled={isLoading}
-                rows={3}
-                placeholder={placeholder}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" && !event.shiftKey) {
-                    event.preventDefault();
-                    void handleSubmit();
-                  }
-                }}
-                className="min-h-[88px] w-full resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none"
-              />
-            </div>
-            <AttachmentPreview
-              attachments={attachments}
-              onRemove={onRemoveAttachment}
-            />
-
-            <div className="flex flex-wrap items-center justify-between gap-2 px-4 pb-4">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                  aria-label="Görsel ekle"
-                >
-                  <Plus className="size-4" />
-                </button>
+        <div className="flex min-h-[148px] flex-col px-5 py-5">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            disabled={isLoading}
+            rows={3}
+            placeholder={placeholder}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                void handleSubmit();
+              }
+            }}
+            className="min-h-[72px] w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[17px]"
+          />
+          <AttachmentPreview
+            attachments={attachments}
+            onRemove={onRemoveAttachment}
+          />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
+                aria-label="Görsel ekle"
+              >
+                <Plus className="size-4" />
+              </button>
+              {modeLabel ? (
                 <button
                   type="button"
                   onClick={() => setMode("general")}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/30"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-primary/12 px-3 py-1.5 text-xs font-semibold text-primary ring-1 ring-primary/25"
                 >
-                  <Globe className="size-3.5" />
+                  <ModeBadgeIcon mode={mode} />
                   {modeLabel}
                   <X className="size-3 opacity-60" />
                 </button>
-                <QualityModeToggle
-                  model={model}
-                  onChange={onModelChange}
-                  disabled={isLoading}
-                />
-              </div>
-              <SendButton
-                canSend={canSend}
-                isLoading={isLoading}
-                onClick={() => void handleSubmit()}
+              ) : null}
+              <QualityModeToggle
+                model={model}
+                onChange={onModelChange}
+                disabled={isLoading}
               />
             </div>
-
-            <div className="border-t border-border/50 px-4 py-3">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium text-foreground">
-                  {ORWIX_HERO.composerLabel}
-                </p>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="flex items-center gap-1 rounded-md px-1.5 py-1 text-sm text-foreground transition-colors hover:bg-primary/10"
-                  >
-                    <Paperclip className="size-3.5 text-muted-foreground" />
-                    {ORWIX_HERO.referenceButton}
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 rounded-md px-1.5 py-1 text-[13px] text-foreground transition-colors hover:bg-primary/10"
-                  >
-                    <Layers className="size-3.5 text-muted-foreground" />
-                    {ORWIX_HERO.figmaImport}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {ORWIX_TEMPLATES.map((template) => (
-                  <button
-                    key={template.primary}
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => applyPrompt(template.prompt)}
-                    className="flex h-10 shrink-0 items-center gap-2.5 rounded-xl border border-border/50 bg-muted/30 px-3.5 transition-all hover:border-primary/30 hover:bg-primary/10 disabled:opacity-50"
-                  >
-                    <Globe className="size-4 text-primary/70" />
-                    <span className="whitespace-nowrap text-sm text-foreground">
-                      {template.primary}
-                    </span>
-                    {"secondary" in template && template.secondary ? (
-                      <span className="whitespace-nowrap text-[13px] text-muted-foreground">
-                        {template.secondary}
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end border-t border-border/50 px-4 py-2">
-              <button
-                type="button"
-                className="flex h-9 items-center rounded-lg px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-primary/10"
-              >
-                {ORWIX_HERO.language}
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="flex min-h-[160px] flex-col px-5 py-5">
-            <textarea
-              ref={textareaRef}
-              value={value}
-              onChange={(event) => setValue(event.target.value)}
-              disabled={isLoading}
-              rows={3}
-              placeholder={placeholder}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey) {
-                  event.preventDefault();
-                  void handleSubmit();
-                }
-              }}
-              className="min-h-[80px] w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-lg"
+            <SendButton
+              canSend={canSend}
+              isLoading={isLoading}
+              onClick={() => void handleSubmit()}
             />
-            <AttachmentPreview
-              attachments={attachments}
-              onRemove={onRemoveAttachment}
-            />
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
-                  aria-label="Görsel ekle"
-                >
-                  <Plus className="size-4" />
-                </button>
-                {modeLabel ? (
-                  <button
-                    type="button"
-                    onClick={() => setMode("general")}
-                    className="inline-flex items-center gap-1.5 rounded-full bg-primary/15 px-3 py-1 text-xs font-semibold text-primary ring-1 ring-primary/30"
-                  >
-                    <ModeBadgeIcon mode={mode} />
-                    {modeLabel}
-                    <X className="size-3 opacity-60" />
-                  </button>
-                ) : null}
-                <QualityModeToggle
-                  model={model}
-                  onChange={onModelChange}
-                  disabled={isLoading}
-                />
-              </div>
-              <SendButton
-                canSend={canSend}
-                isLoading={isLoading}
-                onClick={() => void handleSubmit()}
-              />
-            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
@@ -365,6 +264,8 @@ export function OrwixHero({
   const modeLabel = ORWIX_HERO.modeLabels[mode];
   const isWebsiteMode = mode === "website";
   const isAppsMode = mode === "apps";
+  const isImageMode = mode === "image";
+  const isVideoMode = mode === "video";
   const canSend =
     (value.trim().length > 0 || attachments.length > 0) && !isLoading;
 
@@ -375,7 +276,7 @@ export function OrwixHero({
     setValue("");
     setAttachments([]);
     setAttachError(null);
-    await onSend(trimmed, pending);
+    await onSend(trimmed, pending, { mode });
   };
 
   const selectMode = (nextMode: OrwixMode) => {
@@ -432,7 +333,6 @@ export function OrwixHero({
     setMode,
     canSend,
     handleSubmit,
-    applyPrompt,
     fileInputRef,
     textareaRef,
     model,
@@ -461,25 +361,77 @@ export function OrwixHero({
           <h1 className="font-heading text-[2.75rem] leading-[1.05] tracking-tight md:text-6xl">
             <span className="orwix-hero-title">{ORWIX_HERO.title}</span>
           </h1>
-          <p className="orwix-hero-subtitle mx-auto mt-4 max-w-lg text-base md:text-lg">
-            Slayt, web sitesi, tasarım ve uygulama —{" "}
-            <span className="orwix-hero-subtitle-em">tek bir komutla</span>{" "}
-            başlayın.
+          <p className="orwix-hero-subtitle mx-auto mt-4 max-w-md text-base md:text-lg">
+            Fikirden ürüne —{" "}
+            <span className="orwix-hero-subtitle-em">tek bir komutla</span>.
           </p>
         </div>
       ) : null}
 
       {isAppsMode ? (
         <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-          <ComposerBlock {...composerProps} isWebsiteMode={false} />
+          <ComposerBlock {...composerProps} />
           <OrwixAppStudio
             isLoading={isLoading}
             className="orwix-app-studio-panel mx-auto w-full max-w-[280px] lg:sticky lg:top-24"
           />
         </div>
       ) : (
-        <ComposerBlock {...composerProps} isWebsiteMode={isWebsiteMode} />
+        <ComposerBlock {...composerProps} />
       )}
+
+      {isWebsiteMode && !hasMessages ? (
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          {ORWIX_TEMPLATES.slice(0, 6).map((item) => (
+            <button
+              key={item.primary}
+              type="button"
+              disabled={isLoading}
+              onClick={() => applyPrompt(item.prompt)}
+              className="orwix-chip relative rounded-full px-3.5 py-2 text-xs font-semibold disabled:opacity-50"
+            >
+              <span className="relative z-[1]">
+                {item.primary}
+                {"secondary" in item && item.secondary
+                  ? ` · ${item.secondary}`
+                  : ""}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isImageMode && !hasMessages ? (
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          {ORWIX_IMAGE_TEMPLATES.map((item) => (
+            <button
+              key={item.primary}
+              type="button"
+              disabled={isLoading}
+              onClick={() => applyPrompt(item.prompt)}
+              className="orwix-chip relative rounded-full px-3.5 py-2 text-xs font-semibold disabled:opacity-50"
+            >
+              <span className="relative z-[1]">{item.primary}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isVideoMode && !hasMessages ? (
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          {ORWIX_VIDEO_TEMPLATES.map((item) => (
+            <button
+              key={item.primary}
+              type="button"
+              disabled={isLoading}
+              onClick={() => applyPrompt(item.prompt)}
+              className="orwix-chip relative rounded-full px-3.5 py-2 text-xs font-semibold disabled:opacity-50"
+            >
+              <span className="relative z-[1]">{item.primary}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {attachError ? (
         <p className="mt-2 text-center text-sm text-destructive">{attachError}</p>
@@ -517,7 +469,21 @@ export function OrwixHero({
                     key={item}
                     type="button"
                     className="block w-full rounded-lg px-3 py-2.5 text-left text-sm text-foreground transition-colors hover:bg-primary/10"
-                    onClick={() => applyPrompt(item)}
+                    onClick={() => {
+                      if (item.includes("Slayt")) selectMode("slides");
+                      else if (item.includes("Tasarım")) selectMode("design");
+                      else if (item.toLowerCase().includes("kod"))
+                        selectMode("apps");
+                      applyPrompt(
+                        item.includes("Slayt")
+                          ? "Yatırımcı sunumu için profesyonel slaytlar oluştur"
+                          : item.includes("Tasarım")
+                            ? "Modern bir startup için marka tasarım sistemi oluştur"
+                            : item.toLowerCase().includes("kod")
+                              ? "TypeScript ile temiz, production kalitesinde kod yaz"
+                              : item,
+                      );
+                    }}
                   >
                     {item}
                   </button>

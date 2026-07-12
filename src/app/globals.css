@@ -49,43 +49,42 @@
 }
 
 :root {
-  --background: #e8f5f2;
-  --foreground: #0b1f1e;
-  --card: rgba(255, 255, 255, 0.92);
-  --card-foreground: #0b1f1e;
+  --background: #f3f7f6;
+  --foreground: #0c1918;
+  --card: rgba(255, 255, 255, 0.94);
+  --card-foreground: #0c1918;
   --popover: #ffffff;
-  --popover-foreground: #0b1f1e;
-  --primary: #0f766e;
+  --popover-foreground: #0c1918;
+  --primary: #0d5c56;
   --primary-foreground: #ffffff;
-  --secondary: #d5efe9;
-  --secondary-foreground: #115e59;
-  --muted: #dff3ee;
-  --muted-foreground: #4a6562;
-  --accent: rgba(15, 118, 110, 0.12);
-  --accent-foreground: #0f766e;
+  --secondary: #e4efed;
+  --secondary-foreground: #134e4a;
+  --muted: #e8f0ee;
+  --muted-foreground: #5a6f6c;
+  --accent: rgba(13, 92, 86, 0.1);
+  --accent-foreground: #0d5c56;
   --destructive: #dc2626;
-  --border: rgba(15, 118, 110, 0.18);
+  --border: rgba(12, 25, 24, 0.1);
   --input: #ffffff;
-  --ring: #0d9488;
-  --radius: 0.875rem;
+  --ring: #0f766e;
+  --radius: 0.95rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #4a6562;
-  --sidebar-primary: #0f766e;
+  --sidebar-foreground: #5a6f6c;
+  --sidebar-primary: #0d5c56;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8f5f2;
-  --sidebar-accent-foreground: #0b1f1e;
-  --sidebar-border: rgba(15, 118, 110, 0.16);
-  --sidebar-ring: #0d9488;
-  --orwix-accent: #0891b2;
-  --orwix-glow: rgba(15, 118, 110, 0.22);
-  --orwix-surface: rgba(255, 255, 255, 0.82);
-  --orwix-gradient: linear-gradient(135deg, #115e59 0%, #0d9488 45%, #0e7490 100%);
+  --sidebar-accent: #f3f7f6;
+  --sidebar-accent-foreground: #0c1918;
+  --sidebar-border: rgba(12, 25, 24, 0.08);
+  --sidebar-ring: #0f766e;
+  --orwix-accent: #0e7490;
+  --orwix-glow: rgba(13, 92, 86, 0.14);
+  --orwix-surface: rgba(255, 255, 255, 0.86);
+  --orwix-gradient: linear-gradient(135deg, #0b4f4a 0%, #0f766e 48%, #0e7490 100%);
   --orwix-border-gradient: linear-gradient(
-    135deg,
-    rgba(15, 118, 110, 0.75),
-    rgba(13, 148, 136, 0.7),
-    rgba(8, 145, 178, 0.7),
-    rgba(15, 118, 110, 0.75)
+    120deg,
+    rgba(13, 92, 86, 0.55),
+    rgba(14, 116, 144, 0.35),
+    rgba(13, 92, 86, 0.55)
   );
   --orwix-hero-gradient: linear-gradient(
     115deg,
@@ -100,31 +99,33 @@
   );
   --orwix-hero-gradient-light: linear-gradient(
     115deg,
-    #115e59 0%,
-    #0d9488 16%,
-    #06b6d4 32%,
-    #14b8a6 48%,
-    #0891b2 64%,
-    #0f766e 80%,
-    #115e59 100%
+    #0b4f4a 0%,
+    #0f766e 22%,
+    #0e7490 48%,
+    #0d5c56 74%,
+    #0b4f4a 100%
   );
   --mx: 0px;
   --my: 0px;
-  --orwix-orb-1: rgba(13, 148, 136, 0.4);
-  --orwix-orb-2: rgba(6, 182, 212, 0.32);
-  --orwix-orb-3: rgba(20, 184, 166, 0.26);
-  --orwix-orb-4: rgba(244, 63, 94, 0.16);
-  --orwix-grid-rgb: 13, 148, 136;
-  --orwix-spotlight: rgba(13, 148, 136, 0.14);
-  --orwix-beam-start: rgba(13, 148, 136, 0.45);
-  --orwix-beam-mid: rgba(8, 145, 178, 0.18);
-  --orwix-beam-glow: rgba(15, 118, 110, 0.22);
-  --orwix-icon-from: #0f766e;
-  --orwix-icon-via: #0d9488;
+  --orwix-orb-1: rgba(15, 118, 110, 0.28);
+  --orwix-orb-2: rgba(14, 116, 144, 0.18);
+  --orwix-orb-3: rgba(13, 92, 86, 0.16);
+  --orwix-orb-4: rgba(15, 23, 42, 0.06);
+  --orwix-grid-rgb: 13, 92, 86;
+  --orwix-spotlight: rgba(15, 118, 110, 0.1);
+  --orwix-beam-start: rgba(15, 118, 110, 0.28);
+  --orwix-beam-mid: rgba(14, 116, 144, 0.12);
+  --orwix-beam-glow: rgba(13, 92, 86, 0.14);
+  --orwix-scroll-from: var(--orwix-icon-to);
+  --orwix-scroll-via: var(--orwix-icon-via);
+  --orwix-scroll-to: var(--orwix-icon-from);
+  --orwix-scroll-track: color-mix(in srgb, var(--foreground) 7%, transparent);
+  --orwix-icon-from: #0b4f4a;
+  --orwix-icon-via: #0f766e;
   --orwix-icon-to: #0e7490;
-  --orwix-icon-ink: rgba(11, 31, 30, 0.22);
-  --orwix-icon-core-opacity: 0.18;
-  --orwix-icon-track-opacity: 0.65;
+  --orwix-icon-ink: rgba(12, 25, 24, 0.18);
+  --orwix-icon-core-opacity: 0.14;
+  --orwix-icon-track-opacity: 0.55;
 }
 
 .dark {
@@ -156,6 +157,10 @@
   --sidebar-ring: #2dd4bf;
   --orwix-glow: rgba(45, 212, 191, 0.45);
   --orwix-surface: rgba(2, 20, 22, 0.72);
+  --orwix-scroll-from: var(--orwix-icon-to);
+  --orwix-scroll-via: var(--orwix-icon-via);
+  --orwix-scroll-to: var(--orwix-icon-from);
+  --orwix-scroll-track: rgba(255, 255, 255, 0.08);
   --orwix-icon-from: #14b8a6;
   --orwix-icon-via: #2dd4bf;
   --orwix-icon-to: #67e8f9;
@@ -476,17 +481,22 @@
 
   .orwix-hero-subtitle,
   .orwix-hero-subtitle-em {
-    color: #0a0a0a;
+    color: color-mix(in srgb, var(--foreground) 68%, transparent);
     transition: color 0.35s ease;
   }
 
   .orwix-hero-subtitle-em {
     font-weight: 600;
+    color: color-mix(in srgb, var(--foreground) 88%, transparent);
   }
 
   html.dark .orwix-hero-subtitle,
   html.dark .orwix-hero-subtitle-em {
-    color: #ffffff;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  html.dark .orwix-hero-subtitle-em {
+    color: rgba(255, 255, 255, 0.92);
   }
 
   @keyframes orwix-hero-shimmer {
@@ -526,13 +536,11 @@
   }
 
   html:not(.dark) .orwix-glass {
-    border: 1px solid color-mix(in srgb, var(--primary) 18%, rgba(15, 23, 42, 0.08));
-    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(12, 25, 24, 0.08);
+    background: rgba(255, 255, 255, 0.78);
     box-shadow:
-      0 0 0 1px rgba(255, 255, 255, 0.95) inset,
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 12px 32px rgba(15, 23, 42, 0.06),
-      0 0 0 1px color-mix(in srgb, var(--primary) 6%, transparent);
+      0 1px 0 rgba(255, 255, 255, 0.9) inset,
+      0 10px 30px rgba(12, 25, 24, 0.05);
   }
 
   .orwix-nav-link {
@@ -562,23 +570,23 @@
   /* ── Composer with animated border ── */
   .orwix-composer-wrap {
     position: relative;
-    border-radius: 28px;
-    padding: 1.5px;
+    border-radius: 22px;
+    padding: 1px;
     background: var(--orwix-border-gradient);
-    background-size: 300% 300%;
-    animation: orwix-border-flow 6s ease infinite;
+    background-size: 220% 220%;
+    animation: orwix-border-flow 10s ease infinite;
     box-shadow:
-      0 0 40px var(--orwix-glow),
-      0 0 80px color-mix(in srgb, var(--primary) 20%, transparent);
+      0 1px 0 rgba(255, 255, 255, 0.7) inset,
+      0 18px 50px rgba(12, 25, 24, 0.08);
     transition:
-      box-shadow 0.45s ease,
-      filter 0.45s ease;
+      box-shadow 0.4s ease,
+      filter 0.4s ease;
   }
 
   html:not(.dark) .orwix-composer-wrap {
     box-shadow:
-      0 8px 28px color-mix(in srgb, var(--primary) 12%, transparent),
-      0 2px 8px rgba(15, 23, 42, 0.05);
+      0 1px 0 rgba(255, 255, 255, 0.85) inset,
+      0 14px 40px rgba(12, 25, 24, 0.07);
   }
 
   @keyframes orwix-border-flow {
@@ -592,45 +600,48 @@
   }
 
   .orwix-composer {
-    border-radius: 27px;
+    border-radius: 21px;
     background: var(--card);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(22px) saturate(1.2);
     transition: box-shadow 0.3s ease;
   }
 
   html:not(.dark) .orwix-composer {
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.97);
   }
 
   .orwix-composer-wrap:focus-within {
     box-shadow:
-      0 0 0 4px color-mix(in srgb, var(--primary) 20%, transparent),
-      0 0 60px var(--orwix-glow),
-      0 0 100px color-mix(in srgb, var(--primary) 25%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent),
+      0 18px 48px rgba(12, 25, 24, 0.1);
   }
 
   html:not(.dark) .orwix-composer-wrap:focus-within {
     box-shadow:
-      0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent),
-      0 10px 32px color-mix(in srgb, var(--primary) 14%, transparent);
+      0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent),
+      0 16px 44px rgba(12, 25, 24, 0.09);
   }
 
   /* ── Chips ── */
   .orwix-chip {
     position: relative;
-    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
-    background: rgba(4, 20, 24, 0.6);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    background: rgba(255, 255, 255, 0.55);
     color: var(--foreground);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
     overflow: hidden;
-    transition: all 0.25s ease;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   html:not(.dark) .orwix-chip {
-    background: #ffffff;
-    color: #0f172a;
-    border-color: color-mix(in srgb, var(--primary) 22%, rgba(15, 23, 42, 0.08));
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+    background: rgba(255, 255, 255, 0.82);
+    color: #0c1918;
+    border-color: rgba(12, 25, 24, 0.1);
+    box-shadow: 0 1px 2px rgba(12, 25, 24, 0.04);
   }
 
   .orwix-chip::before {
@@ -639,19 +650,17 @@
     inset: 0;
     background: linear-gradient(
       135deg,
-      color-mix(in srgb, var(--primary) 15%, transparent),
-      color-mix(in srgb, var(--orwix-icon-to) 10%, transparent)
+      color-mix(in srgb, var(--primary) 10%, transparent),
+      transparent 70%
     );
     opacity: 0;
-    transition: opacity 0.25s ease;
+    transition: opacity 0.2s ease;
   }
 
   .orwix-chip:hover {
-    border-color: color-mix(in srgb, var(--primary) 50%, transparent);
-    transform: translateY(-2px);
-    box-shadow:
-      0 8px 24px var(--orwix-glow),
-      0 0 20px color-mix(in srgb, var(--primary) 10%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(12, 25, 24, 0.08);
   }
 
   .orwix-chip:hover::before {
@@ -662,43 +671,31 @@
     position: relative;
     z-index: 1;
     display: flex;
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     align-items: center;
     justify-content: center;
-    border-radius: 9999px;
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 30%, transparent),
-      color-mix(in srgb, var(--orwix-icon-to) 20%, transparent)
-    );
-    color: var(--accent-foreground);
-    box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 30%, transparent);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--primary) 12%, transparent);
+    color: var(--primary);
+    box-shadow: none;
   }
 
   html:not(.dark) .orwix-chip-icon {
-    color: var(--accent-foreground);
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 15%, transparent),
-      color-mix(in srgb, var(--orwix-icon-to) 10%, transparent)
-    );
+    color: var(--primary);
+    background: color-mix(in srgb, var(--primary) 10%, white 90%);
   }
 
   /* ── Buttons ── */
   .orwix-send-btn {
     background: var(--orwix-gradient);
-    box-shadow:
-      0 4px 20px var(--orwix-glow),
-      0 0 30px color-mix(in srgb, var(--primary) 20%, transparent);
+    box-shadow: 0 8px 22px rgba(12, 25, 24, 0.16);
     transition: transform 0.15s ease, box-shadow 0.15s ease;
   }
 
   .orwix-send-btn:hover:not(:disabled) {
-    transform: scale(1.08);
-    box-shadow:
-      0 6px 28px var(--orwix-glow),
-      0 0 40px color-mix(in srgb, var(--primary) 30%, transparent);
+    transform: scale(1.04);
+    box-shadow: 0 10px 26px rgba(12, 25, 24, 0.2);
   }
 
   .orwix-send-btn:disabled {
@@ -750,39 +747,28 @@
 
   /* ── Badges ── */
   .orwix-badge {
-    border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
-    background: color-mix(in srgb, var(--primary) 12%, transparent);
-    color: #ffffff;
-    box-shadow: 0 0 24px color-mix(in srgb, var(--primary) 20%, transparent);
-    animation: orwix-badge-glow 3s ease-in-out infinite;
-  }
-
-  html:not(.dark) .orwix-badge {
-    color: #0f172a;
-    background: rgba(255, 255, 255, 0.85);
-    border-color: color-mix(in srgb, var(--primary) 22%, rgba(15, 23, 42, 0.08));
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 8px 20px color-mix(in srgb, var(--primary) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+    background: color-mix(in srgb, var(--card) 80%, transparent);
+    color: var(--foreground);
+    box-shadow: 0 8px 24px rgba(12, 25, 24, 0.06);
     animation: none;
   }
 
+  html:not(.dark) .orwix-badge {
+    color: #0c1918;
+    background: rgba(255, 255, 255, 0.78);
+    border-color: rgba(12, 25, 24, 0.08);
+    box-shadow: 0 8px 24px rgba(12, 25, 24, 0.05);
+  }
+
   html.dark .orwix-badge {
-    color: #ffffff;
+    color: #ecfeff;
+    border-color: color-mix(in srgb, var(--primary) 22%, transparent);
+    background: color-mix(in srgb, var(--card) 70%, transparent);
   }
 
   .orwix-badge svg {
-    color: inherit;
-  }
-
-  @keyframes orwix-badge-glow {
-    0%,
-    100% {
-      box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 20%, transparent);
-    }
-    50% {
-      box-shadow: 0 0 32px color-mix(in srgb, var(--primary) 35%, transparent);
-    }
+    color: var(--primary);
   }
 
   .orwix-wordmark-hero {
@@ -1146,12 +1132,13 @@
 
   /* ── Chat bubbles ── */
   .orwix-user-bubble {
-    background: linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--primary) 25%, transparent),
-      color-mix(in srgb, var(--primary) 15%, transparent)
-    );
-    border: 1px solid color-mix(in srgb, var(--primary) 25%, transparent);
+    background: color-mix(in srgb, var(--primary) 10%, white 90%);
+    border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+  }
+
+  html.dark .orwix-user-bubble {
+    background: color-mix(in srgb, var(--primary) 16%, transparent);
+    border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
   }
 
   .orwix-typing-dot {
@@ -1176,22 +1163,136 @@
     }
   }
 
+  .orwix-scroll-hide {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .orwix-scroll-hide::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
+    background: transparent !important;
+  }
+
+  .orwix-scroll-hide::-webkit-scrollbar-button,
+  .orwix-scroll-hide::-webkit-scrollbar-track,
+  .orwix-scroll-hide::-webkit-scrollbar-thumb,
+  .orwix-scroll-hide::-webkit-scrollbar-corner {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  .orwix-chat-scroll-track {
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
+    transition: opacity 0.2s ease, background 0.3s ease;
+  }
+
+  .orwix-chat-scroll-thumb {
+    border-radius: 9999px;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 78%, white) 0%,
+      var(--primary) 48%,
+      color-mix(in srgb, var(--primary) 72%, black) 100%
+    );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent),
+      0 6px 16px color-mix(in srgb, var(--primary) 28%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    opacity: 0.95;
+    transition:
+      opacity 0.2s ease,
+      transform 0.15s ease,
+      box-shadow 0.2s ease,
+      background 0.3s ease;
+  }
+
+  .orwix-chat-scroll-thumb:hover,
+  .orwix-chat-scroll-thumb-active {
+    opacity: 1;
+    transform: scaleX(1.2);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent),
+      0 8px 20px color-mix(in srgb, var(--primary) 36%, transparent),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  html.dark .orwix-chat-scroll-track {
+    background: color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  html.dark .orwix-chat-scroll-thumb {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 88%, white) 0%,
+      var(--primary) 50%,
+      color-mix(in srgb, var(--primary) 75%, #0f172a) 100%
+    );
+  }
+
+  .orwix-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--primary) 45%, #94a3b8)
+      transparent;
+  }
+
+  .orwix-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .orwix-scroll::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .orwix-scroll::-webkit-scrollbar-track {
+    margin-block: 12px;
+    background: transparent;
+  }
+
+  .orwix-scroll::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 50%, #94a3b8),
+      color-mix(in srgb, var(--primary) 70%, #64748b)
+    );
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+  }
+
+  .orwix-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--primary) 65%, #cbd5e1),
+      var(--primary)
+    );
+  }
+
+  .orwix-scroll::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
   .orwix-message-enter {
-    animation: orwix-message-enter 0.28s ease-out both;
+    animation: orwix-message-enter 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .orwix-caret {
-    animation: orwix-caret-blink 0.9s steps(1, end) infinite;
+    animation: orwix-caret-blink 1.05s ease-in-out infinite;
   }
 
   @keyframes orwix-caret-blink {
     0%,
-    45% {
+    42% {
       opacity: 1;
     }
-    50%,
+    58%,
     100% {
-      opacity: 0;
+      opacity: 0.15;
     }
   }
 

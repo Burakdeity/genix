@@ -3,8 +3,12 @@ import type {
   GeminiGenerateResponse,
   GeneratePayload,
   ImageGeneratePayload,
+  VideoGeneratePayload,
 } from "@/types/chat.types";
-import type { GeminiImageGenerateResponse } from "@/server/types/gemini.types";
+import type {
+  GeminiImageGenerateResponse,
+  GeminiVideoGenerateResponse,
+} from "@/server/types/gemini.types";
 
 export class ClientApiError extends Error {
   readonly code: string;
@@ -20,6 +24,7 @@ export class ClientApiError extends Error {
 
 interface StreamEventPayload {
   text?: string;
+  sources?: Array<{ title: string; uri: string }>;
   error?: {
     message: string;
     code: string;
@@ -157,9 +162,49 @@ export async function generateGeminiImage(
   return parseImageApiResponse(response);
 }
 
+async function parseVideoApiResponse(
+  response: Response,
+): Promise<GeminiVideoGenerateResponse> {
+  const data: ApiResponse<GeminiVideoGenerateResponse> = await response.json();
+
+  if (!response.ok || !data.success) {
+    const error = data.success
+      ? {
+          code: "INTERNAL_ERROR",
+          message: "Beklenmeyen bir hata oluştu.",
+          statusCode: response.status,
+        }
+      : data.error;
+
+    throw new ClientApiError(error.message, error.code, error.statusCode);
+  }
+
+  return data.data;
+}
+
+export async function generateGeminiVideo(
+  payload: VideoGeneratePayload,
+): Promise<GeminiVideoGenerateResponse> {
+  let response: Response;
+
+  try {
+    response = await fetch("/api/gemini/video", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      redirect: "follow",
+    });
+  } catch (error) {
+    throw toFriendlyNetworkError(error);
+  }
+
+  return parseVideoApiResponse(response);
+}
+
 async function readGeminiStream(
   response: Response,
   onChunk: (text: string) => void,
+  onSources?: (sources: Array<{ title: string; uri: string }>) => void,
 ): Promise<void> {
   if (!response.body) {
     throw new ClientApiError(
@@ -186,6 +231,10 @@ async function readGeminiStream(
         parsed.error.code,
         parsed.error.statusCode,
       );
+    }
+
+    if (parsed.sources?.length) {
+      onSources?.(parsed.sources);
     }
 
     if (parsed.text) {
@@ -225,6 +274,7 @@ async function readGeminiStream(
 export async function streamGeminiResponse(
   payload: Omit<GeneratePayload, "structured">,
   onChunk: (text: string) => void,
+  onSources?: (sources: Array<{ title: string; uri: string }>) => void,
 ): Promise<void> {
   let response: Response;
 
@@ -244,6 +294,7 @@ export async function streamGeminiResponse(
     });
     if (fallback.text) {
       onChunk(fallback.text);
+      if (fallback.sources?.length) onSources?.(fallback.sources);
       return;
     }
     throw toFriendlyNetworkError(error);
@@ -274,7 +325,7 @@ export async function streamGeminiResponse(
   }
 
   try {
-    await readGeminiStream(response, onChunk);
+    await readGeminiStream(response, onChunk, onSources);
   } catch (error) {
     if (error instanceof ClientApiError) {
       throw error;
@@ -287,6 +338,7 @@ export async function streamGeminiResponse(
       });
       if (fallback.text) {
         onChunk(fallback.text);
+        if (fallback.sources?.length) onSources?.(fallback.sources);
         return;
       }
     }

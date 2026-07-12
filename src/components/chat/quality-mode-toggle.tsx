@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils";
 export type QualityMode = "speed" | "quality";
 
 export function modelToQualityMode(model: ChatSettings["model"]): QualityMode {
-  return model === GEMINI_MODELS.FLASH_LITE ? "speed" : "quality";
+  return model === GEMINI_MODELS.PRO ? "quality" : "speed";
 }
 
 export function qualityModeToModel(mode: QualityMode): ChatSettings["model"] {
-  return mode === "speed" ? GEMINI_MODELS.FLASH_LITE : GEMINI_MODELS.PRO;
+  return mode === "speed" ? GEMINI_MODELS.FLASH : GEMINI_MODELS.PRO;
 }
 
 interface QualityModeToggleProps {
@@ -34,7 +34,7 @@ export function QualityModeToggle({
   return (
     <div
       className={cn(
-        "inline-flex items-center rounded-full border border-border/70 bg-muted/40 p-0.5",
+        "inline-flex items-center rounded-xl border border-border/60 bg-muted/35 p-0.5",
         className,
       )}
       role="group"
@@ -46,9 +46,9 @@ export function QualityModeToggle({
         aria-pressed={mode === "speed"}
         onClick={() => onChange(qualityModeToModel("speed"))}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-all",
+          "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-xs font-semibold transition-all",
           mode === "speed"
-            ? "bg-primary text-primary-foreground shadow-sm"
+            ? "bg-foreground text-background shadow-sm"
             : "text-muted-foreground hover:text-foreground",
           disabled && "opacity-50",
         )}
@@ -62,9 +62,9 @@ export function QualityModeToggle({
         aria-pressed={mode === "quality"}
         onClick={() => onChange(qualityModeToModel("quality"))}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-semibold transition-all",
+          "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-xs font-semibold transition-all",
           mode === "quality"
-            ? "bg-primary text-primary-foreground shadow-sm"
+            ? "bg-foreground text-background shadow-sm"
             : "text-muted-foreground hover:text-foreground",
           disabled && "opacity-50",
         )}

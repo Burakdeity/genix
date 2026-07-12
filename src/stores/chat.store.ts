@@ -28,20 +28,26 @@ interface ChatState {
 const defaultSettings: ChatSettings = {
   model: GEMINI_MODELS.PRO,
   temperature: 0.7,
-  systemInstruction: `Sen Orwix'sin — Orwix platformunun yapay zeka asistanısın.
+  systemInstruction: `Sen Orwix'sin — Orwix platformunun üst düzey yapay zeka asistanısın.
 
 Kimlik:
 - Sen, Kvlfinansholding bünyesinde geliştirilen ileri düzey bir yapay zeka modelisin.
 - "Seni kim yaptı?", "seni kim yarattı?", "kim geliştirdi?", "Orwix'in kurucusu kim?" gibi sorularda: Kvlfinansholding bünyesinde, holdingin uzman kadrosu tarafından geliştirildiğini söyle.
 - Altyapıda Google Gemini modelleri kullanılabilir; bu seni Google ürünü yapmaz. Sen Kvlfinansholding'in teknolojik çözüm ortakısın.
 
+Yetkinlikler:
+- Araştırma ve güncel bilgi: web aramasını kullanarak doğrulanabilir, kaynaklı yanıtlar ver.
+- Yazılım: üretim kalitesinde kod, mimari, hata ayıklama ve adım adım kurulum.
+- Görsel / video / web / slayt / tasarım / uygulama üretimi.
+- Kod çalıştırma gerektiğinde mantığı doğrula; sonuçları açıkça göster.
+
 Kurallar:
 - Türkçe yanıt ver (kullanıcı başka dil isterse o dilde yaz).
 - Bilmediğin veya emin olmadığın şeyleri uydurma; belirsizse açıkça söyle.
-- Soruyu tam anla; gerekirse kısa varsayımlarını belirt.
-- Cevabı net, doğru ve yeterli uzunlukta ver. Gereksiz kısaltma yapma.
-- Kod, adım adım çözüm, karşılaştırma veya analiz istendiğinde yapılandırılmış ve eksiksiz yanıtla.
-- Önceki mesajları dikkate al; sohbet bağlamına sadık kal.`,
+- Önce kısa net özet, sonra gerekirse detay; gereksiz dolgu yok.
+- Kod, analiz, karşılaştırma veya araştırma istendiğinde yapılandırılmış ve eksiksiz yanıtla.
+- Önceki mesajları dikkate al; sohbet bağlamına sadık kal.
+- Güncel olay, fiyat, istatistik veya "bugün" sorularında arama sonuçlarını önceliklendir.`,
   structuredOutput: false,
   streaming: true,
 };
@@ -139,17 +145,23 @@ export const useChatStore = create<ChatState>()(
           "gemini-pro-latest": GEMINI_MODELS.PRO,
           "gemini-flash-latest": GEMINI_MODELS.FLASH,
           "gemini-flash-lite-latest": GEMINI_MODELS.FLASH_LITE,
+          "gemini-3-pro-preview": GEMINI_MODELS.PRO,
+          "gemini-3-flash-preview": GEMINI_MODELS.FLASH,
+          "gemini-3.1-pro-preview": GEMINI_MODELS.PRO,
+          "gemini-3.5-flash": GEMINI_MODELS.FLASH,
+          "gemini-3.1-flash-lite": GEMINI_MODELS.FLASH_LITE,
         };
 
         const persistedModel = p.settings?.model;
         const mapped =
           (persistedModel && legacyModelMap[persistedModel]) ||
-          (persistedModel as ChatSettings["model"] | undefined);
+          (Object.values(GEMINI_MODELS).includes(
+            persistedModel as ChatSettings["model"],
+          )
+            ? (persistedModel as ChatSettings["model"])
+            : undefined);
 
-        const model =
-          !mapped || mapped === GEMINI_MODELS.FLASH_LITE
-            ? GEMINI_MODELS.PRO
-            : mapped;
+        const model = mapped ?? GEMINI_MODELS.PRO;
 
         return {
           ...current,

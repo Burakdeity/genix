@@ -9,13 +9,18 @@ import {
 import {
   GEMINI_IMAGE_MODELS,
   GEMINI_MODELS,
+  GEMINI_VIDEO_MODELS,
   type GeminiGenerateRequest,
   type GeminiGenerateResponse,
   type GeminiGeneratedImage,
+  type GeminiGeneratedVideo,
+  type GeminiGroundingSource,
   type GeminiImageGenerateRequest,
   type GeminiImageGenerateResponse,
   type GeminiModelId,
   type GeminiStreamChunk,
+  type GeminiVideoGenerateRequest,
+  type GeminiVideoGenerateResponse,
 } from "@/server/types/gemini.types";
 import { isRetryableError, withRetry } from "@/server/utils/retry";
 
@@ -31,7 +36,13 @@ const IMAGE_FALLBACK_MODELS = [
   GEMINI_IMAGE_MODELS.FLASH,
 ] as const;
 
-const DEFAULT_MAX_OUTPUT_TOKENS = 8192;
+const VIDEO_FALLBACK_MODELS = [
+  GEMINI_VIDEO_MODELS.FAST,
+  GEMINI_VIDEO_MODELS.PRO,
+  GEMINI_VIDEO_MODELS.LITE,
+] as const;
+
+const DEFAULT_MAX_OUTPUT_TOKENS = 16384;
 
 type GeminiPart =
   | { text: string }
@@ -118,6 +129,17 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
 
 function buildGenerateConfig(request: GeminiGenerateRequest) {
   const { config, structuredOutput, systemInstruction } = request;
+  const tools: Array<Record<string, object>> = [];
+
+  // Structured JSON and tools conflict on many Gemini endpoints.
+  if (!structuredOutput) {
+    if (request.enableSearch) {
+      tools.push({ googleSearch: {} });
+    }
+    if (request.enableCodeExecution) {
+      tools.push({ codeExecution: {} });
+    }
+  }
 
   return {
     ...(systemInstruction ? { systemInstruction } : {}),
@@ -125,6 +147,7 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
     maxOutputTokens: config?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
     ...(config?.topP !== undefined ? { topP: config.topP } : {}),
     ...(config?.topK !== undefined ? { topK: config.topK } : {}),
+    ...(tools.length > 0 ? { tools } : {}),
     ...(structuredOutput
       ? {
           responseMimeType: structuredOutput.responseMimeType,
@@ -134,35 +157,151 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
   };
 }
 
+type ResponsePart = {
+  text?: string;
+  thought?: boolean;
+  executableCode?: { language?: string; code?: string };
+  codeExecutionResult?: { output?: string; outcome?: string };
+};
+
 function extractResponseText(response: {
   text?: string;
   candidates?: Array<{
     content?: {
-      parts?: Array<{ text?: string; thought?: boolean }>;
+      parts?: ResponsePart[];
     };
   }>;
 }): string {
-  const direct = response.text?.trim() ?? "";
-  if (direct) return direct;
-
   const parts = response.candidates?.[0]?.content?.parts ?? [];
-  return parts
-    .filter((part) => !part.thought && typeof part.text === "string")
-    .map((part) => part.text!.trim())
+  const composed = parts
+    .map((part) => {
+      if (part.thought) return "";
+      if (typeof part.text === "string" && part.text.trim()) {
+        return part.text.trim();
+      }
+      if (part.executableCode?.code) {
+        const lang = part.executableCode.language || "code";
+        return `\`\`\`${lang}\n${part.executableCode.code}\n\`\`\``;
+      }
+      if (part.codeExecutionResult?.output) {
+        return `Çıktı:\n\`\`\`\n${part.codeExecutionResult.output}\n\`\`\``;
+      }
+      return "";
+    })
     .filter(Boolean)
-    .join("\n")
+    .join("\n\n")
     .trim();
+
+  if (composed) return composed;
+
+  return response.text?.trim() ?? "";
 }
 
 function extractChunkText(chunk: {
   text?: string;
   candidates?: Array<{
     content?: {
-      parts?: Array<{ text?: string; thought?: boolean }>;
+      parts?: ResponsePart[];
     };
   }>;
 }): string {
   return extractResponseText(chunk);
+}
+
+function extractGroundingSources(response: {
+  candidates?: Array<{
+    groundingMetadata?: {
+      groundingChunks?: Array<{
+        web?: { uri?: string; title?: string };
+      }>;
+    };
+  }>;
+}): GeminiGroundingSource[] {
+  const chunks =
+    response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+  const sources: GeminiGroundingSource[] = [];
+  const seen = new Set<string>();
+
+  for (const chunk of chunks) {
+    const uri = chunk.web?.uri?.trim();
+    if (!uri || seen.has(uri)) continue;
+    seen.add(uri);
+    sources.push({
+      title: chunk.web?.title?.trim() || uri,
+      uri,
+    });
+  }
+
+  return sources;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function videoToDataUrl(
+  client: GoogleGenAI,
+  videoFile: unknown,
+): Promise<GeminiGeneratedVideo | null> {
+  const file = videoFile as {
+    videoBytes?: string | Uint8Array;
+    uri?: string;
+    mimeType?: string;
+    video?: {
+      videoBytes?: string | Uint8Array;
+      uri?: string;
+      mimeType?: string;
+    };
+  };
+
+  const nested = file.video ?? file;
+  const mimeType = nested.mimeType || file.mimeType || "video/mp4";
+
+  if (nested.videoBytes) {
+    const bytes =
+      typeof nested.videoBytes === "string"
+        ? nested.videoBytes
+        : Buffer.from(nested.videoBytes).toString("base64");
+    return {
+      mimeType,
+      dataUrl: `data:${mimeType};base64,${bytes}`,
+    };
+  }
+
+  const uri = nested.uri || file.uri;
+  if (!uri) return null;
+
+  try {
+    // Prefer SDK download when available; fall back to authenticated fetch.
+    const download = (
+      client as unknown as {
+        files?: {
+          download?: (args: {
+            file: unknown;
+            downloadPath?: string;
+          }) => Promise<unknown>;
+        };
+      }
+    ).files?.download;
+
+    const apiKey =
+      process.env.GEMINI_API_KEY?.trim() || getServerEnv().GEMINI_API_KEY;
+    const separator = uri.includes("?") ? "&" : "?";
+    const response = await fetch(`${uri}${separator}key=${apiKey}`);
+    if (!response.ok) {
+      throw new Error(`Video indirilemedi (${response.status}).`);
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    void download;
+    return {
+      mimeType,
+      dataUrl: `data:${mimeType};base64,${buffer.toString("base64")}`,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function parseStructuredResponse(text: string): ChatStructuredResponse {
@@ -200,9 +339,11 @@ export class GeminiService {
               throw new Error("Gemini API boş yanıt döndürdü.");
             }
 
+            const sources = extractGroundingSources(response);
             const result: GeminiGenerateResponse = {
               text,
               model: model as GeminiModelId,
+              ...(sources.length > 0 ? { sources } : {}),
             };
 
             if (request.structuredOutput) {
@@ -221,10 +362,49 @@ export class GeminiService {
           isRetryableError(error) ||
           message.includes("boş yanıt") ||
           message.includes("not found") ||
-          message.includes("no longer available");
+          message.includes("no longer available") ||
+          message.includes("tool") ||
+          message.includes("google_search") ||
+          message.includes("code_execution");
 
         if (!shouldFallback) {
           throw mapGeminiError(error);
+        }
+
+        // If tools caused the failure, retry once without tools on same model.
+        if (
+          (request.enableSearch || request.enableCodeExecution) &&
+          (message.includes("tool") ||
+            message.includes("google_search") ||
+            message.includes("code_execution") ||
+            message.includes("invalid"))
+        ) {
+          try {
+            return await withRetry(
+              async () => {
+                const response = await this.client.models.generateContent({
+                  model,
+                  contents,
+                  config: buildGenerateConfig({
+                    ...request,
+                    enableSearch: false,
+                    enableCodeExecution: false,
+                  }),
+                });
+                const text = extractResponseText(response);
+                if (!text) {
+                  throw new Error("Gemini API boş yanıt döndürdü.");
+                }
+                return {
+                  text,
+                  model: model as GeminiModelId,
+                };
+              },
+              { maxAttempts: 1, baseDelayMs: 200 },
+            );
+          } catch {
+            // continue model fallback
+          }
         }
       }
     }
@@ -251,9 +431,14 @@ export class GeminiService {
           });
 
           let hasContent = false;
+          let lastSources: GeminiGroundingSource[] = [];
 
           for await (const chunk of stream) {
             const text = extractChunkText(chunk);
+            const sources = extractGroundingSources(chunk);
+            if (sources.length > 0) {
+              lastSources = sources;
+            }
             if (text) {
               hasContent = true;
               yield { text, done: false };
@@ -264,7 +449,11 @@ export class GeminiService {
             throw new Error("Gemini API boş akış yanıtı döndürdü.");
           }
 
-          yield { text: "", done: true };
+          yield {
+            text: "",
+            done: true,
+            ...(lastSources.length > 0 ? { sources: lastSources } : {}),
+          };
           return;
         } catch (error) {
           const mapped = mapGeminiError(error);
@@ -411,6 +600,99 @@ export class GeminiService {
           if (!shouldFallback) {
             throw mapGeminiError(error);
           }
+        }
+      }
+    }
+
+    throw mapGeminiError(lastError);
+  }
+
+  async generateVideo(
+    request: GeminiVideoGenerateRequest,
+  ): Promise<GeminiVideoGenerateResponse> {
+    const primary = request.model ?? GEMINI_VIDEO_MODELS.FAST;
+    const models = [
+      primary,
+      ...VIDEO_FALLBACK_MODELS.filter((model) => model !== primary),
+    ];
+    let lastError: unknown;
+
+    const prompt =
+      request.prompt.trim() ||
+      "Sinematik, yüksek kaliteli kısa bir video oluştur.";
+
+    for (const model of models) {
+      try {
+        let operation = await this.client.models.generateVideos({
+          model,
+          prompt,
+          config: {
+            numberOfVideos: 1,
+            ...(request.aspectRatio
+              ? { aspectRatio: request.aspectRatio }
+              : { aspectRatio: "16:9" }),
+          },
+        });
+
+        const maxPolls = 36;
+        for (let i = 0; i < maxPolls && !operation.done; i += 1) {
+          await sleep(8000);
+          operation = await this.client.operations.getVideosOperation({
+            operation,
+          });
+        }
+
+        if (!operation.done) {
+          throw new Error("Video üretimi zaman aşımına uğradı.");
+        }
+
+        const generated =
+          (
+            operation as {
+              response?: {
+                generatedVideos?: Array<{ video?: unknown } | unknown>;
+              };
+            }
+          ).response?.generatedVideos ?? [];
+
+        if (!generated.length) {
+          throw new Error(`Gemini video üretemedi (${model}).`);
+        }
+
+        const videos: GeminiGeneratedVideo[] = [];
+        for (const item of generated) {
+          const file =
+            item && typeof item === "object" && "video" in item
+              ? (item as { video: unknown }).video
+              : item;
+          const converted = await videoToDataUrl(this.client, file ?? item);
+          if (converted) videos.push(converted);
+        }
+
+        if (videos.length === 0) {
+          throw new Error("Video indirilemedi.");
+        }
+
+        return {
+          text: "Video hazır.",
+          videos,
+          model,
+        };
+      } catch (error) {
+        lastError = error;
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : "";
+        const shouldFallback =
+          isRetryableError(error) ||
+          message.includes("video üretemedi") ||
+          message.includes("not found") ||
+          message.includes("no longer available") ||
+          message.includes("not supported") ||
+          message.includes("permission") ||
+          message.includes("quota");
+
+        if (!shouldFallback) {
+          throw mapGeminiError(error);
         }
       }
     }

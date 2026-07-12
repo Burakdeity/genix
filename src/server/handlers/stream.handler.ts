@@ -23,8 +23,10 @@ const streamRequestSchema = z
       ])
       .optional()
       .default(GEMINI_MODELS.PRO),
-    systemInstruction: z.string().max(4000).optional(),
+    systemInstruction: z.string().max(8000).optional(),
     temperature: z.number().min(0).max(2).optional().default(0.7),
+    enableSearch: z.boolean().optional().default(true),
+    enableCodeExecution: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
     if (!value.prompt.trim() && value.images.length === 0) {
@@ -63,15 +65,22 @@ export async function* createGeminiStream(
       images: request.images.map(({ mimeType, data }) => ({ mimeType, data })),
       model: request.model as GeminiModelId,
       systemInstruction: request.systemInstruction,
+      enableSearch: request.enableSearch,
+      enableCodeExecution: request.enableCodeExecution,
       config: {
         temperature: request.temperature,
-        maxOutputTokens: 8192,
+        maxOutputTokens: 16384,
       },
     });
 
     for await (const chunk of stream) {
       if (chunk.text) {
         yield chunk.text;
+      }
+      if (chunk.done && chunk.sources?.length) {
+        yield `data: ${JSON.stringify({
+          sources: chunk.sources.slice(0, 6),
+        })}\n\n`;
       }
     }
   } catch (error) {

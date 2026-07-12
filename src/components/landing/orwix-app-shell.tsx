@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertCircle } from "lucide-react";
 
 import { ChatMessageItem } from "@/components/chat/chat-message";
+import { ChatScrollArea } from "@/components/chat/chat-scroll-area";
 import { OrwixBackground } from "@/components/landing/orwix-background";
 import { OrwixCookieConsent } from "@/components/landing/orwix-cookie-consent";
 import { OrwixFooter } from "@/components/landing/orwix-footer";
@@ -13,7 +14,12 @@ import { OrwixHero } from "@/components/landing/orwix-hero";
 import { OrwixMetaBanner } from "@/components/landing/orwix-meta-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
-import type { ChatAttachment, ChatMessage, ChatSettings } from "@/types/chat.types";
+import type {
+  ChatAttachment,
+  ChatMessage,
+  ChatSettings,
+  SendMessageOptions,
+} from "@/types/chat.types";
 
 interface PromptRequest {
   id: number;
@@ -27,6 +33,7 @@ interface OrwixAppShellProps {
   onSend: (
     message: string,
     attachments?: ChatAttachment[],
+    options?: SendMessageOptions,
   ) => Promise<void>;
   model: ChatSettings["model"];
   onModelChange: (model: ChatSettings["model"]) => void;
@@ -77,22 +84,24 @@ export function OrwixAppShell({
           )}
         >
           {hasMessages ? (
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pt-4 md:px-6 md:pt-6">
-              <div className="mx-auto max-w-3xl space-y-5 pb-4">
-                {messages.map((message, index) => (
-                  <ChatMessageItem
-                    key={message.id}
-                    message={message}
-                    isTyping={
-                      isLoading &&
-                      index === messages.length - 1 &&
-                      message.role === "assistant"
-                    }
-                  />
-                ))}
-                <div ref={messagesEndRef} className="h-px w-full shrink-0" />
+            <ChatScrollArea>
+              <div className="px-5 pt-5 md:px-8 md:pt-6">
+                <div className="mx-auto max-w-3xl space-y-6 pb-5">
+                  {messages.map((message, index) => (
+                    <ChatMessageItem
+                      key={message.id}
+                      message={message}
+                      isTyping={
+                        isLoading &&
+                        index === messages.length - 1 &&
+                        message.role === "assistant"
+                      }
+                    />
+                  ))}
+                  <div ref={messagesEndRef} className="h-px w-full shrink-0" />
+                </div>
               </div>
-            </div>
+            </ChatScrollArea>
           ) : null}
 
           <div

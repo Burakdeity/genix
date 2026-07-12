@@ -1,19 +1,21 @@
 export const ORWIX_META = {
-  title: "Orwix: Yapay Zeka ile Görsel, Web ve Uygulama",
+  title: "Orwix: Yapay Zeka ile Görsel, Video, Web ve Yazılım",
   description:
-    "Orwix ile stüdyo kalitesinde görseller üretin; web sitesi, slayt ve uygulamaları tek komutla hayata geçirin.",
+    "Orwix ile stüdyo kalitesinde görsel ve video üretin; web, slayt, uygulama ve yazılımı tek komutla hayata geçirin. Google Search destekli derin araştırma.",
 } as const;
 
 export type OrwixMode =
   | "general"
   | "image"
+  | "video"
   | "website"
   | "slides"
   | "design"
-  | "apps";
+  | "apps"
+  | "research";
 
 export const ORWIX_BANNER =
-  "Orwix — Stüdyo kalitesinde görsel üretin; slayt, web ve uygulama geliştirin.";
+  "Stüdyo kalitesinde görsel, video, web ve yazılım — tek komutla.";
 
 export const ORWIX_HEADER_NAV = {
   dropdowns: ["Özellikler", "Çözümler", "Kaynaklar"] as const,
@@ -29,35 +31,41 @@ export const ORWIX_HERO = {
     general: "Bir görev atayın veya herhangi bir şey sorun",
     image:
       "Üretmek istediğiniz görseli detaylı anlatın (ör. sinematik ürün fotoğrafı, logo, poster)",
+    video:
+      "Çekmek istediğiniz kısa videoyu anlatın (sahne, kamera, ışık, tempo)",
     website: "Oluşturmak istediğiniz web sitesini tanımlayın",
     slides: "Oluşturmak istediğiniz slaytları tanımlayın",
     design: "Oluşturmak istediğiniz tasarımı tanımlayın",
-    apps: "Geliştirmek istediğiniz uygulamayı tanımlayın",
+    apps: "Geliştirmek istediğiniz uygulamayı / yazılımı tanımlayın",
+    research: "Araştırmak istediğiniz konuyu yazın — güncel kaynaklarla yanıtlanır",
   },
   modeLabels: {
     general: null,
     image: "Görsel",
+    video: "Video",
     website: "Web Sitesi",
     slides: "Slaytlar",
     design: "Tasarım",
-    apps: "Uygulama",
+    apps: "Yazılım",
+    research: "Araştırma",
   },
 } as const;
 
 export const ORWIX_SUGGESTIONS: ReadonlyArray<{
   label: string;
   mode: OrwixMode;
-  icon: "image" | "slides" | "website" | "design" | "apps";
+  icon: "image" | "video" | "slides" | "website" | "design" | "apps" | "research";
 }> = [
   { label: "Görsel oluştur", mode: "image", icon: "image" },
-  { label: "Slaytlar oluştur", mode: "slides", icon: "slides" },
+  { label: "Video oluştur", mode: "video", icon: "video" },
+  { label: "Araştırma yap", mode: "research", icon: "research" },
   { label: "Web sitesi oluştur", mode: "website", icon: "website" },
-  { label: "Tasarım", mode: "design", icon: "design" },
-  { label: "Uygulama geliştir", mode: "apps", icon: "apps" },
+  { label: "Uygulama / yazılım", mode: "apps", icon: "apps" },
 ];
 
 export const ORWIX_MORE_SUGGESTIONS = [
-  "Araştırma yap",
+  "Slaytlar oluştur",
+  "Tasarım sistemi kur",
   "Belge özetle",
   "Kod yaz",
   "Veri analizi",
@@ -98,6 +106,29 @@ export const ORWIX_IMAGE_TEMPLATES = [
   },
 ] as const;
 
+export const ORWIX_VIDEO_TEMPLATES = [
+  {
+    primary: "Ürün videosu",
+    prompt:
+      "Modern bir kulaklığın 360 derece stüdyo tanıtım videosunu oluştur. Softbox ışık, yavaş kamera pani.",
+  },
+  {
+    primary: "Şehir drone",
+    prompt:
+      "Gün batımında neon ışıklı bir şehir üzerinden sinematik drone çekimi videosu oluştur.",
+  },
+  {
+    primary: "Doğa",
+    prompt:
+      "Sisli ormanda yavaş ilerleyen kamera ile atmosferik kısa video oluştur. Doğal ses hissi.",
+  },
+  {
+    primary: "Reels",
+    prompt:
+      "9:16 dikey, dinamik geçişli kısa sosyal medya reels videosu oluştur. Enerjik tempo.",
+  },
+] as const;
+
 export const ORWIX_TEMPLATES = [
   {
     primary: "E-ticaret",
@@ -127,13 +158,13 @@ export const ORWIX_FOOTER = {
 
 export const ORWIX_SURPRISE_PROMPTS = [
   "Neon ışıklı yağmurlu bir şehirde duran futuristik spor araba, sinematik gece fotoğrafı oluştur.",
+  "Gün batımında sahil yolunda ilerleyen klasik kırmızı spor arabanın kısa sinematik videosunu oluştur.",
   "Sıcak ve davetkar bir kahve dükkanı web sitesi tasarla. Menü, konum ve online sipariş bölümleri olsun.",
   "Yatırımcılara yönelik etkileyici bir sunum hazırla. Problem, çözüm, pazar, iş modeli ve yol haritası slaytları olsun.",
   "Modern bir startup için logo ve marka kiti oluştur. Renk paleti, tipografi ve kullanım örnekleri dahil olsun.",
   "Minimal ve dönüşüm odaklı bir e-ticaret mağazası sitesi oluştur. Ürün listesi, sepet ve ödeme akışı olsun.",
-  "Erken aşama bir SaaS startup için yüksek dönüşümlü landing page tasarla. Hero, özellikler ve CTA bölümleri olsun.",
-  "Tarayıcıda oynanabilir basit bir mini oyun fikri geliştir. Oynanış mekaniği, skor sistemi ve arayüz taslağı olsun.",
-  "Analitik odaklı bir yönetim paneli tasarla. KPI kartları, grafikler ve filtreleme alanı olsun.",
+  "TypeScript ile küçük bir görev yönetim API'si yaz. CRUD endpointleri ve örnek kullanım olsun.",
+  "2026 yapay zeka pazar trendlerini araştır ve kaynaklı kısa bir brifing hazırla.",
 ] as const;
 
 export const ORWIX_COOKIE = {

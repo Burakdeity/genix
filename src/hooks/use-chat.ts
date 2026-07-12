@@ -5,13 +5,24 @@ import { useCallback } from "react";
 import {
   generateGeminiImage,
   generateGeminiResponse,
+  generateGeminiVideo,
   streamGeminiResponse,
 } from "@/lib/api/gemini-client";
 import { getEasterEggReply } from "@/lib/chat/easter-eggs";
 import {
   detectAspectRatio,
+  enhanceImagePrompt,
   isImageGenerationPrompt,
 } from "@/lib/chat/image-prompt";
+import {
+  buildSystemInstruction,
+  shouldEnableCodeExecution,
+  shouldEnableSearch,
+} from "@/lib/chat/mode-prompts";
+import {
+  enhanceVideoPrompt,
+  isVideoGenerationPrompt,
+} from "@/lib/chat/video-prompt";
 import {
   createStreamTypewriter,
   typeText,
@@ -24,7 +35,13 @@ import {
   GUEST_IMAGE_LIMIT,
   useImageQuotaStore,
 } from "@/stores/image-quota.store";
-import type { ChatAttachment, ChatMessage } from "@/types/chat.types";
+import type {
+  ChatAttachment,
+  ChatMessage,
+  SendMessageOptions,
+} from "@/types/chat.types";
+import type { OrwixMode } from "@/content/orwix-content";
+import { GEMINI_MODELS, GEMINI_VIDEO_MODELS } from "@/server/types/gemini.types";
 
 function createMessageId(): string {
   return crypto.randomUUID();
@@ -55,10 +72,15 @@ export function useChat() {
   } = useChatStore();
 
   const sendMessage = useCallback(
-    async (prompt: string, attachments: ChatAttachment[] = []) => {
+    async (
+      prompt: string,
+      attachments: ChatAttachment[] = [],
+      options: SendMessageOptions = {},
+    ) => {
       const trimmed = prompt.trim();
       if ((!trimmed && attachments.length === 0) || isLoading) return;
 
+      const mode: OrwixMode = options.mode ?? "general";
       const apiImages = attachments.map(({ mimeType, data, name }) => ({
         mimeType,
         data,
@@ -98,7 +120,76 @@ export function useChat() {
         return;
       }
 
+      const wantsVideo =
+        mode === "video" || isVideoGenerationPrompt(trimmed);
+
+      if (wantsVideo) {
+        try {
+          await typeText(
+            "Video üretiliyor (Veo)… Bu 1–2 dakika sürebilir.\n",
+            updateLastAssistantMessage,
+          );
+
+          const videoResult = await generateGeminiVideo({
+            prompt: enhanceVideoPrompt(trimmed),
+            model:
+              settings.model === GEMINI_MODELS.PRO
+                ? GEMINI_VIDEO_MODELS.PRO
+                : GEMINI_VIDEO_MODELS.FAST,
+            aspectRatio: /\b(9:16|dikey|story|reels)\b/i.test(trimmed)
+              ? "9:16"
+              : "16:9",
+          });
+
+          await typeText(
+            videoResult.text.trim() || "Video hazır.",
+            updateLastAssistantMessage,
+          );
+
+          useChatStore.setState((state) => {
+            const updated = [...state.messages];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                videos: videoResult.videos.map((video) => ({
+                  mimeType: video.mimeType,
+                  dataUrl: video.dataUrl,
+                })),
+              };
+            }
+            return { messages: updated };
+          });
+        } catch (err) {
+          const message =
+            err instanceof Error
+              ? err.message
+              : "Video üretilirken bir hata oluştu.";
+          setError(message);
+
+          useChatStore.setState((state) => {
+            const next = [...state.messages];
+            const lastIndex = next.length - 1;
+            const lastMessage = next[lastIndex];
+
+            if (
+              lastIndex >= 0 &&
+              lastMessage.role === "assistant" &&
+              !lastMessage.content.trim()
+            ) {
+              return { messages: next.slice(0, -1) };
+            }
+
+            return { messages: next };
+          });
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
       const wantsImage =
+        mode === "image" ||
         isImageGenerationPrompt(trimmed) ||
         (attachments.length > 0 &&
           /\b(düzenle|edit|değiştir|varyasyon|yeniden\s+çiz|bu\s+görsel)\b/i.test(
@@ -129,10 +220,12 @@ export function useChat() {
 
         try {
           const imageResult = await generateGeminiImage({
-            prompt:
+            prompt: enhanceImagePrompt(
               trimmed ||
-              "Bu görselleri referans alarak kaliteli bir görsel üret.",
+                "Bu görselleri referans alarak kaliteli bir görsel üret.",
+            ),
             aspectRatio: detectAspectRatio(trimmed),
+            imageSize: "2K",
             images: apiImages,
           });
 
@@ -207,22 +300,45 @@ export function useChat() {
         },
       ];
 
+      const systemInstruction = buildSystemInstruction(
+        settings.systemInstruction,
+        mode,
+      );
+
       const payload = {
         prompt: trimmed,
         history,
         images: apiImages,
         model: settings.model,
-        systemInstruction: settings.systemInstruction || undefined,
+        systemInstruction: systemInstruction || undefined,
         temperature: settings.temperature,
         structured: settings.structuredOutput,
+        enableSearch: shouldEnableSearch(trimmed, mode),
+        enableCodeExecution: shouldEnableCodeExecution(trimmed, mode),
       };
 
       try {
         if (settings.streaming && !settings.structuredOutput) {
           const typewriter = createStreamTypewriter(updateLastAssistantMessage);
-          await streamGeminiResponse(payload, (chunk) => {
-            typewriter.push(chunk);
-          });
+          await streamGeminiResponse(
+            payload,
+            (chunk) => {
+              typewriter.push(chunk);
+            },
+            (sources) => {
+              useChatStore.setState((state) => {
+                const updated = [...state.messages];
+                const lastIndex = updated.length - 1;
+                if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+                  updated[lastIndex] = {
+                    ...updated[lastIndex],
+                    sources,
+                  };
+                }
+                return { messages: updated };
+              });
+            },
+          );
           await typewriter.done();
           return;
         }
@@ -239,6 +355,9 @@ export function useChat() {
               updated[lastIndex] = {
                 ...updated[lastIndex],
                 structuredData,
+                ...(response.sources?.length
+                  ? { sources: response.sources }
+                  : {}),
               };
             }
             return { messages: updated };
@@ -247,6 +366,19 @@ export function useChat() {
         }
 
         await typeText(response.text, updateLastAssistantMessage);
+        if (response.sources?.length) {
+          useChatStore.setState((state) => {
+            const updated = [...state.messages];
+            const lastIndex = updated.length - 1;
+            if (lastIndex >= 0 && updated[lastIndex].role === "assistant") {
+              updated[lastIndex] = {
+                ...updated[lastIndex],
+                sources: response.sources,
+              };
+            }
+            return { messages: updated };
+          });
+        }
       } catch (err) {
         const message =
           err instanceof Error

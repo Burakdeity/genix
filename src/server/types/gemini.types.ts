@@ -1,9 +1,10 @@
 import type { Schema } from "@google/genai";
 
+/** Top-tier Gemini 3.x aliases available on this API key */
 export const GEMINI_MODELS = {
-  FLASH_LITE: "gemini-flash-lite-latest",
-  FLASH: "gemini-flash-latest",
-  PRO: "gemini-pro-latest",
+  FLASH_LITE: "gemini-3.1-flash-lite",
+  FLASH: "gemini-3.5-flash",
+  PRO: "gemini-3.1-pro-preview",
 } as const;
 
 export type GeminiModelId = (typeof GEMINI_MODELS)[keyof typeof GEMINI_MODELS];
@@ -16,6 +17,15 @@ export const GEMINI_IMAGE_MODELS = {
 
 export type GeminiImageModelId =
   (typeof GEMINI_IMAGE_MODELS)[keyof typeof GEMINI_IMAGE_MODELS];
+
+export const GEMINI_VIDEO_MODELS = {
+  FAST: "veo-3.1-fast-generate-preview",
+  PRO: "veo-3.1-generate-preview",
+  LITE: "veo-3.1-lite-generate-preview",
+} as const;
+
+export type GeminiVideoModelId =
+  (typeof GEMINI_VIDEO_MODELS)[keyof typeof GEMINI_VIDEO_MODELS];
 
 export type GeminiImageAspectRatio =
   | "1:1"
@@ -42,6 +52,23 @@ export interface GeminiImageGenerateResponse {
   model: string;
 }
 
+export interface GeminiGeneratedVideo {
+  mimeType: string;
+  dataUrl: string;
+}
+
+export interface GeminiVideoGenerateRequest {
+  prompt: string;
+  model?: GeminiVideoModelId;
+  aspectRatio?: "16:9" | "9:16";
+}
+
+export interface GeminiVideoGenerateResponse {
+  text: string;
+  videos: GeminiGeneratedVideo[];
+  model: string;
+}
+
 export interface GeminiGenerationConfig {
   temperature?: number;
   maxOutputTokens?: number;
@@ -52,6 +79,11 @@ export interface GeminiGenerationConfig {
 export interface GeminiStructuredOutputConfig {
   responseMimeType: "application/json";
   responseJsonSchema: Schema;
+}
+
+export interface GeminiGroundingSource {
+  title: string;
+  uri: string;
 }
 
 export interface GeminiGenerateRequest {
@@ -70,6 +102,10 @@ export interface GeminiGenerateRequest {
   systemInstruction?: string;
   config?: GeminiGenerationConfig;
   structuredOutput?: GeminiStructuredOutputConfig;
+  /** Google Search grounding for up-to-date research answers */
+  enableSearch?: boolean;
+  /** Sandboxed code execution tool */
+  enableCodeExecution?: boolean;
 }
 
 export interface GeminiImageGenerateRequest {
@@ -89,11 +125,13 @@ export interface GeminiGenerateResponse {
   text: string;
   model: GeminiModelId;
   structuredData?: unknown;
+  sources?: GeminiGroundingSource[];
 }
 
 export interface GeminiStreamChunk {
   text: string;
   done: boolean;
+  sources?: GeminiGroundingSource[];
 }
 
 export interface ApiSuccessResponse<T> {

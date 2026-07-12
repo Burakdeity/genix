@@ -1,50 +1,25 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId } from "react";
 
 import { cn } from "@/lib/utils";
 
 interface OrwixIconProps {
   className?: string;
   size?: number;
+  /** Kept for API compatibility; professional mark stays static by default */
   animated?: boolean;
 }
 
 /**
- * Orwix monogram: O ring with an X inside (O + X → Orwix).
- * Colors follow theme CSS variables (--orwix-icon-*).
+ * Orwix monogram: continuous O ring + precise X (O + X → Orwix).
+ * Theme-aware via --orwix-icon-* CSS variables.
  */
 export function OrwixIcon({
   className,
   size = 48,
-  animated = true,
 }: OrwixIconProps) {
   const uid = useId().replace(/:/g, "");
-  const [time, setTime] = useState(0);
-
-  useEffect(() => {
-    if (!animated) {
-      setTime(0);
-      return;
-    }
-
-    const start = performance.now();
-    let frame = 0;
-
-    const tick = (now: number) => {
-      setTime((now - start) / 1000);
-      frame = requestAnimationFrame(tick);
-    };
-
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [animated]);
-
-  const ringRotate = animated ? (time / 14) * 360 : 0;
-  const trackRotate = animated ? -(time / 10) * 360 : 0;
-  const xRotate = animated ? -(time / 18) * 360 : 0;
-  const xPulse = animated ? 1 + Math.sin(time * 2.2) * 0.04 : 1;
-  const ringPulse = animated ? 1 + Math.sin(time * 1.6) * 0.015 : 1;
 
   return (
     <svg
@@ -59,10 +34,10 @@ export function OrwixIcon({
       <defs>
         <linearGradient
           id={`${uid}-brand`}
-          x1="10"
-          y1="8"
-          x2="54"
-          y2="56"
+          x1="8"
+          y1="6"
+          x2="56"
+          y2="58"
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="var(--orwix-icon-from)" />
@@ -71,63 +46,47 @@ export function OrwixIcon({
         </linearGradient>
       </defs>
 
-      {/* Soft core */}
+      {/* Soft brand core */}
       <circle
         cx="32"
         cy="32"
-        r={12 * ringPulse}
-        fill="var(--orwix-icon-via)"
-        style={{ opacity: "var(--orwix-icon-core-opacity)" }}
+        r="11"
+        fill={`url(#${uid}-brand)`}
+        opacity="0.12"
       />
 
-      {/* O — dashed ring, slow spin */}
-      <g transform={`rotate(${ringRotate} 32 32)`}>
-        <circle
-          cx="32"
-          cy="32"
-          r={22 * ringPulse}
-          stroke="var(--orwix-icon-ink)"
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray="108 18"
-        />
-        <circle
-          cx="32"
-          cy="32"
-          r={22 * ringPulse}
+      {/* Outer O — continuous premium ring */}
+      <circle
+        cx="32"
+        cy="32"
+        r="22"
+        stroke={`url(#${uid}-brand)`}
+        strokeWidth="5"
+        strokeLinecap="round"
+      />
+
+      {/* Inner track */}
+      <circle
+        cx="32"
+        cy="32"
+        r="15.5"
+        stroke={`url(#${uid}-brand)`}
+        strokeWidth="1.5"
+        opacity="0.35"
+      />
+
+      {/* X monogram */}
+      <g strokeLinecap="round" strokeLinejoin="round">
+        <path
+          d="M23.5 23.5 L40.5 40.5"
           stroke={`url(#${uid}-brand)`}
           strokeWidth="5"
-          strokeLinecap="round"
-          strokeDasharray="108 18"
         />
-      </g>
-
-      {/* Inner track — opposite spin */}
-      <g transform={`rotate(${trackRotate} 32 32)`}>
-        <circle
-          cx="32"
-          cy="32"
-          r="16.5"
+        <path
+          d="M40.5 23.5 L23.5 40.5"
           stroke={`url(#${uid}-brand)`}
-          strokeWidth="1.6"
-          style={{ opacity: "var(--orwix-icon-track-opacity)" }}
-          strokeLinecap="round"
-          strokeDasharray="36 40"
+          strokeWidth="5"
         />
-        <circle cx="48.5" cy="32" r="2.25" fill="var(--orwix-icon-from)" />
-        <circle cx="48.5" cy="32" r="2" fill="var(--orwix-icon-to)" />
-      </g>
-
-      {/* X monogram — slightly smaller, gentle rotate + pulse */}
-      <g
-        transform={`translate(32 32) rotate(${xRotate}) scale(${xPulse * 0.78}) translate(-32 -32)`}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M24 24 L40 40" stroke="var(--orwix-icon-ink)" strokeWidth="6" />
-        <path d="M40 24 L24 40" stroke="var(--orwix-icon-ink)" strokeWidth="6" />
-        <path d="M24 24 L40 40" stroke={`url(#${uid}-brand)`} strokeWidth="5" />
-        <path d="M40 24 L24 40" stroke={`url(#${uid}-brand)`} strokeWidth="5" />
       </g>
     </svg>
   );

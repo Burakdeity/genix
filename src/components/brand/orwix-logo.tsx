@@ -11,14 +11,14 @@ interface OrwixWordmarkProps {
 }
 
 /**
- * Orwix wordmark: branded O ring + clean "rwix" typography.
+ * Orwix wordmark: O+X monogram + "rwix" type.
  */
 export function OrwixWordmark({ className, hero = false }: OrwixWordmarkProps) {
   const uid = useId().replace(/:/g, "");
 
   return (
     <svg
-      viewBox="0 0 126 36"
+      viewBox="0 0 138 36"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn(
@@ -33,9 +33,9 @@ export function OrwixWordmark({ className, hero = false }: OrwixWordmarkProps) {
         <linearGradient
           id={`${uid}-wm`}
           x1="0"
-          y1="6"
-          x2="126"
-          y2="30"
+          y1="4"
+          x2="138"
+          y2="32"
           gradientUnits="userSpaceOnUse"
         >
           <stop stopColor="var(--orwix-icon-from)" />
@@ -44,29 +44,31 @@ export function OrwixWordmark({ className, hero = false }: OrwixWordmarkProps) {
         </linearGradient>
       </defs>
 
-      {/* Branded O — soft double ring */}
       <circle
-        cx="16.5"
+        cx="17"
         cy="18"
-        r="12.25"
+        r="12.5"
         stroke={`url(#${uid}-wm)`}
-        strokeWidth="3.6"
+        strokeWidth="3.4"
         fill="none"
-        strokeLinecap="round"
       />
       <circle
-        cx="16.5"
+        cx="17"
         cy="18"
-        r="7.1"
+        r="7.2"
         stroke={`url(#${uid}-wm)`}
-        strokeWidth="1.35"
+        strokeWidth="1.2"
         fill="none"
         opacity="0.35"
       />
 
-      {/* rwix — Space Grotesk */}
+      <g stroke={`url(#${uid}-wm)`} strokeWidth="2.8" strokeLinecap="round">
+        <path d="M12.2 13.2 L21.8 22.8" />
+        <path d="M21.8 13.2 L12.2 22.8" />
+      </g>
+
       <text
-        x="30"
+        x="36"
         y="25.5"
         fill={`url(#${uid}-wm)`}
         style={{
@@ -74,7 +76,7 @@ export function OrwixWordmark({ className, hero = false }: OrwixWordmarkProps) {
             "var(--font-space), var(--font-jakarta), system-ui, sans-serif",
           fontSize: 26,
           fontWeight: 700,
-          letterSpacing: "-0.04em",
+          letterSpacing: "-0.045em",
         }}
       >
         rwix

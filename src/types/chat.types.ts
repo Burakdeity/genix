@@ -4,6 +4,7 @@ import type {
   GeminiGenerateResponse,
   GeminiModelId,
 } from "@/server/types/gemini.types";
+import type { OrwixMode } from "@/content/orwix-content";
 
 export type MessageRole = "user" | "assistant";
 
@@ -14,6 +15,14 @@ export interface ChatMessage {
   images?: Array<{
     mimeType: string;
     dataUrl: string;
+  }>;
+  videos?: Array<{
+    mimeType: string;
+    dataUrl: string;
+  }>;
+  sources?: Array<{
+    title: string;
+    uri: string;
   }>;
   structuredData?: ChatStructuredResponse;
   createdAt: number;
@@ -49,6 +58,8 @@ export interface GeneratePayload {
   systemInstruction?: string;
   temperature: number;
   structured: boolean;
+  enableSearch?: boolean;
+  enableCodeExecution?: boolean;
 }
 
 export interface ImageGeneratePayload {
@@ -62,5 +73,15 @@ export interface ImageGeneratePayload {
     name?: string;
   }>;
 }
+
+export interface VideoGeneratePayload {
+  prompt: string;
+  model?: string;
+  aspectRatio?: "16:9" | "9:16";
+}
+
+export type SendMessageOptions = {
+  mode?: OrwixMode;
+};
 
 export type { ApiResponse, GeminiGenerateResponse, ChatStructuredResponse };

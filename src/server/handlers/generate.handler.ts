@@ -29,9 +29,11 @@ const generateRequestSchema = z
       ])
       .optional()
       .default(GEMINI_MODELS.PRO),
-    systemInstruction: z.string().max(4000).optional(),
+    systemInstruction: z.string().max(8000).optional(),
     temperature: z.number().min(0).max(2).optional().default(0.7),
     structured: z.boolean().optional().default(false),
+    enableSearch: z.boolean().optional().default(true),
+    enableCodeExecution: z.boolean().optional().default(false),
   })
   .superRefine((value, ctx) => {
     if (!value.prompt.trim() && value.images.length === 0) {
@@ -78,6 +80,8 @@ export async function handleGenerateRequest(
       systemInstruction,
       temperature,
       structured,
+      enableSearch,
+      enableCodeExecution,
     } = parsed.data;
 
     const service = getGeminiService();
@@ -87,7 +91,9 @@ export async function handleGenerateRequest(
       images: images.map(({ mimeType, data }) => ({ mimeType, data })),
       model: model as GeminiModelId,
       systemInstruction,
-      config: { temperature, maxOutputTokens: 8192 },
+      enableSearch: structured ? false : enableSearch,
+      enableCodeExecution: structured ? false : enableCodeExecution,
+      config: { temperature, maxOutputTokens: 16384 },
       ...(structured
         ? {
             structuredOutput: {
