@@ -144,13 +144,13 @@ export function enhanceVideoPrompt(prompt: string): string {
       : "Widescreen 16:9 cinematic framing.";
 
   return [
-    `Create an 8-second cinematic video.`,
+    `Create an 8-second cinematic video at production quality.`,
     `User request (Turkish — follow meaning exactly, do not ignore): ${trimmed}`,
     `Scene to film: ${scene}`,
     framing,
-    `Motion: natural, continuous action (not a still photo); consistent characters and objects across frames.`,
-    `Camera: smooth, motivated camera move; professional lighting and color.`,
+    `Motion: natural, continuous action (not a still photo); consistent characters, faces, and objects across frames.`,
+    `Camera: smooth, motivated move; professional lighting, color grade, shallow depth when useful.`,
     `Avoid: on-screen captions, watermarks, UI chrome, logos, subtitles, random text — unless the user explicitly asked for text.`,
-    `Quality: sharp detail, coherent physics, no flicker or morphing faces.`,
+    `Quality: sharp detail, coherent physics, no flicker, no morphing faces/hands, no jumpy cuts unless requested.`,
   ].join("\n");
 }

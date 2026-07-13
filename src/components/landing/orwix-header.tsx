@@ -60,7 +60,7 @@ function AuthButtons({ className }: { className?: string }) {
         type="button"
         variant="ghost"
         size="sm"
-        className="orwix-nav-link hidden h-8 rounded-full px-2 text-xs font-medium hover:bg-primary/10 sm:inline-flex sm:h-9 sm:px-4 sm:text-sm"
+        className="orwix-nav-link h-8 rounded-full px-2 text-xs font-medium hover:bg-primary/10 sm:h-9 sm:px-4 sm:text-sm"
         onClick={() => openAuthModal("picker")}
       >
         Giriş yap

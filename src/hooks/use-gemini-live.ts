@@ -427,7 +427,7 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       // Soft opener — lock Turkish + native accent from the first utterance.
       try {
         session.sendRealtimeInput({
-          text: "RESPOND IN TURKISH. YOU MUST RESPOND UNMISTAKABLY IN TURKISH. Kullanıcı yeni bağlandı. Yalnızca anadili Türkçe olan biri gibi, net İstanbul Türkçesiyle çok kısa ve samimi selamla; kendini Orwix olarak tanıt. Tek İngilizce kelime yok. İngilizce aksan yok. Kelimeleri yutma.",
+          text: "RESPOND IN TURKISH. YOU MUST RESPOND UNMISTAKABLY IN TURKISH. Native Istanbul Turkish only. Kullanıcı yeni bağlandı. Çok kısa ve samimi selamla; kendini Orwix olarak tanıt. Tek İngilizce kelime yok. İngilizce aksan yok. Kelimeleri yutma; harfleri net bitir.",
         });
       } catch {
         // optional greeting

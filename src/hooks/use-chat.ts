@@ -21,6 +21,8 @@ import { cacheMessageImages } from "@/lib/chat/session-image-cache";
 import {
   buildSystemInstruction,
   detectPromptMode,
+  enhanceBuildUserPrompt,
+  resolveBuildMaxOutputTokens,
   shouldEnableCodeExecution,
   shouldEnableSearch,
 } from "@/lib/chat/mode-prompts";
@@ -519,8 +521,13 @@ export function useChat() {
           ? GEMINI_MODELS.PRO
           : GEMINI_MODELS.FLASH_LITE;
 
+      const userPrompt = enhanceBuildUserPrompt(
+        trimmed || (attachments.length > 0 ? IMAGE_ONLY_PROMPT : ""),
+        effectiveMode,
+      );
+
       const payload = {
-        prompt: trimmed || (attachments.length > 0 ? IMAGE_ONLY_PROMPT : ""),
+        prompt: userPrompt,
         history,
         images: apiImages,
         model: chatModel,
@@ -529,6 +536,10 @@ export function useChat() {
         structured: settings.structuredOutput,
         enableSearch: shouldEnableSearch(trimmed, effectiveMode),
         enableCodeExecution: shouldEnableCodeExecution(trimmed, effectiveMode),
+        maxOutputTokens: resolveBuildMaxOutputTokens(effectiveMode, {
+          studioTool: studioTool?.id,
+          isPro: canUseQuality && settings.model === GEMINI_MODELS.PRO,
+        }),
       };
 
       try {

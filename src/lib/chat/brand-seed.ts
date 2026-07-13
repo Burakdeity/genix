@@ -118,9 +118,11 @@ export function createBrandBirth(): BrandBirthPlan {
       prompt: `Sıfırdan uydurma bir marka icat et. Marka adı: ${brandName}. Sektör: ${industry}. Hedef kitle: ${audience}. Görsel dil: ${aesthetic}. Bugünün tarihi: ${daySeed}.
 
 Görev:
-1) 4-6 cümlelik marka brifi yaz (slogan, kişilik, renk paleti hex, tipografi).
-2) Ardından tek dosyalık, çalışır premium açılış sayfası HTML üret (\`\`\`html). Inline SVG logo olsun; menü, kahraman alan, 3 özellik, CTA ve footer içersin.
-3) Bu marka gerçek değil — tamamen sen uydur; jenerik "AI startup" klişelerinden kaçın.`,
+1) En fazla 5 cümlelik marka brifi (slogan, kişilik, 3–4 hex renk, tipografi hissi).
+2) Tek dosya, eksiksiz, prodüksiyon kalitesinde açılış sayfası HTML (\`\`\`html):
+   sticky nav, full-bleed hero (marka baskın), özellikler, sosyal kanıt veya nasıl çalışır, CTA, footer.
+   Inline SVG logo; Google Fonts; atmosferik zemin; 2–3 incelikli CSS motion.
+3) Gerçekçi Türkçe kopya; lorem/AI-purple klişe yok. Bu marka gerçek değil — tamamen uydur ama inandırıcı olsun.`,
     }),
     () => ({
       brandName,

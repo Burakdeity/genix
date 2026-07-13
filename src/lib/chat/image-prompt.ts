@@ -371,10 +371,12 @@ export function enhanceImagePrompt(prompt: string): string {
 
   return `${base}
 
-Kurallar:
-- İstenen konu, stil, renk, kompozisyon ve metne birebir uy
-- Kullanıcı belirtmedikçe ekstra sinematik/stüdyo stili dayatma
-- Yanıtta mutlaka görsel üret; sadece metin açıklaması yazma`;
+Production rules:
+- Follow the user's subject, style, colors, composition, and any text exactly
+- Do not force extra cinematic/studio style unless requested
+- Prefer sharp detail, coherent lighting, and clean composition
+- Avoid generic stock "AI art" clichés, warped hands/text, watermarks
+- Always produce an image; never reply with text-only description`;
 }
 
 export function enhanceImageEditPrompt(prompt: string): string {
@@ -385,11 +387,12 @@ export function enhanceImageEditPrompt(prompt: string): string {
 
   return `${request}
 
-Görsel düzenleme kuralları:
-- Ekteki / referans görseli temel al; sıfırdan farklı bir sahne üretme
-- Boyut, oran, yerleşim, renk veya nesne ekleme/çıkarma isteklerini görselde uygula
-- Görselin genel stilini ve tanınabilir öğelerini mümkün olduğunca koru
-- Yanıtta mutlaka düzenlenmiş görsel üret; sadece metin açıklaması yazma`;
+Image edit rules:
+- Edit the attached/reference image; do not invent a new unrelated scene
+- Apply size, crop, placement, color, add/remove object requests precisely
+- Preserve recognizable subjects, style, and brand elements when possible
+- Keep typography legible if text is involved
+- Always output the edited image; never text-only`;
 }
 
 export function dataUrlToInlineImage(

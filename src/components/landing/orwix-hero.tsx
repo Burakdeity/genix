@@ -20,13 +20,13 @@ import {
 import { OrwixLogo } from "@/components/brand/orwix-logo";
 import { QualityModeToggle } from "@/components/chat/quality-mode-toggle";
 import { HeroShimmerTitle } from "@/components/landing/hero-shimmer-title";
-import { OrwixAppStudio } from "@/components/landing/orwix-app-studio";
 import {
   ORWIX_HERO,
   ORWIX_IMAGE_TEMPLATES,
   ORWIX_MORE_SUGGESTIONS,
   ORWIX_SUGGESTIONS,
   ORWIX_TEMPLATES,
+  ORWIX_APP_TEMPLATES,
   ORWIX_VIDEO_TEMPLATES,
   type OrwixMode,
 } from "@/content/orwix-content";
@@ -484,8 +484,7 @@ export function OrwixHero({
   return (
     <section
       className={cn(
-        "relative mx-auto flex w-full flex-col px-4 md:px-6",
-        isAppsMode ? "max-w-6xl" : "max-w-3xl",
+        "relative mx-auto flex w-full max-w-3xl flex-col px-4 md:px-6",
         hasMessages
           ? "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
           : "flex-1 items-center justify-center pb-10 pt-8 md:pb-14 md:pt-12",
@@ -506,33 +505,17 @@ export function OrwixHero({
         </div>
       ) : null}
 
-      {isAppsMode ? (
-        <div className="orwix-hero-rise orwix-hero-rise-4 grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-          <ComposerBlock
-            {...composerProps}
-            breathe={!hasMessages}
-            compact={hasMessages}
-          />
-          {!hasMessages ? (
-            <OrwixAppStudio
-              isLoading={isLoading}
-              className="orwix-app-studio-panel mx-auto hidden w-full max-w-[280px] sm:block lg:sticky lg:top-24"
-            />
-          ) : null}
-        </div>
-      ) : (
-        <div className="orwix-hero-rise orwix-hero-rise-4 w-full">
-          <ComposerBlock
-            {...composerProps}
-            breathe={!hasMessages}
-            compact={hasMessages}
-          />
-        </div>
-      )}
+      <div className="orwix-hero-rise orwix-hero-rise-4 w-full">
+        <ComposerBlock
+          {...composerProps}
+          breathe={!hasMessages}
+          compact={hasMessages}
+        />
+      </div>
 
       {isWebsiteMode && !hasMessages ? (
         <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
-          {ORWIX_TEMPLATES.slice(0, 6).map((item) => (
+          {ORWIX_TEMPLATES.map((item) => (
             <button
               key={item.primary}
               type="button"
@@ -546,6 +529,22 @@ export function OrwixHero({
                   ? ` · ${item.secondary}`
                   : ""}
               </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {isAppsMode && !hasMessages ? (
+        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+          {ORWIX_APP_TEMPLATES.map((item) => (
+            <button
+              key={item.primary}
+              type="button"
+              disabled={isLoading}
+              onClick={() => applyPrompt(item.prompt)}
+              className="orwix-chip relative rounded-full px-3.5 py-2 text-xs font-semibold disabled:opacity-50"
+            >
+              <span className="relative z-[1]">{item.primary}</span>
             </button>
           ))}
         </div>

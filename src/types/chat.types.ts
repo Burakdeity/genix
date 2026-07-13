@@ -61,6 +61,7 @@ export interface GeneratePayload {
   structured: boolean;
   enableSearch?: boolean;
   enableCodeExecution?: boolean;
+  maxOutputTokens?: number;
 }
 
 export interface ImageGeneratePayload {

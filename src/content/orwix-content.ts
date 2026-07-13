@@ -77,10 +77,12 @@ export const ORWIX_HERO = {
       "Üretmek istediğiniz görseli detaylı anlatın (ör. sinematik ürün fotoğrafı, logo, poster)",
     video:
       "Çekmek istediğiniz kısa videoyu anlatın (sahne, kamera, ışık, tempo)",
-    website: "Oluşturmak istediğiniz web sitesini tanımlayın",
+    website:
+      "Örn: İstanbul’a özel premium kahve markası için açılış sayfası — hero, menü, mağazalar, sipariş CTA",
     slides: "Oluşturmak istediğiniz slaytları tanımlayın",
     design: "Oluşturmak istediğiniz tasarımı tanımlayın",
-    apps: "Geliştirmek istediğiniz uygulamayı / yazılımı tanımlayın",
+    apps:
+      "Örn: Gider takip uygulaması — ekle/sil, kategoriler, toplamlar, localStorage, tek dosya HTML",
     research: "Araştırmak istediğiniz konuyu yazın — güncel kaynaklarla yanıtlanır",
   },
   modeLabels: {
@@ -177,20 +179,77 @@ export const ORWIX_TEMPLATES = [
   {
     primary: "E-ticaret",
     secondary: "Shopify",
-    prompt: "E-ticaret Shopify web sitesi oluştur",
+    prompt:
+      "Modern bir ev tekstili markası için premium Shopify tarzı e-ticaret açılış + vitrin sayfası oluştur. Kategoriler, öne çıkan ürünler, güven rozetleri, sepete ekle CTA. Türkçe, mobil-first, tek dosya HTML.",
   },
-  { primary: "Açılış Sayfası", prompt: "Açılış Sayfası oluştur" },
-  { primary: "Kontrol Paneli", prompt: "Kontrol Paneli oluştur" },
-  { primary: "Portföy", prompt: "Portföy web sitesi oluştur" },
-  { primary: "Kurumsal", prompt: "Kurumsal web sitesi oluştur" },
-  { primary: "SaaS", prompt: "SaaS web sitesi oluştur" },
+  {
+    primary: "Açılış Sayfası",
+    prompt:
+      "B2B SaaS ürünü için dönüşüm odaklı açılış sayfası oluştur. Hero + özellikler + nasıl çalışır + fiyat + SSS + CTA. Marka adı uydur; ciddi ama sıcak ton; tek dosya HTML.",
+  },
+  {
+    primary: "Kontrol Paneli",
+    prompt:
+      "Finans / analitik kontrol paneli (dashboard) arayüzü oluştur. Kenar menü, KPI kartları, grafik alanları (SVG), tablo ve filtreler. Koyu profesyonel tema; tek dosya HTML+JS.",
+  },
+  {
+    primary: "Portföy",
+    prompt:
+      "Yaratıcı bir ürün tasarımcısı için kişisel portföy sitesi oluştur. Büyük tipografi, seçilmiş işler grid'i, hakkında, iletişim. Karakterli tipografi ve atmosferik zemin; tek dosya HTML.",
+  },
+  {
+    primary: "Kurumsal",
+    prompt:
+      "İstanbul merkezli bir danışmanlık firması için kurumsal web sitesi oluştur. Hakkımızda, hizmetler, ekip, referanslar, iletişim. Güven veren, sade premium dil; tek dosya HTML.",
+  },
+  {
+    primary: "SaaS",
+    prompt:
+      "Geliştirici araçları SaaS ürünü için ürün sitesi oluştur. Ürün demosu alanı, entegrasyonlar, fiyatlandırma (3 plan), müşteri alıntıları, güçlü CTA. Tek dosya HTML.",
+  },
   {
     primary: "Biyografi bağlantısı",
-    prompt: "Biyografi bağlantısı sayfası oluştur",
+    prompt:
+      "İçerik üreticisi için link-in-bio / biyografi bağlantı sayfası oluştur. Avatar, kısa bio, sosyal ikonlar, 6 düzenli CTA linki. Mobil odaklı, şık; tek dosya HTML.",
   },
-  { primary: "Blog", prompt: "Blog web sitesi oluştur" },
-  { primary: "Mini Oyunlar", prompt: "Mini Oyunlar web sitesi oluştur" },
-  { primary: "Verimlilik", prompt: "Verimlilik web sitesi oluştur" },
+  {
+    primary: "Blog",
+    prompt:
+      "Düşünce liderliği blogu ana sayfası oluştur. Öne çıkan yazı, kategori filtreleri, yazı listesi, bülten kaydı. Okunaklı tipografi; tek dosya HTML.",
+  },
+] as const;
+
+export const ORWIX_APP_TEMPLATES = [
+  {
+    primary: "Görev listesi",
+    prompt:
+      "Modern bir todo / görev uygulaması oluştur. Ekle, tamamla, sil, filtrele (tümü/aktif/biten), localStorage kalıcılığı. Premium UI; tek dosya HTML+CSS+JS.",
+  },
+  {
+    primary: "Gider takip",
+    prompt:
+      "Kişisel gider takip uygulaması oluştur. Harcama ekle (tutar, kategori, not), toplamlar, kategori dağılımı, silme. Türkçe UI; tek dosya HTML+JS.",
+  },
+  {
+    primary: "Not defteri",
+    prompt:
+      "Hızlı not defteri uygulaması oluştur. Not listesi + düzenleyici, arama, pinleme, localStorage. Temiz yazı deneyimi; tek dosya HTML.",
+  },
+  {
+    primary: "Pomodoro",
+    prompt:
+      "Pomodoro odak zamanlayıcısı oluştur. 25/5 döngü, başlat/duraklat/sıfırla, tur sayacı, isteğe bağlı ses bitiş sinyali. Minimal ama premium; tek dosya HTML.",
+  },
+  {
+    primary: "Admin panel",
+    prompt:
+      "Küçük işletme admin paneli UI’si oluştur. Giriş sonrası dashboard, kullanıcı tablosu (örnek veri), modal ile ekle/düzenle. Tek dosya HTML+JS.",
+  },
+  {
+    primary: "Chat UI",
+    prompt:
+      "Gerçekçi bir mesajlaşma arayüzü oluştur. Konuşma listesi, baloncuklar, yazıyor… durumu, gönder. Sahte bot yanıtı ekle; tek dosya HTML+JS.",
+  },
 ] as const;
 
 export const ORWIX_FOOTER = {

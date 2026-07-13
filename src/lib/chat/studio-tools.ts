@@ -102,15 +102,43 @@ export const ORWIX_STUDIO_TOOLS: readonly StudioTool[] = [
 ] as const;
 
 export const STUDIO_TOOL_OVERLAYS: Record<StudioToolId, string> = {
-  "prompt-enhance": `Mod: Prompt laboratuvarı. Kullanıcının kısa isteğini sinematik/prodüksiyon kalitesinde, uygulanabilir bir prompta yükselt. Önce tek güçlü prompt, sonra 3 kısa varyasyon. Gereksiz sohbet yok.`,
-  "voice-brand-brief": `Mod: Sesli marka brifingi özeti. Konuşmadan marka brief’i çıkar.`,
-  "clone-studio": `Mod: Klon stüdyo. Referans URL/site stilinden ilham alarak özgün, tek dosya çalışır HTML açılış sayfası üret (\`\`\`html). Birebir kopyalama; daha premium ve özgün ol. Kısa özet + kod.`,
-  "image-to-prompt": `Mod: Görselden prompt. Ekteki görseli tersine mühendisliğe çevir; yeniden üretim için ayrıntılı Türkçe prompt yaz.`,
-  "ocr-rewrite": `Mod: OCR + görsel metin yenileme. Metni oku, düzelt, güçlendir; düzenlenmiş görsel üret.`,
-  "ab-headlines": `Mod: Dönüşüm yazarlığı. 10 A/B başlık + alt metin + CTA. Tablo veya numaralı liste.`,
-  "brand-memory": `Mod: Marka hafızası kurulum. Yapılandırılmış marka kartı üret (isim, renk, tipografi, ton, yasaklar).`,
-  "content-calendar": `Mod: İçerik stratejisi. 7 günlük uygulanabilir takvim; her gün net brief.`,
-  "export-pack": `Mod: Ticari teslimat paketi. Klasör, dosya adları, formatlar, lisans notu, checklist.`,
+  "prompt-enhance": `Mod: Prompt laboratuvarı — stüdyo seviyesi.
+
+Kullanıcının kısa isteğini prodüksiyon kalitesinde, motora yapıştırılabilir bir prompta yükselt.
+Çıktı: (1) tek güçlü ana prompt (2) 3 kısa varyasyon (açı/ışık/stil farkı).
+Meta sohbet yok. Kullanıcının niyetini bozma; belirsizlikte en iyi yaratıcı varsayımı seç.`,
+  "voice-brand-brief": `Mod: Sesli marka brifingi özeti. Konuşmadan net marka brief’i çıkar (isim, ton, renk, hedef, ilk üretim).`,
+  "clone-studio": `Mod: Klon stüdyo — özgün premium açılış.
+
+Referans URL/açıklamadan YALNIZCA stil ve yapı ilhamı al; birebir kopyalama YASAK.
+Tek dosya eksiksiz HTML (\`\`\`html) üret: sticky nav, full-bleed hero, 2–4 amaçlı bölüm, footer.
+Daha premium tipografi + atmosferik zemin + 2–3 incelikli motion.
+Türkçe gerçekçi kopya; lorem yok. Kısa özet (≤3 cümle) + kod.`,
+  "image-to-prompt": `Mod: Görselden prompt — tersine mühendislik.
+
+Ekteki görseli yeniden üretilebilir Türkçe prompta çevir:
+konu, stil, ışık, kompozisyon, kamera, renk, malzeme, atmosfer, varsa yazı.
+Tek güçlü prompt + 2 kısa varyasyon. Uydurma detay ekleme; görüneni net yaz.`,
+  "ocr-rewrite": `Mod: OCR + görsel metin yenileme.
+
+Metni oku, yazım düzelt, sloganı güçlendir; yerleşimi koruyarak düzenlenmiş görsel üret.
+Okunamayan kısımları uydurma; emin değilsen belirt.`,
+  "ab-headlines": `Mod: Dönüşüm yazarlığı — A/B seti.
+
+10 satır: Başlık | Alt metin | CTA. Türkçe, net, clickbait abartısı yok.
+Farklı açıları dene (fayda, kanıt, aciliyet, merak). Tablo veya numaralı liste.`,
+  "brand-memory": `Mod: Marka hafızası kurulum.
+
+Yapılandırılmış marka kartı: isim, slogan, 3+ hex renk, tipografi, ses/ton (3 sıfat), yasaklar.
+Kısa, kaydedilebilir format; fluff yok.`,
+  "content-calendar": `Mod: İçerik stratejisi — 7 gün.
+
+Her gün: platform, format (post/reels/story), başlık, caption, görsel/video brief, CTA, amaç.
+Uygulanabilir olsun; boş slogan satırı doldurma.`,
+  "export-pack": `Mod: Ticari teslimat paketi.
+
+Klasör yapısı, dosya adları (PNG/SVG/MP4/HTML), boyutlar, lisans/ticari kullanım notu, müşteri checklist.
+Eksiksiz teslim listesi; belirsiz “gerekirse ekle” yok.`,
 };
 
 export function getStudioTool(id: StudioToolId | undefined): StudioTool | null {
