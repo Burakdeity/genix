@@ -102,7 +102,6 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const [outputTranscript, setOutputTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
-  const [outputLevel, setOutputLevel] = useState(0);
 
   const sessionRef = useRef<LiveSession | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
@@ -425,10 +424,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         return;
       }
 
-      // Soft opener — force clear Istanbul Turkish from the first utterance.
+      // Soft opener — lock Turkish + native accent from the first utterance.
       try {
         session.sendRealtimeInput({
-          text: "Kullanıcı yeni bağlandı. Yalnızca net İstanbul Türkçesiyle, çok kısa ve samimi selamla; kendini Orwix olarak tanıt. İngilizce kelime, yabancı şive veya abartılı kahkaha yok. Kelimeleri yutma.",
+          text: "RESPOND IN TURKISH. YOU MUST RESPOND UNMISTAKABLY IN TURKISH. Kullanıcı yeni bağlandı. Yalnızca anadili Türkçe olan biri gibi, net İstanbul Türkçesiyle çok kısa ve samimi selamla; kendini Orwix olarak tanıt. Tek İngilizce kelime yok. İngilizce aksan yok. Kelimeleri yutma.",
         });
       } catch {
         // optional greeting
@@ -472,17 +471,6 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   }, [isMuted]);
 
   useEffect(() => {
-    let frame = 0;
-    const tick = () => {
-      const level = playbackQueueRef.current?.level ?? 0;
-      setOutputLevel((prev) => prev * 0.55 + level * 0.45);
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, []);
-
-  useEffect(() => {
     return () => {
       disconnect();
     };
@@ -493,7 +481,6 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
     error,
     inputTranscript,
     outputTranscript,
-    outputLevel,
     isMuted,
     connect,
     disconnect,

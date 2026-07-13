@@ -83,8 +83,6 @@ export class PcmPlaybackQueue {
   private activeSources = new Set<AudioBufferSourceNode>();
   private onDrain: (() => void) | null = null;
   private drainTimer: ReturnType<typeof setTimeout> | null = null;
-  private latestLevel = 0;
-  private levelDecayTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(context: AudioContext) {
     this.context = context;
@@ -93,11 +91,6 @@ export class PcmPlaybackQueue {
 
   setOnDrain(callback: (() => void) | null): void {
     this.onDrain = callback;
-  }
-
-  /** 0–1 approximate loudness of the most recent audio chunk (for lip sync). */
-  get level(): number {
-    return this.latestLevel;
   }
 
   get isPlaying(): boolean {
@@ -121,13 +114,6 @@ export class PcmPlaybackQueue {
     void this.ensureRunning();
 
     const floats = int16ToFloat32(pcm);
-    this.latestLevel = Math.min(1, rmsLevel(floats) * 4.2);
-    if (this.levelDecayTimer) clearTimeout(this.levelDecayTimer);
-    this.levelDecayTimer = setTimeout(() => {
-      this.latestLevel = 0;
-      this.levelDecayTimer = null;
-    }, Math.max(80, (floats.length / sampleRate) * 1000));
-
     const buffer = this.context.createBuffer(1, floats.length, sampleRate);
     buffer.copyToChannel(new Float32Array(floats), 0);
 
@@ -151,11 +137,6 @@ export class PcmPlaybackQueue {
 
   flush(): void {
     this.clearDrainTimer();
-    if (this.levelDecayTimer) {
-      clearTimeout(this.levelDecayTimer);
-      this.levelDecayTimer = null;
-    }
-    this.latestLevel = 0;
     for (const source of this.activeSources) {
       try {
         source.stop();

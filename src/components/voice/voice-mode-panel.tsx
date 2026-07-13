@@ -14,7 +14,6 @@ import {
 
 import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { Button } from "@/components/ui/button";
-import { LivePresenceAvatar } from "@/components/voice/live-presence-avatar";
 import { useGeminiLive } from "@/hooks/use-gemini-live";
 import { FREE_VOICE_MINUTES, PRO_VOICE_MINUTES } from "@/lib/billing/plans";
 import { primeVoiceAudio } from "@/lib/voice/audio-utils";
@@ -64,7 +63,6 @@ export function VoiceModePanel() {
     error,
     inputTranscript,
     outputTranscript,
-    outputLevel,
     isMuted,
     connect,
     disconnect,
@@ -197,12 +195,13 @@ export function VoiceModePanel() {
           >
             <div className="orwix-voice-ring" aria-hidden />
             <div className="orwix-voice-ring orwix-voice-ring-delay" aria-hidden />
-            <LivePresenceAvatar
-              state={status}
-              muted={isMuted}
-              profileId={profileId}
-              outputLevel={outputLevel}
-              className="orwix-voice-presence"
+            <div
+              className={cn(
+                "orwix-voice-orb",
+                orbActive && "orwix-voice-orb-active",
+                orbSpeaking && "orwix-voice-orb-speaking",
+              )}
+              aria-hidden
             />
           </div>
 
