@@ -1,10 +1,12 @@
 "use client";
 
-import { Gauge, Sparkles } from "lucide-react";
+import { Gauge, Lock, Sparkles } from "lucide-react";
 
 import { GEMINI_MODELS } from "@/server/types/gemini.types";
 import type { ChatSettings } from "@/types/chat.types";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export type QualityMode = "speed" | "quality";
 
@@ -31,6 +33,18 @@ export function QualityModeToggle({
   className,
 }: QualityModeToggleProps) {
   const mode = modelToQualityMode(model);
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const isPro = useImageQuotaStore((state) => state.isPro(activeAccountId));
+  const openProModal = useImageQuotaStore((state) => state.openProModal);
+
+  const selectSpeed = () => onChange(qualityModeToModel("speed"));
+  const selectQuality = () => {
+    if (!isPro) {
+      openProModal();
+      return;
+    }
+    onChange(qualityModeToModel("quality"));
+  };
 
   return (
     <div
@@ -45,7 +59,7 @@ export function QualityModeToggle({
         type="button"
         disabled={disabled}
         aria-pressed={mode === "speed"}
-        onClick={() => onChange(qualityModeToModel("speed"))}
+        onClick={selectSpeed}
         className={cn(
           "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-xs font-semibold transition-all",
           mode === "speed"
@@ -61,7 +75,8 @@ export function QualityModeToggle({
         type="button"
         disabled={disabled}
         aria-pressed={mode === "quality"}
-        onClick={() => onChange(qualityModeToModel("quality"))}
+        title={isPro ? "Kalite modeli" : "Kalite modeli Pro plana özel"}
+        onClick={selectQuality}
         className={cn(
           "inline-flex h-8 items-center gap-1.5 rounded-[10px] px-3 text-xs font-semibold transition-all",
           mode === "quality"
@@ -70,7 +85,11 @@ export function QualityModeToggle({
           disabled && "opacity-50",
         )}
       >
-        <Sparkles className="size-3.5" />
+        {isPro ? (
+          <Sparkles className="size-3.5" />
+        ) : (
+          <Lock className="size-3.5" />
+        )}
         Kalite
       </button>
     </div>

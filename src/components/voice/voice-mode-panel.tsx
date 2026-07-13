@@ -15,8 +15,12 @@ import {
 import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { Button } from "@/components/ui/button";
 import { useGeminiLive } from "@/hooks/use-gemini-live";
+import { FREE_VOICE_MINUTES, PRO_VOICE_MINUTES } from "@/lib/billing/plans";
 import { primeVoiceAudio } from "@/lib/voice/audio-utils";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { useImageQuotaStore } from "@/stores/image-quota.store";
+import { useVoiceQuotaStore } from "@/stores/voice-quota.store";
 import { useVoiceStore } from "@/stores/voice.store";
 import {
   getVoiceProfile,
@@ -47,6 +51,11 @@ export function VoiceModePanel() {
   const close = useVoiceStore((state) => state.close);
   const profileId = useVoiceStore((state) => state.profileId);
   const setProfileId = useVoiceStore((state) => state.setProfileId);
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const isPro = useImageQuotaStore((state) => state.isPro(activeAccountId));
+  const remainingSeconds = useVoiceQuotaStore((state) =>
+    state.getRemainingSeconds(activeAccountId),
+  );
 
   const {
     status,
@@ -73,6 +82,29 @@ export function VoiceModePanel() {
     void connectRef.current();
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    if (status !== "listening" && status !== "speaking") return;
+
+    const tickMs = 5000;
+    const id = window.setInterval(() => {
+      const accountId = useAuthStore.getState().activeAccountId;
+      useVoiceQuotaStore.getState().consumeSeconds(accountId, tickMs / 1000);
+      const left = useVoiceQuotaStore.getState().getRemainingSeconds(accountId);
+      if (left <= 0) {
+        disconnectRef.current();
+        useVoiceStore.getState().close();
+        if (!accountId) {
+          useImageQuotaStore.getState().openLoginModal();
+        } else if (!useImageQuotaStore.getState().isPro(accountId)) {
+          useImageQuotaStore.getState().openProModal();
+        }
+      }
+    }, tickMs);
+
+    return () => window.clearInterval(id);
+  }, [isOpen, status]);
+
   const previousProfileRef = useRef(profileId);
 
   useEffect(() => {
@@ -94,6 +126,7 @@ export function VoiceModePanel() {
     (profile) => profile.id === profileId,
   );
   const activeProfile = getVoiceProfile(profileId);
+  const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
   function selectProfile(offset: number) {
     const nextIndex =
@@ -128,7 +161,8 @@ export function VoiceModePanel() {
             Canlı ses
           </p>
           <p className="mt-0.5 text-sm font-medium text-foreground/80">
-            Orwix Voice
+            Orwix Voice · {remainingMinutes} dk kaldı
+            {isPro ? ` · Pro (${PRO_VOICE_MINUTES})` : ` · ücretsiz (${FREE_VOICE_MINUTES})`}
           </p>
         </div>
         <button

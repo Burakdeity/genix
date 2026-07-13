@@ -100,6 +100,13 @@ function AttachmentPreview({
   );
 }
 
+interface PromptRequest {
+  id: number;
+  text: string;
+  mode?: OrwixMode;
+  autoSend?: boolean;
+}
+
 interface OrwixHeroProps {
   onSend: (
     message: string,
@@ -108,7 +115,7 @@ interface OrwixHeroProps {
   ) => Promise<void>;
   isLoading: boolean;
   hasMessages: boolean;
-  promptRequest?: { id: number; text: string } | null;
+  promptRequest?: PromptRequest | null;
   model: ChatSettings["model"];
   onModelChange: (model: ChatSettings["model"]) => void;
 }
@@ -263,11 +270,27 @@ export function OrwixHero({
   const [attachError, setAttachError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const onSendRef = useRef(onSend);
+  const handledPromptIdRef = useRef<number | null>(null);
+
+  onSendRef.current = onSend;
 
   useEffect(() => {
     if (!promptRequest) return;
-    setValue(promptRequest.text);
+    if (handledPromptIdRef.current === promptRequest.id) return;
+    handledPromptIdRef.current = promptRequest.id;
+
+    const nextMode = promptRequest.mode ?? "general";
+    setMode(nextMode);
     setMoreOpen(false);
+
+    if (promptRequest.autoSend) {
+      setValue("");
+      void onSendRef.current(promptRequest.text, [], { mode: nextMode });
+      return;
+    }
+
+    setValue(promptRequest.text);
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
       textareaRef.current?.scrollIntoView({

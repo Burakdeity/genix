@@ -33,7 +33,7 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("api_key")
   ) {
     return new AppError(
-      "Geçersiz veya eksik API anahtarı. Lütfen sunucu yapılandırmanızı kontrol edin.",
+      "Kimlik doğrulama başarısız. Lütfen daha sonra tekrar deneyin.",
       "INVALID_API_KEY",
       401,
     );
@@ -45,7 +45,7 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("denied access")
   ) {
     return new AppError(
-      "Google projenize erişim reddedildi. AI Studio'da API'nin etkin olduğunu ve projenizin askıya alınmadığını kontrol edin.",
+      "Bu isteğe şu an erişilemiyor. Lütfen biraz sonra tekrar deneyin.",
       "GEMINI_API_ERROR",
       403,
     );
@@ -60,8 +60,8 @@ export function mapGeminiError(error: unknown): AppError {
     const quotaZero = normalized.includes("limit: 0");
     return new AppError(
       quotaZero
-        ? "Ücretsiz API kotanız 0 görünüyor. Google AI Studio kotanızı kontrol edin veya faturalandırmayı etkinleştirin."
-        : "İstek limiti aşıldı. Lütfen birkaç saniye sonra tekrar deneyin.",
+        ? "Hizmet kapasitesi dolu. Lütfen kısa süre sonra tekrar deneyin."
+        : "Çok fazla istek gönderildi. Lütfen birkaç saniye sonra tekrar deneyin.",
       quotaZero ? "QUOTA_EXCEEDED" : "RATE_LIMIT",
       429,
     );
@@ -96,7 +96,7 @@ export function mapGeminiError(error: unknown): AppError {
 
   if (normalized.includes("quota") || normalized.includes("billing")) {
     return new AppError(
-      "API kotanız doldu. Google AI Studio kotanızı kontrol edin.",
+      "Hizmet kotası doldu. Lütfen kısa süre sonra tekrar deneyin.",
       "QUOTA_EXCEEDED",
       402,
     );
@@ -109,7 +109,7 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("etimedout")
   ) {
     return new AppError(
-      "Gemini API'ye bağlanılamadı. İnternet bağlantınızı kontrol edin.",
+      "Bağlantı kurulamadı. İnternetinizi kontrol edip tekrar deneyin.",
       "NETWORK_ERROR",
       503,
     );
@@ -121,7 +121,7 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("no longer available")
   ) {
     return new AppError(
-      "Seçilen model kullanılamıyor. Lütfen başka bir model seçin veya sayfayı yenileyin.",
+      "Seçilen model şu an kullanılamıyor. Lütfen sayfayı yenileyip tekrar deneyin.",
       "GEMINI_API_ERROR",
       404,
     );
@@ -133,18 +133,14 @@ export function mapGeminiError(error: unknown): AppError {
     normalized.includes("empty response")
   ) {
     return new AppError(
-      "Model boş yanıt döndürdü. Başka modele geçiliyor veya tekrar deneyin.",
+      "Boş yanıt alındı. Lütfen isteğinizi yeniden gönderin.",
       "GEMINI_API_ERROR",
       502,
     );
   }
 
-  const detail = message.replace(/\s+/g, " ").trim().slice(0, 180);
-
   return new AppError(
-    detail
-      ? `Gemini API isteği başarısız oldu: ${detail}`
-      : "Gemini API isteği başarısız oldu. Lütfen tekrar deneyin.",
+    "İstek tamamlanamadı. Lütfen tekrar deneyin.",
     "GEMINI_API_ERROR",
     status ?? 502,
   );

@@ -18,12 +18,12 @@ Kısacası; ben, Kvlfinansholding'in vizyonunu dijital dünyada işlenebilir, so
 
 const EASTER_EGGS: Array<{ match: RegExp; reply: string }> = [
   {
-    match: /murat\s*kaval/i,
+    match: /murat\s*kaval/iu,
     reply: MURAT_KAVAL_BIO,
   },
   {
     match:
-      /seni\s+kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi)|kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi)|(?:orwix'?in\s+)?kurucu(?:su)?\s+kim|kim\s+olu[sş]turdu/i,
+      /seni\s+kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi|kodlad[ıi])|kim\s+(yapt[ıi]|yaratt[ıi]|geli[sş]tirdi|kodlad[ıi])|(?:orwix'?in\s+)?(?:kurucu(?:su)?|yapımcısı|yapimcisi|sahibi|geliştiricisi|gelistiricisi)\s+kim|kim\s+olu[sş]turdu|seni\s+kim\s+yaptı|yapımcın\s+kim|yapimcin\s+kim|sahibin\s+kim|geliştirici\s+kim|gelistirici\s+kim|kimsin\s+sen|orwix'?i\s+kim\s+yapt[ıi]/iu,
     reply: CREATOR_REPLY,
   },
 ];

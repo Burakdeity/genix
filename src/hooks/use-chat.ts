@@ -20,6 +20,7 @@ import {
 import { cacheMessageImages } from "@/lib/chat/session-image-cache";
 import {
   buildSystemInstruction,
+  detectPromptMode,
   shouldEnableCodeExecution,
   shouldEnableSearch,
 } from "@/lib/chat/mode-prompts";
@@ -171,8 +172,14 @@ export function useChat() {
         return;
       }
 
+      // Explicit UI mode wins; otherwise infer from Turkish/English intent.
+      const inferredMode =
+        mode === "general" ? detectPromptMode(trimmed) : null;
+      const effectiveMode = mode !== "general" ? mode : (inferredMode ?? mode);
+
       const wantsVideo =
-        mode === "video" || isVideoGenerationPrompt(trimmed);
+        effectiveMode === "video" ||
+        (effectiveMode !== "image" && isVideoGenerationPrompt(trimmed));
 
       if (wantsVideo) {
         const accountId = useAuthStore.getState().activeAccountId;
@@ -181,13 +188,18 @@ export function useChat() {
         if (!videoQuota.canGenerate(accountId)) {
           if (!accountId) {
             setLastAssistantContent(
-              `Ücretsiz video hakkın (${GUEST_VIDEO_LIMIT}) bitti. Giriş yaparsan ${FREE_SIGNED_IN_VIDEO_LIMIT} video hakkı daha tanınır.`,
+              `Ücretsiz video hakkınız (${GUEST_VIDEO_LIMIT}) bitti. Giriş yaparsanız ayda ${FREE_SIGNED_IN_VIDEO_LIMIT} video hakkı tanınır.`,
             );
             useImageQuotaStore.getState().openLoginModal();
+          } else if (useImageQuotaStore.getState().isPro(accountId)) {
+            setLastAssistantContent(
+              `Pro video kotanız bu ay doldu (${videoQuota.getLimit(accountId)} video / ay).`,
+            );
           } else {
             setLastAssistantContent(
-              `Ücretsiz video hakkınız (${FREE_SIGNED_IN_VIDEO_LIMIT}) doldu.`,
+              `Ücretsiz video hakkınız bu ay doldu (${FREE_SIGNED_IN_VIDEO_LIMIT} / ay). Pro ile ayda daha fazla video üretebilirsiniz.`,
             );
+            useImageQuotaStore.getState().openProModal();
           }
           setLoading(false);
           return;
@@ -199,12 +211,16 @@ export function useChat() {
           const videoResult = await generateGeminiVideo({
             prompt: enhanceVideoPrompt(trimmed),
             model:
+              useImageQuotaStore.getState().isPro(accountId) &&
               settings.model === GEMINI_MODELS.PRO
                 ? GEMINI_VIDEO_MODELS.PRO
                 : GEMINI_VIDEO_MODELS.FAST,
-            aspectRatio: /\b(9:16|dikey|story|reels)\b/i.test(trimmed)
-              ? "9:16"
-              : "16:9",
+            aspectRatio:
+              /(?:^|[^\p{L}\p{N}_])(?:9:16|dikey|story|reels|shorts)(?=$|[^\p{L}\p{N}_])/iu.test(
+                trimmed,
+              )
+                ? "9:16"
+                : "16:9",
           });
 
           videoQuota.consume(accountId);
@@ -254,7 +270,7 @@ export function useChat() {
       });
 
       const wantsImage =
-        mode === "image" ||
+        effectiveMode === "image" ||
         isImageGenerationPrompt(trimmed) ||
         wantsImageEdit;
 
@@ -264,13 +280,17 @@ export function useChat() {
 
         if (!quota.canGenerate(accountId)) {
           if (!accountId) {
-            updateLastAssistantMessage(
-              `Ücretsiz görsel hakkın (${GUEST_IMAGE_LIMIT}) bitti. Giriş yaparsan hemen ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı daha tanınır.`,
+            setLastAssistantContent(
+              `Ücretsiz görsel hakkınız (${GUEST_IMAGE_LIMIT}) bitti. Giriş yaparsanız ayda ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı tanınır.`,
             );
             quota.openLoginModal();
+          } else if (quota.isPro(accountId)) {
+            setLastAssistantContent(
+              `Pro görsel kotanız bu ay doldu (${quota.getLimit(accountId)} görsel / ay).`,
+            );
           } else {
-            updateLastAssistantMessage(
-              `Ücretsiz görsel hakkınız (${FREE_SIGNED_IN_IMAGE_LIMIT}) doldu. Sınırsız üretim için Pro plana geçin.`,
+            setLastAssistantContent(
+              `Ücretsiz görsel hakkınız bu ay doldu (${FREE_SIGNED_IN_IMAGE_LIMIT} / ay). Pro ile daha yüksek kota ve 2K kalite açılır.`,
             );
             quota.openProModal();
           }
@@ -278,7 +298,8 @@ export function useChat() {
           return;
         }
 
-        const preferQuality = settings.model === GEMINI_MODELS.PRO;
+        const preferQuality =
+          quota.isPro(accountId) && settings.model === GEMINI_MODELS.PRO;
         const referenceImages =
           apiImages.length > 0
             ? apiImages
@@ -371,12 +392,16 @@ export function useChat() {
 
       const systemInstruction = buildSystemInstruction(
         settings.systemInstruction,
-        mode,
+        effectiveMode,
       );
 
-      // Pro = kalite. Diğer her şey = Flash-Lite (3.5 Flash şu an yavaş/503).
+      // Kalite (Pro model) yalnızca Pro abonelerde.
+      const accountIdForModel = useAuthStore.getState().activeAccountId;
+      const canUseQuality =
+        !!accountIdForModel &&
+        useImageQuotaStore.getState().isPro(accountIdForModel);
       const chatModel =
-        settings.model === GEMINI_MODELS.PRO
+        canUseQuality && settings.model === GEMINI_MODELS.PRO
           ? GEMINI_MODELS.PRO
           : GEMINI_MODELS.FLASH_LITE;
 
@@ -388,8 +413,8 @@ export function useChat() {
         temperature: settings.temperature,
         systemInstruction: systemInstruction || undefined,
         structured: settings.structuredOutput,
-        enableSearch: shouldEnableSearch(trimmed, mode),
-        enableCodeExecution: shouldEnableCodeExecution(trimmed, mode),
+        enableSearch: shouldEnableSearch(trimmed, effectiveMode),
+        enableCodeExecution: shouldEnableCodeExecution(trimmed, effectiveMode),
       };
 
       try {

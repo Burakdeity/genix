@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { primeVoiceAudio } from "@/lib/voice/audio-utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { useImageQuotaStore } from "@/stores/image-quota.store";
+import { useVoiceQuotaStore } from "@/stores/voice-quota.store";
 import type { VoiceProfileId } from "@/types/voice.types";
 
 interface VoiceState {
@@ -24,6 +27,17 @@ export const useVoiceStore = create<VoiceState>()(
       autoSpeak: true,
       open: () => set({ isOpen: true }),
       openLive: async () => {
+        const accountId = useAuthStore.getState().activeAccountId;
+        const voiceQuota = useVoiceQuotaStore.getState();
+        if (!voiceQuota.canStart(accountId)) {
+          if (!accountId) {
+            useImageQuotaStore.getState().openLoginModal();
+          } else {
+            useImageQuotaStore.getState().openProModal();
+          }
+          return;
+        }
+
         try {
           await primeVoiceAudio();
         } catch {

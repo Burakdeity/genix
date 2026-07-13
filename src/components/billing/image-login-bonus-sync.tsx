@@ -42,7 +42,7 @@ export function ImageLoginBonusSync() {
     useChatStore.getState().addMessage({
       id: crypto.randomUUID(),
       role: "assistant",
-      content: `Giriş başarılı. ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı tanındı. Kalan hak: ${remaining}. Yeni bir görsel isteği yazabilirsin.`,
+      content: `Giriş başarılı. Bu ay ${FREE_SIGNED_IN_IMAGE_LIMIT} görsel hakkı tanındı. Kalan hak: ${remaining}. Yeni bir görsel isteği yazabilirsin.`,
       createdAt: Date.now(),
     });
   }, [activeAccountId, hydrated]);

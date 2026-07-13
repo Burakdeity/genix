@@ -1,8 +1,50 @@
-const VIDEO_PROMPT_RE =
-  /\b(video|klip|reels|short|animasyon|sinematik\s+sahne)\b[\s\S]{0,60}\b(oluştur|yap|üret|generate|create|çek|tasarla)\b|\b(oluştur|yap|üret|generate|create|çek)\b[\s\S]{0,60}\b(video|klip|reels|short)\b|\b(video\s+üret|generate\s+(a\s+)?video|create\s+(a\s+)?video|bana\s+bir\s+video)\b/i;
+import { normalizeTr, trStem, TR_LEFT, TR_RIGHT } from "@/lib/chat/tr-text";
+
+const VIDEO_NOUNS = [
+  "video",
+  "klip",
+  "reels",
+  "shorts",
+  "short",
+  "animasyon",
+  "sinematik\\s+sahne",
+  "kısa\\s+film",
+  "kisa\\s+film",
+  "reklam\\s+filmi",
+  "tanıtım\\s+filmi",
+  "tanitim\\s+filmi",
+  "çekim",
+  "cekim",
+  "tiktok",
+  "story\\s+videosu",
+] as const;
+
+const VIDEO_VERBS = [
+  "oluştur",
+  "olustur",
+  "yap",
+  "üret",
+  "uret",
+  "generate",
+  "create",
+  "çek",
+  "cek",
+  "tasarla",
+  "hazırla",
+  "hazirla",
+] as const;
+
+const VIDEO_PROMPT_RE = new RegExp(
+  [
+    `${trStem(VIDEO_NOUNS)}[\\s\\S]{0,80}${trStem(VIDEO_VERBS)}`,
+    `${trStem(VIDEO_VERBS)}[\\s\\S]{0,80}${trStem(VIDEO_NOUNS)}`,
+    `${TR_LEFT}(?:video\\s+üret|video\\s+uret|generate\\s+(?:a\\s+)?video|create\\s+(?:a\\s+)?video|bana\\s+bir\\s+video|video\\s+hazırla|video\\s+hazirla)${TR_RIGHT}`,
+  ].join("|"),
+  "iu",
+);
 
 export function isVideoGenerationPrompt(prompt: string): boolean {
-  return VIDEO_PROMPT_RE.test(prompt.trim());
+  return VIDEO_PROMPT_RE.test(normalizeTr(prompt));
 }
 
 export function enhanceVideoPrompt(prompt: string): string {

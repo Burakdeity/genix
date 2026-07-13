@@ -27,10 +27,13 @@ import type {
   ChatSettings,
   SendMessageOptions,
 } from "@/types/chat.types";
+import type { OrwixMode } from "@/content/orwix-content";
 
 interface PromptRequest {
   id: number;
   text: string;
+  mode?: OrwixMode;
+  autoSend?: boolean;
 }
 
 interface OrwixAppShellProps {
@@ -63,9 +66,28 @@ export function OrwixAppShell({
     (state) => (state.sessionsByAccountId[accountId] ?? []).length > 0,
   );
 
-  const handleSelectPrompt = (text: string) => {
-    setPromptRequest({ id: Date.now(), text });
+  const handleSelectPrompt = (
+    text: string,
+    options?: { mode?: OrwixMode; autoSend?: boolean },
+  ) => {
+    setPromptRequest({
+      id: Date.now(),
+      text,
+      mode: options?.mode,
+      autoSend: options?.autoSend,
+    });
   };
+
+  // Consume external prompt requests once handled so they don't retrigger.
+  useEffect(() => {
+    if (!promptRequest) return;
+    const timer = window.setTimeout(() => {
+      setPromptRequest((current) =>
+        current?.id === promptRequest.id ? null : current,
+      );
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [promptRequest]);
 
   useEffect(() => {
     if (!hasMessages) return;
@@ -86,7 +108,7 @@ export function OrwixAppShell({
           hasMessages ? "h-full min-h-0" : "min-h-[100dvh]",
         )}
       >
-        <OrwixHeader />
+        <OrwixHeader onSelectPrompt={handleSelectPrompt} />
         {!hasMessages ? <OrwixMetaBanner /> : null}
 
         <main

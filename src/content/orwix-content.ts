@@ -17,8 +17,52 @@ export type OrwixMode =
 export const ORWIX_BANNER =
   "Stüdyo kalitesinde görsel, video, web ve yazılım — tek komutla.";
 
+export type OrwixNavItem = {
+  label: string;
+  description?: string;
+  mode?: OrwixMode;
+  prompt?: string;
+  href?: string;
+};
+
 export const ORWIX_HEADER_NAV = {
-  dropdowns: ["Özellikler", "Çözümler", "Kaynaklar"] as const,
+  dropdowns: [
+    {
+      label: "Özellikler",
+      items: [
+        {
+          label: "Görsel üretimi",
+          description: "Logo, poster, ürün fotoğrafı",
+          mode: "image" as const,
+        },
+        {
+          label: "Video üretimi",
+          description: "Kısa sinematik klipler",
+          mode: "video" as const,
+        },
+        {
+          label: "Web sitesi",
+          description: "Açılış sayfası ve HTML",
+          mode: "website" as const,
+        },
+        {
+          label: "Slaytlar",
+          description: "Sunum ve yatırımcı deck",
+          mode: "slides" as const,
+        },
+        {
+          label: "Araştırma",
+          description: "Güncel kaynaklarla yanıt",
+          mode: "research" as const,
+        },
+        {
+          label: "Uygulama / yazılım",
+          description: "Kod ve ürün iskeleti",
+          mode: "apps" as const,
+        },
+      ] satisfies ReadonlyArray<OrwixNavItem>,
+    },
+  ],
 } as const;
 
 export const ORWIX_HERO = {
@@ -151,20 +195,14 @@ export const ORWIX_TEMPLATES = [
 
 export const ORWIX_FOOTER = {
   tagline: "Hayal et. Söyle. Oluşsun.",
-  subtitle: "Bugün ne inşa edelim?",
-  surpriseLabel: "Şaşırt beni",
+  subtitle: "Bugün hangi markayı doğuralım?",
+  surpriseLabel: "Marka doğur",
   copyright: "© 2026 Orwix",
 } as const;
 
 export const ORWIX_SURPRISE_PROMPTS = [
-  "Neon ışıklı yağmurlu bir şehirde duran futuristik spor araba, sinematik gece fotoğrafı oluştur.",
-  "Gün batımında sahil yolunda ilerleyen klasik kırmızı spor arabanın kısa sinematik videosunu oluştur.",
-  "Sıcak ve davetkar bir kahve dükkanı web sitesi tasarla. Menü, konum ve online sipariş bölümleri olsun.",
-  "Yatırımcılara yönelik etkileyici bir sunum hazırla. Problem, çözüm, pazar, iş modeli ve yol haritası slaytları olsun.",
-  "Modern bir startup için logo ve marka kiti oluştur. Renk paleti, tipografi ve kullanım örnekleri dahil olsun.",
-  "Minimal ve dönüşüm odaklı bir e-ticaret mağazası sitesi oluştur. Ürün listesi, sepet ve ödeme akışı olsun.",
-  "TypeScript ile küçük bir görev yönetim API'si yaz. CRUD endpointleri ve örnek kullanım olsun.",
-  "2026 yapay zeka pazar trendlerini araştır ve kaynaklı kısa bir brifing hazırla.",
+  // Kept for backward compatibility; footer now uses createBrandBirth().
+  "Sıfırdan uydurma bir marka icat et ve premium açılış sayfası HTML üret.",
 ] as const;
 
 export const ORWIX_COOKIE = {

@@ -2,21 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Sparkles, X } from "lucide-react";
+import { Loader2, Sparkles, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { useAuthStore } from "@/stores/auth.store";
+import { createProCheckoutSession } from "@/lib/api/billing-client";
 import {
   FREE_SIGNED_IN_IMAGE_LIMIT,
-  useImageQuotaStore,
-} from "@/stores/image-quota.store";
+  ORWIX_PRO_PRICE_LABEL,
+  PRO_BENEFITS,
+} from "@/lib/billing/plans";
+import { useAuthStore } from "@/stores/auth.store";
+import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export function ProPlanModal() {
   const [mounted, setMounted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const open = useImageQuotaStore((state) => state.proModalOpen);
   const closeProModal = useImageQuotaStore((state) => state.closeProModal);
-  const activatePro = useImageQuotaStore((state) => state.activatePro);
   const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const accounts = useAuthStore((state) => state.accounts);
   const openAuthModal = useAuthStore((state) => state.openAuthModal);
 
   useEffect(() => {
@@ -25,13 +30,40 @@ export function ProPlanModal() {
 
   if (!mounted || !open) return null;
 
+  const startCheckout = async () => {
+    if (!activeAccountId) {
+      closeProModal();
+      openAuthModal("picker");
+      return;
+    }
+
+    const account = accounts.find((item) => item.id === activeAccountId);
+    setLoading(true);
+    setError(null);
+    try {
+      const { url } = await createProCheckoutSession({
+        accountId: activeAccountId,
+        email: account?.email,
+      });
+      window.location.assign(url);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Ödeme sayfası açılamadı. Stripe anahtarlarını kontrol edin.",
+      );
+      setLoading(false);
+    }
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[320] flex items-center justify-center bg-black/45 p-4">
       <div className="relative w-full max-w-md rounded-3xl bg-white p-6 shadow-xl dark:bg-zinc-900">
         <button
           type="button"
           onClick={closeProModal}
-          className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+          disabled={loading}
+          className="absolute right-3 top-3 flex size-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-50"
           aria-label="Kapat"
         >
           <X className="size-4" />
@@ -42,36 +74,47 @@ export function ProPlanModal() {
         </div>
 
         <h2 className="text-2xl font-semibold text-foreground">Orwix Pro</h2>
+        <p className="mt-1 text-lg font-semibold text-primary">
+          {ORWIX_PRO_PRICE_LABEL}
+        </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-          Ücretsiz görsel hakkınız ({FREE_SIGNED_IN_IMAGE_LIMIT}) doldu. Pro plana
-          geçerek sınırsız görsel üretimi açabilirsiniz.
+          Ücretsiz haklarınız doldu (ör. {FREE_SIGNED_IN_IMAGE_LIMIT} görsel /
+          ay). Güvenli Stripe ödemesiyle Pro&apos;ya geçin.
         </p>
 
         <ul className="mt-4 space-y-2 text-sm text-foreground">
-          <li>• Sınırsız görsel oluşturma</li>
-          <li>• Daha yüksek kaliteli üretim</li>
-          <li>• Öncelikli erişim</li>
+          {PRO_BENEFITS.map((benefit) => (
+            <li key={benefit}>• {benefit}</li>
+          ))}
         </ul>
+
+        {error ? (
+          <p className="mt-4 rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {error}
+          </p>
+        ) : null}
 
         <div className="mt-6 flex flex-col gap-2">
           <Button
             type="button"
             className="h-11 rounded-full"
-            onClick={() => {
-              if (!activeAccountId) {
-                closeProModal();
-                openAuthModal("picker");
-                return;
-              }
-              activatePro(activeAccountId);
-            }}
+            disabled={loading}
+            onClick={() => void startCheckout()}
           >
-            Pro plana geç
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                Stripe açılıyor…
+              </>
+            ) : (
+              <>Pro satın al — {ORWIX_PRO_PRICE_LABEL}</>
+            )}
           </Button>
           <Button
             type="button"
             variant="ghost"
             className="h-11 rounded-full"
+            disabled={loading}
             onClick={closeProModal}
           >
             Daha sonra
