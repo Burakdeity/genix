@@ -147,7 +147,7 @@ export function VoiceModePanel() {
             Orwix ile konuş
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Doğal, kesintisiz sesli sohbet — cümleni bitirene kadar dinler.
+            Samimi, biraz cilveli — komik olunca güler, sohbeti hafif tutar.
           </p>
         </div>
 

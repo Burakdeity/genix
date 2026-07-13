@@ -49,8 +49,8 @@ function buildLiveConfig(voiceName: string) {
         disabled: false,
         startOfSpeechSensitivity: "START_SENSITIVITY_LOW",
         endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
-        prefixPaddingMs: 300,
-        silenceDurationMs: 1100,
+        prefixPaddingMs: 350,
+        silenceDurationMs: 1300,
       },
       // Echo from speakers often falsely "interrupts"; client also gates mic.
       activityHandling: "START_OF_ACTIVITY_INTERRUPTS",

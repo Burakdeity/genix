@@ -115,18 +115,21 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const speakStartedAtRef = useRef(0);
   const turnCompletePendingRef = useRef(false);
   const inputTranscriptRef = useRef("");
+  const bargeInHitsRef = useRef(0);
 
   voiceProfileRef.current = voiceProfile;
 
   const markListening = useCallback(() => {
     speakingRef.current = false;
     turnCompletePendingRef.current = false;
+    bargeInHitsRef.current = 0;
     setStatus("listening");
   }, []);
 
   const markSpeaking = useCallback(() => {
     if (!speakingRef.current) {
       speakStartedAtRef.current = Date.now();
+      bargeInHitsRef.current = 0;
     }
     speakingRef.current = true;
     setStatus("speaking");
@@ -194,6 +197,14 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
 
       if (content.inputTranscription?.text) {
         const next = content.inputTranscription.text;
+        // New user turn after assistant spoke → clear old Orwix caption.
+        if (
+          next &&
+          next !== inputTranscriptRef.current &&
+          next.length < inputTranscriptRef.current.length
+        ) {
+          setOutputTranscript("");
+        }
         inputTranscriptRef.current = next;
         setInputTranscript(next);
       }
@@ -274,16 +285,23 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         const level = rmsLevel(channel);
 
         // While Orwix is talking, don't stream mic (prevents echo cutoffs)
-        // unless the user clearly barges in with loud speech.
+        // unless the user clearly barges in with sustained loud speech.
         if (speakingRef.current || playbackQueueRef.current?.isPlaying) {
           const guarded =
             Date.now() - speakStartedAtRef.current < BARGE_IN_GUARD_MS;
           if (guarded || level < BARGE_IN_RMS) {
+            bargeInHitsRef.current = 0;
             return;
           }
-          // Real barge-in: stop local playback and let mic resume.
+
+          bargeInHitsRef.current += 1;
+          // Need 2 hot frames (~0.3s) so a cough/echo doesn't cut speech.
+          if (bargeInHitsRef.current < 2) return;
+
           playbackQueueRef.current?.flush();
           markListening();
+        } else {
+          bargeInHitsRef.current = 0;
         }
 
         const downsampled = downsampleTo16k(channel, audio.capture.sampleRate);
@@ -400,6 +418,15 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         session.close();
         cleanupMedia();
         return;
+      }
+
+      // Soft opener so the voice starts warm and playful.
+      try {
+        session.sendRealtimeInput({
+          text: "Kullanıcı yeni bağlandı. Çok kısa, samimi ve tatlı bir şekilde selamla; kendini Orwix olarak tanıt. Abartma.",
+        });
+      } catch {
+        // optional greeting
       }
 
       setStatus("listening");

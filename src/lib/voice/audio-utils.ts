@@ -2,9 +2,9 @@ export const LIVE_INPUT_SAMPLE_RATE = 16_000;
 export const LIVE_OUTPUT_SAMPLE_RATE = 24_000;
 
 /** RMS threshold for barge-in while assistant is speaking (0–1). */
-export const BARGE_IN_RMS = 0.055;
+export const BARGE_IN_RMS = 0.07;
 /** Ignore barge-in briefly after assistant starts talking (echo settle). */
-export const BARGE_IN_GUARD_MS = 450;
+export const BARGE_IN_GUARD_MS = 650;
 
 export function float32ToInt16(input: Float32Array): Int16Array {
   const output = new Int16Array(input.length);
