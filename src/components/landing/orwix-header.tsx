@@ -11,9 +11,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ClientOnly } from "@/components/ui/client-only";
 import { Button } from "@/components/ui/button";
 import {
-  ORWIX_HEADER_NAV,
   type OrwixMode,
-  type OrwixNavItem,
 } from "@/content/orwix-content";
 import {
   ORWIX_PRO_PRICE_LABEL,
@@ -83,105 +81,6 @@ type NavSelectOptions = { mode?: OrwixMode; autoSend?: boolean };
 
 interface OrwixHeaderProps {
   onSelectPrompt?: (text: string, options?: NavSelectOptions) => void;
-}
-
-function useDropdownClose(open: boolean, onClose: () => void) {
-  const rootRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) {
-        onClose();
-      }
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
-
-  return rootRef;
-}
-
-function NavDropdown({
-  label,
-  items,
-  open,
-  onToggle,
-  onClose,
-  onSelectItem,
-}: {
-  label: string;
-  items: ReadonlyArray<OrwixNavItem>;
-  open: boolean;
-  onToggle: () => void;
-  onClose: () => void;
-  onSelectItem: (item: OrwixNavItem) => void;
-}) {
-  const menuId = useId();
-  const rootRef = useDropdownClose(open, onClose);
-
-  return (
-    <div ref={rootRef} className="relative">
-      <button
-        type="button"
-        className={cn(
-          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-medium tracking-[-0.01em] transition-all hover:bg-primary/10 sm:gap-1 sm:px-2.5 sm:text-sm",
-          open && "bg-primary/10 text-foreground",
-        )}
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-controls={menuId}
-        onClick={onToggle}
-      >
-        {label}
-        <ChevronDown
-          className={cn(
-            "size-3 opacity-60 transition-transform sm:size-3.5",
-            open && "rotate-180",
-          )}
-        />
-      </button>
-
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          className="orwix-glass absolute left-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 p-1.5 shadow-xl shadow-black/10 sm:left-1/2 sm:w-72 sm:-translate-x-1/2"
-        >
-          {items.map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              role="menuitem"
-              className="flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-primary/10"
-              onClick={() => {
-                onSelectItem(item);
-                onClose();
-              }}
-            >
-              <span className="text-sm font-medium text-foreground">
-                {item.label}
-              </span>
-              {item.description ? (
-                <span className="text-xs text-muted-foreground">
-                  {item.description}
-                </span>
-              ) : null}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  );
 }
 
 function PlansDropdown({
@@ -420,7 +319,7 @@ function PlansDropdown({
   );
 }
 
-export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
+export function OrwixHeader(_props: OrwixHeaderProps = {}) {
   const activeAccountId = useAuthStore((state) => state.activeAccountId);
   const startNewChat = useChatStore((state) => state.startNewChat);
   const setHistoryOpen = useChatStore((state) => state.setHistoryOpen);
@@ -433,22 +332,6 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
       return;
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const handleNavItem = (item: OrwixNavItem) => {
-    if (item.href) {
-      const target = document.querySelector(item.href);
-      if (target) {
-        target.scrollIntoView({ behavior: "smooth", block: "center" });
-        return;
-      }
-      window.location.hash = item.href;
-      return;
-    }
-
-    onSelectPrompt?.(item.prompt ?? "", {
-      mode: item.mode,
-    });
   };
 
   return (
@@ -467,26 +350,10 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
               className="shrink-0 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label="Ana sayfaya git"
             >
-              <OrwixWordmark className="h-5 w-auto sm:h-7" />
+              <OrwixWordmark className="h-7 w-auto sm:h-8" />
             </button>
 
-            <nav className="flex min-w-0 items-center gap-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-1 [&::-webkit-scrollbar]:hidden">
-              {ORWIX_HEADER_NAV.dropdowns.map((dropdown) => (
-                <div key={dropdown.label} className="shrink-0">
-                  <NavDropdown
-                    label={dropdown.label}
-                    items={dropdown.items}
-                    open={openMenu === dropdown.label}
-                    onToggle={() =>
-                      setOpenMenu((current) =>
-                        current === dropdown.label ? null : dropdown.label,
-                      )
-                    }
-                    onClose={() => setOpenMenu(null)}
-                    onSelectItem={handleNavItem}
-                  />
-                </div>
-              ))}
+            <nav className="flex min-w-0 items-center gap-0 sm:gap-1">
               <div className="shrink-0">
                 <PlansDropdown
                   open={openMenu === "Planlar"}
