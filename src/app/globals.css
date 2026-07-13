@@ -1290,6 +1290,21 @@
     animation: orwix-caret-blink 1.05s ease-in-out infinite;
   }
 
+  .orwix-caret-writing {
+    animation: orwix-caret-write 0.72s steps(1, end) infinite;
+  }
+
+  @keyframes orwix-caret-write {
+    0%,
+    55% {
+      opacity: 1;
+    }
+    56%,
+    100% {
+      opacity: 0.2;
+    }
+  }
+
   .orwix-thinking-label {
     animation: orwix-thinking-pulse 1.6s ease-in-out infinite;
   }

@@ -15,6 +15,7 @@ import {
   getDisplayTextWithoutHtml,
 } from "@/lib/chat/extract-html";
 import { resolveMessageImageDataUrl } from "@/lib/chat/session-image-cache";
+import { formatMessageTimestamp } from "@/lib/chat/format-chat-date";
 import type { ChatMessage } from "@/types/chat.types";
 import { cn } from "@/lib/utils";
 
@@ -166,12 +167,34 @@ export function ChatMessageItem({
               )}
               {isTyping ? (
                 <span
-                  className="orwix-caret ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.12em] rounded-full bg-primary/80 align-baseline"
+                  className="orwix-caret orwix-caret-writing ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.12em] rounded-full bg-primary/85 align-baseline"
                   aria-hidden
                 />
               ) : null}
             </div>
           )}
+
+          {!isThinking && !mediaGeneratingKind && !isTyping ? (
+            <div
+              className={cn(
+                "mt-2 flex",
+                isUser ? "justify-end" : "justify-between gap-3",
+              )}
+            >
+              {!isUser ? (
+                <span className="hidden text-[11px] font-medium tracking-[-0.01em] text-muted-foreground/70 sm:inline">
+                  Orwix
+                </span>
+              ) : null}
+              <time
+                dateTime={new Date(message.createdAt).toISOString()}
+                className="text-[11px] tabular-nums text-muted-foreground/75"
+                title={new Date(message.createdAt).toLocaleString("tr-TR")}
+              >
+                {formatMessageTimestamp(message.createdAt)}
+              </time>
+            </div>
+          ) : null}
 
           {message.images && message.images.length > 0 ? (
             <div className="mt-3 grid gap-3">
