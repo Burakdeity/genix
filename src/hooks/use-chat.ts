@@ -61,7 +61,7 @@ function createMessageId(): string {
 }
 
 const IMAGE_ONLY_PROMPT = "Bu görseli incele.";
-const MEDIA_STATUS_RE = /(üretiliyor|üretim|bekleyin|sürebilir)/i;
+const MEDIA_STATUS_RE = /(üretiliyor|oluşturuluyor|üretim|bekleyin|sürebilir)/i;
 
 function isStructuredData(value: unknown): value is ChatStructuredResponse {
   if (!value || typeof value !== "object") return false;
@@ -194,9 +194,7 @@ export function useChat() {
         }
 
         try {
-          setLastAssistantContent(
-            "Video üretiliyor (Veo)… Bu 1–2 dakika sürebilir.",
-          );
+          setLastAssistantContent("Video oluşturuluyor…");
 
           const videoResult = await generateGeminiVideo({
             prompt: enhanceVideoPrompt(trimmed),
@@ -289,7 +287,7 @@ export function useChat() {
               : undefined;
 
         try {
-          setLastAssistantContent("Görsel üretiliyor…");
+          setLastAssistantContent("Görsel oluşturuluyor…");
 
           const promptForApi = referenceImages?.length
             ? enhanceImageEditPrompt(trimmed)
@@ -353,14 +351,14 @@ export function useChat() {
       const prior = useChatStore
         .getState()
         .messages.slice(0, -2)
-        .filter((message) => message.content.trim().length > 0)
-        .slice(-8)
-        .map((message) => ({
-          role: message.role,
-          content:
-            message.content.length > 2500
-              ? `${message.content.slice(0, 2500)}…`
-              : message.content,
+          .filter((message) => message.content.trim().length > 0)
+          .slice(-8)
+          .map((message) => ({
+            role: message.role,
+            content:
+              message.content.length > 2500
+                ? `${message.content.slice(0, 2500)}…`
+                : message.content,
         }));
 
       const history = [

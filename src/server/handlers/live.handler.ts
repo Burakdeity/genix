@@ -31,10 +31,38 @@ function getClientKey(request: Request): string {
   return request.headers.get("x-real-ip") ?? "local";
 }
 
+function buildLiveConfig(voiceName: string) {
+  return {
+    responseModalities: [Modality.AUDIO],
+    systemInstruction: LIVE_SYSTEM_INSTRUCTION,
+    speechConfig: {
+      voiceConfig: {
+        prebuiltVoiceConfig: { voiceName },
+      },
+      languageCode: "tr-TR",
+    },
+    inputAudioTranscription: {},
+    outputAudioTranscription: {},
+    // Longer silence tolerance = fewer mid-sentence cutoffs.
+    realtimeInputConfig: {
+      automaticActivityDetection: {
+        disabled: false,
+        startOfSpeechSensitivity: "START_SENSITIVITY_LOW",
+        endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
+        prefixPaddingMs: 300,
+        silenceDurationMs: 1100,
+      },
+      // Echo from speakers often falsely "interrupts"; client also gates mic.
+      activityHandling: "START_OF_ACTIVITY_INTERRUPTS",
+    },
+  };
+}
+
 async function createLiveToken(
   apiKey: string,
   model: string,
   voiceName: string,
+  includeVadConfig: boolean,
 ) {
   const ai = new GoogleGenAI({
     apiKey,
@@ -46,6 +74,19 @@ async function createLiveToken(
     Date.now() + 2 * 60 * 1000,
   ).toISOString();
 
+  const baseConfig = {
+    responseModalities: [Modality.AUDIO],
+    systemInstruction: LIVE_SYSTEM_INSTRUCTION,
+    speechConfig: {
+      voiceConfig: {
+        prebuiltVoiceConfig: { voiceName },
+      },
+      languageCode: "tr-TR",
+    },
+    inputAudioTranscription: {},
+    outputAudioTranscription: {},
+  };
+
   return ai.authTokens.create({
     config: {
       uses: 1,
@@ -53,18 +94,9 @@ async function createLiveToken(
       newSessionExpireTime,
       liveConnectConstraints: {
         model,
-        config: {
-          responseModalities: [Modality.AUDIO],
-          systemInstruction: LIVE_SYSTEM_INSTRUCTION,
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName },
-            },
-            languageCode: "tr-TR",
-          },
-          inputAudioTranscription: {},
-          outputAudioTranscription: {},
-        },
+        config: includeVadConfig
+          ? buildLiveConfig(voiceName)
+          : baseConfig,
       },
       httpOptions: { apiVersion: "v1alpha" },
     },
@@ -103,36 +135,48 @@ export async function handleLiveSessionRequest(
     let lastError: unknown;
 
     for (const model of models) {
-      try {
-        const token = await createLiveToken(GEMINI_API_KEY, model, voiceName);
-        const tokenValue = token.name?.trim();
-        if (!tokenValue) {
-          throw new AppError(
-            "Ses oturumu anahtarı oluşturulamadı.",
-            "GEMINI_API_ERROR",
-            502,
-          );
-        }
-
-        return {
-          success: true,
-          data: {
-            token: tokenValue,
+      for (const includeVad of [true, false]) {
+        try {
+          const token = await createLiveToken(
+            GEMINI_API_KEY,
             model,
-            apiVersion: "v1alpha",
-            voiceProfile,
-          },
-        };
-      } catch (error) {
-        lastError = error;
-        const message =
-          error instanceof Error ? error.message.toLowerCase() : String(error);
-        const retryable =
-          message.includes("not found") ||
-          message.includes("not supported") ||
-          message.includes("invalid") ||
-          message.includes("thinking");
-        if (!retryable) break;
+            voiceName,
+            includeVad,
+          );
+          const tokenValue = token.name?.trim();
+          if (!tokenValue) {
+            throw new AppError(
+              "Ses oturumu anahtarı oluşturulamadı.",
+              "GEMINI_API_ERROR",
+              502,
+            );
+          }
+
+          return {
+            success: true,
+            data: {
+              token: tokenValue,
+              model,
+              apiVersion: "v1alpha",
+              voiceProfile,
+            },
+          };
+        } catch (error) {
+          lastError = error;
+          const message =
+            error instanceof Error
+              ? error.message.toLowerCase()
+              : String(error);
+          const retryable =
+            message.includes("not found") ||
+            message.includes("not supported") ||
+            message.includes("invalid") ||
+            message.includes("unknown") ||
+            message.includes("thinking") ||
+            message.includes("sensitivity") ||
+            message.includes("realtime");
+          if (!retryable) break;
+        }
       }
     }
 

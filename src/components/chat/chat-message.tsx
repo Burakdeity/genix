@@ -3,6 +3,10 @@
 import { ExternalLink } from "lucide-react";
 
 import { OrwixIcon } from "@/components/brand/orwix-icon";
+import {
+  detectMediaGeneratingKind,
+  MediaGeneratingPlaceholder,
+} from "@/components/chat/media-generating-placeholder";
 import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { WebsitePreview } from "@/components/chat/website-preview";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
@@ -64,8 +68,15 @@ export function ChatMessageItem({
   isTyping = false,
 }: ChatMessageItemProps) {
   const isUser = message.role === "user";
+  const mediaGeneratingKind =
+    !isUser && isTyping
+      ? detectMediaGeneratingKind(message.content)
+      : null;
   const isThinking =
-    !isUser && isTyping && message.content.trim().length === 0;
+    !isUser &&
+    isTyping &&
+    message.content.trim().length === 0 &&
+    !mediaGeneratingKind;
   const previewHtml =
     !isUser && !isTyping ? extractHtmlFromContent(message.content) : null;
 
@@ -99,7 +110,11 @@ export function ChatMessageItem({
       >
         {!isUser ? (
           <div className="mt-1.5 hidden size-9 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-white/90 shadow-sm sm:flex">
-            <OrwixIcon size={22} animated={isThinking} className="size-5" />
+            <OrwixIcon
+              size={22}
+              animated={isThinking || Boolean(mediaGeneratingKind)}
+              className="size-5"
+            />
           </div>
         ) : null}
 
@@ -114,7 +129,11 @@ export function ChatMessageItem({
           {!isUser ? (
             <div className="mb-3 flex items-center gap-2.5 sm:hidden">
               <div className="flex size-8 items-center justify-center rounded-xl border border-border/50 bg-white/90">
-                <OrwixIcon size={18} animated={isThinking} className="size-4" />
+                <OrwixIcon
+                  size={18}
+                  animated={isThinking || Boolean(mediaGeneratingKind)}
+                  className="size-4"
+                />
               </div>
               <span className="text-xs font-semibold tracking-[-0.01em] text-foreground/70">
                 Orwix
@@ -122,7 +141,9 @@ export function ChatMessageItem({
             </div>
           ) : null}
 
-          {isThinking ? (
+          {mediaGeneratingKind ? (
+            <MediaGeneratingPlaceholder kind={mediaGeneratingKind} />
+          ) : isThinking ? (
             <div
               className="orwix-thinking flex items-center gap-3"
               aria-live="polite"

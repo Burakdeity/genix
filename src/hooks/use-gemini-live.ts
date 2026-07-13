@@ -5,6 +5,8 @@ import { GoogleGenAI, Modality } from "@google/genai";
 
 import type { LiveSessionResponse } from "@/server/types/live.types";
 import {
+  BARGE_IN_GUARD_MS,
+  BARGE_IN_RMS,
   downsampleTo16k,
   float32ToInt16,
   int16ToBase64,
@@ -12,6 +14,7 @@ import {
   PcmPlaybackQueue,
   primeVoiceAudio,
   releasePrimedVoiceAudio,
+  rmsLevel,
   takePrimedVoiceAudio,
 } from "@/lib/voice/audio-utils";
 import type { VoiceProfileId } from "@/types/voice.types";
@@ -108,8 +111,26 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const mutedRef = useRef(false);
   const connectIdRef = useRef(0);
   const voiceProfileRef = useRef(voiceProfile);
+  const speakingRef = useRef(false);
+  const speakStartedAtRef = useRef(0);
+  const turnCompletePendingRef = useRef(false);
+  const inputTranscriptRef = useRef("");
 
   voiceProfileRef.current = voiceProfile;
+
+  const markListening = useCallback(() => {
+    speakingRef.current = false;
+    turnCompletePendingRef.current = false;
+    setStatus("listening");
+  }, []);
+
+  const markSpeaking = useCallback(() => {
+    if (!speakingRef.current) {
+      speakStartedAtRef.current = Date.now();
+    }
+    speakingRef.current = true;
+    setStatus("speaking");
+  }, []);
 
   const cleanupMedia = useCallback(() => {
     processorRef.current?.disconnect();
@@ -122,13 +143,16 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
     }
     mediaStreamRef.current = null;
 
+    playbackQueueRef.current?.setOnDrain(null);
+    playbackQueueRef.current?.flush();
     void captureContextRef.current?.close();
     captureContextRef.current = null;
 
-    playbackQueueRef.current?.flush();
     void playbackContextRef.current?.close();
     playbackContextRef.current = null;
     playbackQueueRef.current = null;
+    speakingRef.current = false;
+    turnCompletePendingRef.current = false;
   }, []);
 
   const disconnect = useCallback(() => {
@@ -159,12 +183,19 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       if (!content) return;
 
       if (content.interrupted) {
-        playbackQueueRef.current?.flush();
-        setStatus("listening");
+        // Only honor interruption if user is clearly speaking (not speaker echo).
+        const recentBarge =
+          Date.now() - speakStartedAtRef.current > BARGE_IN_GUARD_MS;
+        if (recentBarge || !speakingRef.current) {
+          playbackQueueRef.current?.flush();
+          markListening();
+        }
       }
 
       if (content.inputTranscription?.text) {
-        setInputTranscript(content.inputTranscription.text);
+        const next = content.inputTranscription.text;
+        inputTranscriptRef.current = next;
+        setInputTranscript(next);
       }
 
       if (content.outputTranscription?.text) {
@@ -184,15 +215,20 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         const inline = part.inlineData;
         if (inline?.data && (!inline.mimeType || inline.mimeType.includes("audio"))) {
           playbackQueueRef.current?.enqueuePcm16(inline.data);
-          setStatus("speaking");
+          markSpeaking();
         }
       }
 
       if (content.turnComplete) {
-        setStatus("listening");
+        // Keep "speaking" until the playback queue actually drains.
+        if (playbackQueueRef.current?.isPlaying) {
+          turnCompletePendingRef.current = true;
+        } else {
+          markListening();
+        }
       }
     },
-    [],
+    [markListening, markSpeaking],
   );
 
   const startMicrophone = useCallback(
@@ -215,11 +251,19 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         await audio.playback.resume();
       }
 
-      playbackQueueRef.current = new PcmPlaybackQueue(audio.playback);
-      await playbackQueueRef.current.ensureRunning();
+      const queue = new PcmPlaybackQueue(audio.playback);
+      queue.setOnDrain(() => {
+        if (connectId !== connectIdRef.current) return;
+        if (turnCompletePendingRef.current || speakingRef.current) {
+          markListening();
+        }
+      });
+      playbackQueueRef.current = queue;
+      await queue.ensureRunning();
 
       const source = audio.capture.createMediaStreamSource(audio.stream);
-      const processor = audio.capture.createScriptProcessor(4096, 1, 1);
+      // Larger buffer = fewer glitches / more stable streaming under load.
+      const processor = audio.capture.createScriptProcessor(8192, 1, 1);
       processorRef.current = processor;
 
       processor.onaudioprocess = (event) => {
@@ -227,6 +271,21 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         if (connectId !== connectIdRef.current) return;
 
         const channel = event.inputBuffer.getChannelData(0);
+        const level = rmsLevel(channel);
+
+        // While Orwix is talking, don't stream mic (prevents echo cutoffs)
+        // unless the user clearly barges in with loud speech.
+        if (speakingRef.current || playbackQueueRef.current?.isPlaying) {
+          const guarded =
+            Date.now() - speakStartedAtRef.current < BARGE_IN_GUARD_MS;
+          if (guarded || level < BARGE_IN_RMS) {
+            return;
+          }
+          // Real barge-in: stop local playback and let mic resume.
+          playbackQueueRef.current?.flush();
+          markListening();
+        }
+
         const downsampled = downsampleTo16k(channel, audio.capture.sampleRate);
         if (downsampled.length === 0) return;
 
@@ -249,7 +308,7 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       processor.connect(gain);
       gain.connect(audio.capture.destination);
     },
-    [],
+    [markListening],
   );
 
   const connect = useCallback(async () => {
@@ -257,10 +316,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
     setError(null);
     setInputTranscript("");
     setOutputTranscript("");
+    inputTranscriptRef.current = "";
     setStatus("connecting");
 
     try {
-      // Prime mic/AudioContext as early as possible (ideally already primed on click).
       await primeVoiceAudio();
       if (connectId !== connectIdRef.current) return;
 
@@ -287,7 +346,6 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
 
       const session = await ai.live.connect({
         model: payload.data.model,
-        // Config is locked by ephemeral token constraints — keep client setup minimal.
         config: {
           responseModalities: [Modality.AUDIO],
         },
@@ -351,7 +409,8 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       releasePrimedVoiceAudio();
       sessionRef.current = null;
       const message =
-        err instanceof DOMException || (err instanceof Error && err.name.includes("Error"))
+        err instanceof DOMException ||
+        (err instanceof Error && err.name.includes("Error"))
           ? microphoneErrorMessage(err)
           : err instanceof Error
             ? err.message

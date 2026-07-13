@@ -1,6 +1,11 @@
 export const LIVE_INPUT_SAMPLE_RATE = 16_000;
 export const LIVE_OUTPUT_SAMPLE_RATE = 24_000;
 
+/** RMS threshold for barge-in while assistant is speaking (0–1). */
+export const BARGE_IN_RMS = 0.055;
+/** Ignore barge-in briefly after assistant starts talking (echo settle). */
+export const BARGE_IN_GUARD_MS = 450;
+
 export function float32ToInt16(input: Float32Array): Int16Array {
   const output = new Int16Array(input.length);
   for (let i = 0; i < input.length; i += 1) {
@@ -62,14 +67,38 @@ export function downsampleTo16k(
   return output;
 }
 
+export function rmsLevel(input: Float32Array): number {
+  if (input.length === 0) return 0;
+  let sum = 0;
+  for (let i = 0; i < input.length; i += 1) {
+    const sample = input[i] ?? 0;
+    sum += sample * sample;
+  }
+  return Math.sqrt(sum / input.length);
+}
+
 export class PcmPlaybackQueue {
   private readonly context: AudioContext;
   private nextStartTime = 0;
   private activeSources = new Set<AudioBufferSourceNode>();
+  private onDrain: (() => void) | null = null;
+  private drainTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(context: AudioContext) {
     this.context = context;
     this.nextStartTime = context.currentTime;
+  }
+
+  setOnDrain(callback: (() => void) | null): void {
+    this.onDrain = callback;
+  }
+
+  get isPlaying(): boolean {
+    return this.activeSources.size > 0 || this.nextStartTime > this.context.currentTime + 0.04;
+  }
+
+  get remainingMs(): number {
+    return Math.max(0, (this.nextStartTime - this.context.currentTime) * 1000);
   }
 
   async ensureRunning(): Promise<void> {
@@ -92,17 +121,22 @@ export class PcmPlaybackQueue {
     source.buffer = buffer;
     source.connect(this.context.destination);
 
-    const startAt = Math.max(this.context.currentTime, this.nextStartTime);
+    // Small lookahead so chunks stitch without gaps under load.
+    const startAt = Math.max(this.context.currentTime + 0.03, this.nextStartTime);
     source.start(startAt);
     this.nextStartTime = startAt + buffer.duration;
 
     this.activeSources.add(source);
+    this.clearDrainTimer();
+
     source.onended = () => {
       this.activeSources.delete(source);
+      this.scheduleDrainCheck();
     };
   }
 
   flush(): void {
+    this.clearDrainTimer();
     for (const source of this.activeSources) {
       try {
         source.stop();
@@ -112,6 +146,26 @@ export class PcmPlaybackQueue {
     }
     this.activeSources.clear();
     this.nextStartTime = this.context.currentTime;
+  }
+
+  private clearDrainTimer(): void {
+    if (this.drainTimer) {
+      clearTimeout(this.drainTimer);
+      this.drainTimer = null;
+    }
+  }
+
+  private scheduleDrainCheck(): void {
+    this.clearDrainTimer();
+    const remaining = this.remainingMs;
+    this.drainTimer = setTimeout(() => {
+      this.drainTimer = null;
+      if (!this.isPlaying) {
+        this.onDrain?.();
+      } else {
+        this.scheduleDrainCheck();
+      }
+    }, Math.max(40, remaining + 40));
   }
 }
 
@@ -129,10 +183,10 @@ export async function primeVoiceAudio(): Promise<{
   stream: MediaStream;
 }> {
   if (!primedCapture || primedCapture.state === "closed") {
-    primedCapture = new AudioContext();
+    primedCapture = new AudioContext({ sampleRate: 48_000 });
   }
   if (!primedPlayback || primedPlayback.state === "closed") {
-    primedPlayback = new AudioContext();
+    primedPlayback = new AudioContext({ sampleRate: LIVE_OUTPUT_SAMPLE_RATE });
   }
 
   if (primedCapture.state === "suspended") {
