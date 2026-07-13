@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowUp,
-  Calendar,
   Clapperboard,
   Globe,
   ImageIcon,
@@ -139,7 +138,7 @@ function SuggestionIcon({
   if (icon === "video") return <Clapperboard className={className} />;
   if (icon === "research") return <Search className={className} />;
   if (icon === "slides") return <Presentation className={className} />;
-  if (icon === "website") return <Calendar className={className} />;
+  if (icon === "website") return <Globe className={className} />;
   if (icon === "design") return <Sparkles className={className} />;
   return <MonitorSmartphone className={className} />;
 }
@@ -173,6 +172,7 @@ function ComposerBlock({
   attachments,
   onRemoveAttachment,
   breathe = false,
+  compact = false,
 }: {
   value: string;
   setValue: (value: string) => void;
@@ -190,6 +190,7 @@ function ComposerBlock({
   attachments: ChatAttachment[];
   onRemoveAttachment: (index: number) => void;
   breathe?: boolean;
+  compact?: boolean;
 }) {
   const openVoiceMode = useVoiceStore((state) => state.openLive);
 
@@ -201,13 +202,18 @@ function ComposerBlock({
       )}
     >
       <div className="orwix-composer w-full overflow-hidden">
-        <div className="flex min-h-[148px] flex-col px-5 py-5">
+        <div
+          className={cn(
+            "flex flex-col",
+            compact ? "min-h-0 px-3 py-2.5 sm:px-4" : "min-h-[148px] px-5 py-5",
+          )}
+        >
           <textarea
             ref={textareaRef}
             value={value}
             onChange={(event) => setValue(event.target.value)}
             disabled={isLoading}
-            rows={3}
+            rows={compact ? 1 : 3}
             placeholder={placeholder}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
@@ -215,13 +221,23 @@ function ComposerBlock({
                 void handleSubmit();
               }
             }}
-            className="min-h-[72px] w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[17px]"
+            className={cn(
+              "w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[17px]",
+              compact
+                ? "max-h-28 min-h-[28px] py-1"
+                : "min-h-[72px]",
+            )}
           />
           <AttachmentPreview
             attachments={attachments}
             onRemove={onRemoveAttachment}
           />
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+          <div
+            className={cn(
+              "flex flex-wrap items-center justify-between gap-2",
+              compact ? "mt-1.5" : "mt-3",
+            )}
+          >
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -242,11 +258,13 @@ function ComposerBlock({
                   <X className="size-3 opacity-60" />
                 </button>
               ) : null}
-              <QualityModeToggle
-                model={model}
-                onChange={onModelChange}
-                disabled={isLoading}
-              />
+              <div className={cn(compact && "hidden sm:block")}>
+                <QualityModeToggle
+                  model={model}
+                  onChange={onModelChange}
+                  disabled={isLoading}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -478,7 +496,7 @@ export function OrwixHero({
           <div className="orwix-hero-rise orwix-hero-rise-1 mb-6 flex justify-center md:mb-7">
             <OrwixLogo />
           </div>
-          <HeroShimmerTitle className="font-heading text-[2.75rem] leading-[1.05] tracking-tight md:text-6xl">
+          <HeroShimmerTitle className="font-heading text-[clamp(1.55rem,7.2vw,2.75rem)] leading-[1.12] tracking-tight md:text-6xl">
             {heroTitle}
           </HeroShimmerTitle>
           <p className="orwix-hero-rise orwix-hero-rise-3 orwix-hero-subtitle mx-auto mt-4 max-w-md text-base md:text-lg">
@@ -490,15 +508,25 @@ export function OrwixHero({
 
       {isAppsMode ? (
         <div className="orwix-hero-rise orwix-hero-rise-4 grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
-          <ComposerBlock {...composerProps} breathe={!hasMessages} />
-          <OrwixAppStudio
-            isLoading={isLoading}
-            className="orwix-app-studio-panel mx-auto w-full max-w-[280px] lg:sticky lg:top-24"
+          <ComposerBlock
+            {...composerProps}
+            breathe={!hasMessages}
+            compact={hasMessages}
           />
+          {!hasMessages ? (
+            <OrwixAppStudio
+              isLoading={isLoading}
+              className="orwix-app-studio-panel mx-auto hidden w-full max-w-[280px] sm:block lg:sticky lg:top-24"
+            />
+          ) : null}
         </div>
       ) : (
         <div className="orwix-hero-rise orwix-hero-rise-4 w-full">
-          <ComposerBlock {...composerProps} breathe={!hasMessages} />
+          <ComposerBlock
+            {...composerProps}
+            breathe={!hasMessages}
+            compact={hasMessages}
+          />
         </div>
       )}
 
@@ -560,7 +588,7 @@ export function OrwixHero({
       ) : null}
 
       {mode === "general" && !hasMessages ? (
-        <div className="orwix-hero-rise orwix-hero-rise-5 relative mt-6 flex w-full flex-wrap justify-center gap-2.5 md:mt-7">
+        <div className="orwix-hero-rise orwix-hero-rise-5 relative mt-6 flex w-full flex-nowrap justify-start gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:mt-7 md:flex-wrap md:justify-center md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
           {ORWIX_SUGGESTIONS.map((item) => (
             <button
               key={item.label}
@@ -588,7 +616,7 @@ export function OrwixHero({
               <span className="relative z-[1]">Daha fazla</span>
             </button>
             {moreOpen ? (
-              <div className="orwix-glass absolute left-0 top-full z-20 mt-2 min-w-[200px] rounded-xl p-2">
+              <div className="orwix-glass absolute left-1/2 top-full z-20 mt-2 min-w-[200px] -translate-x-1/2 rounded-xl p-2 sm:left-0 sm:translate-x-0">
                 {ORWIX_MORE_SUGGESTIONS.map((item) => (
                   <button
                     key={item}

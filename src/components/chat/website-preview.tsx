@@ -13,8 +13,16 @@ interface WebsitePreviewProps {
 type PreviewWidth = "desktop" | "mobile";
 
 export function WebsitePreview({ html, className }: WebsitePreviewProps) {
-  const [width, setWidth] = useState<PreviewWidth>("desktop");
+  const [width, setWidth] = useState<PreviewWidth>("mobile");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    const sync = () => setWidth(mq.matches ? "desktop" : "mobile");
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     if (!html.trim()) {
@@ -111,7 +119,7 @@ export function WebsitePreview({ html, className }: WebsitePreviewProps) {
               referrerPolicy="no-referrer"
               className={cn(
                 "block w-full border-0 bg-white",
-                width === "mobile" ? "h-[560px]" : "h-[460px] md:h-[580px]",
+                width === "mobile" ? "h-[min(560px,70dvh)]" : "h-[460px] md:h-[580px]",
               )}
             />
           ) : (

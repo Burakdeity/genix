@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 /**
  * Lightweight markdown for chat bubbles: **bold**, *italic*, `code`,
  * and simple line breaks. Avoids a heavy markdown dependency while streaming.
@@ -63,7 +65,7 @@ export function MessageMarkdown({
   const lines = text.split("\n");
 
   return (
-    <div className={className}>
+    <div className={cn("max-w-full break-words [overflow-wrap:anywhere]", className)}>
       {lines.map((line, index) => {
         const isLast = index === lines.length - 1;
         const trimmed = line.trimStart();

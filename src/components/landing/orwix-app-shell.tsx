@@ -60,6 +60,7 @@ export function OrwixAppShell({
 }: OrwixAppShellProps) {
   const hasMessages = messages.length > 0;
   const [promptRequest, setPromptRequest] = useState<PromptRequest | null>(null);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const accountId =
     useAuthStore((state) => state.activeAccountId) ?? GUEST_CHAT_ACCOUNT_ID;
@@ -96,12 +97,42 @@ export function OrwixAppShell({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, hasMessages, isLoading]);
 
+  // Keep chat shell above the iOS keyboard via visualViewport.
+  useEffect(() => {
+    if (!hasMessages) {
+      setViewportHeight(null);
+      return;
+    }
+
+    const vv = window.visualViewport;
+    const sync = () => {
+      const next = vv?.height ?? window.innerHeight;
+      setViewportHeight(Math.round(next));
+    };
+
+    sync();
+    vv?.addEventListener("resize", sync);
+    vv?.addEventListener("scroll", sync);
+    window.addEventListener("resize", sync);
+
+    return () => {
+      vv?.removeEventListener("resize", sync);
+      vv?.removeEventListener("scroll", sync);
+      window.removeEventListener("resize", sync);
+    };
+  }, [hasMessages]);
+
   return (
     <div
       className={cn(
         "orwix-page flex flex-col",
-        hasMessages ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]",
+        hasMessages ? "overflow-hidden" : "min-h-[100dvh]",
       )}
+      style={
+        hasMessages
+          ? { height: viewportHeight ? `${viewportHeight}px` : "100dvh" }
+          : undefined
+      }
     >
       <OrwixBackground />
       <div
@@ -121,7 +152,7 @@ export function OrwixAppShell({
         >
           {hasMessages ? (
             <ChatScrollArea>
-              <div className="px-5 pt-5 md:px-8 md:pt-6">
+              <div className="px-4 pt-4 sm:px-5 sm:pt-5 md:px-8 md:pt-6">
                 <div className="mx-auto max-w-3xl space-y-6 pb-5">
                   {messages.map((message, index) => (
                     <ChatMessageItem

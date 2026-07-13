@@ -18,7 +18,7 @@ export function SignInPanel({ onBack, onClose }: SignInPanelProps) {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-[#f0f4f9]">
       <div className="flex flex-1 flex-col items-center justify-center px-4 py-8">
-        <div className="relative w-full max-w-[448px] rounded-[28px] bg-white px-10 py-12 shadow-sm">
+        <div className="relative w-full max-w-[448px] rounded-[28px] bg-white px-5 py-10 shadow-sm sm:px-10 sm:py-12">
           <button
             type="button"
             onClick={onBack}
@@ -32,7 +32,7 @@ export function SignInPanel({ onBack, onClose }: SignInPanelProps) {
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 flex size-10 items-center justify-center rounded-full bg-white/80 text-[#444746] shadow-sm hover:bg-white"
+              className="absolute right-3 top-[max(0.75rem,env(safe-area-inset-top))] flex size-10 items-center justify-center rounded-full bg-white/80 text-[#444746] shadow-sm hover:bg-white sm:right-4 sm:top-4"
               aria-label="Kapat"
             >
               ✕

@@ -45,7 +45,7 @@ export function AuthModal() {
               type="button"
               onClick={closeAuthModal}
               className={cn(
-                "absolute top-4 right-4 z-10 flex size-10 items-center justify-center rounded-full",
+                "absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-10 flex size-10 items-center justify-center rounded-full",
                 "bg-white/80 text-[#444746] shadow-sm hover:bg-white",
               )}
               aria-label="Kapat"

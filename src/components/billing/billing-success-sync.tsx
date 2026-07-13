@@ -72,7 +72,7 @@ export function BillingSuccessSync() {
   if (!notice) return null;
 
   return (
-    <div className="fixed bottom-4 left-1/2 z-[350] w-[min(24rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-2xl border border-border/60 bg-background/95 px-4 py-3 text-center text-sm shadow-xl backdrop-blur">
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 z-[350] w-[min(24rem,calc(100vw-1.5rem))] -translate-x-1/2 rounded-2xl border border-border/60 bg-background/95 px-4 py-3 text-center text-sm shadow-xl backdrop-blur">
       <p className="text-foreground">{notice}</p>
       <button
         type="button"

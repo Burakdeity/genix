@@ -195,7 +195,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    min-height: 100vh;
+    min-height: 100dvh;
     transition: background-color 0.5s ease;
   }
 
@@ -1446,6 +1446,15 @@
     height: min(240px, 64vw);
   }
 
+  @media (max-height: 700px) {
+    .orwix-voice-stage {
+      width: min(160px, 42vw);
+      height: min(160px, 42vw);
+      margin-top: 0.25rem;
+      margin-bottom: 0.25rem;
+    }
+  }
+
   .orwix-voice-ring {
     position: absolute;
     inset: 8%;
@@ -1468,10 +1477,16 @@
     animation: orwix-voice-ring-speak 1.1s ease-in-out infinite;
   }
 
-  .orwix-voice-stage .orwix-voice-orb,
-  .orwix-voice-stage .orwix-voice-presence {
+  .orwix-voice-stage .orwix-voice-orb {
     width: min(180px, 48vw);
     height: min(180px, 48vw);
+  }
+
+  @media (max-height: 700px) {
+    .orwix-voice-stage .orwix-voice-orb {
+      width: min(120px, 34vw);
+      height: min(120px, 34vw);
+    }
   }
 
   @keyframes orwix-voice-ring {
@@ -2455,7 +2470,9 @@ html:not(.dark) .orwix-chip:hover {
     .orwix-media-gen-orb,
     .orwix-hero-rise,
     .orwix-composer-wrap.orwix-composer-breathe,
-    .orwix-voice-ring {
+    .orwix-voice-ring,
+    .orwix-voice-orb-active,
+    .orwix-voice-orb-speaking {
       animation: none !important;
     }
 

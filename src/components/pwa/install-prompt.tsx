@@ -44,7 +44,7 @@ export function InstallPrompt() {
 
   if (deferredPrompt) {
     return (
-      <div className="fixed inset-x-4 bottom-20 z-50 rounded-2xl border border-border bg-card p-4 shadow-2xl md:bottom-6 md:left-auto md:right-6 md:max-w-sm">
+      <div className="fixed inset-x-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-50 rounded-2xl border border-border bg-card p-4 shadow-2xl md:bottom-6 md:left-auto md:right-6 md:max-w-sm">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="font-semibold text-foreground">Uygulamayı yükle</p>
@@ -78,7 +78,7 @@ export function InstallPrompt() {
 
   if (isIos) {
     return (
-      <div className="fixed inset-x-4 bottom-20 z-50 rounded-2xl border border-border bg-card p-4 shadow-2xl md:bottom-6 md:left-auto md:right-6 md:max-w-sm">
+      <div className="fixed inset-x-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-50 rounded-2xl border border-border bg-card p-4 shadow-2xl md:bottom-6 md:left-auto md:right-6 md:max-w-sm">
         <p className="font-semibold text-foreground">iPhone&apos;a ekle</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Safari&apos;de{" "}

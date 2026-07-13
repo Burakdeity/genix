@@ -33,7 +33,7 @@ export function OrwixCookieConsent() {
   return (
     <div
       id="cerez-politikasi"
-      className="orwix-glass pointer-events-auto fixed bottom-4 left-3 right-3 z-50 rounded-2xl border border-primary/20 p-5 shadow-2xl shadow-primary/10 sm:bottom-5 sm:left-auto sm:right-6 sm:max-w-[380px]"
+      className="orwix-glass pointer-events-auto fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-3 right-3 z-50 rounded-2xl border border-primary/20 p-4 shadow-2xl shadow-primary/10 sm:bottom-[max(1.25rem,env(safe-area-inset-bottom))] sm:left-auto sm:right-6 sm:max-w-[380px] sm:p-5"
     >
       <p className="text-base font-semibold leading-snug text-foreground">
         {ORWIX_COOKIE.title}

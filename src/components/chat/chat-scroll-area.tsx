@@ -164,7 +164,7 @@ export function ChatScrollArea({ children, className }: ChatScrollAreaProps) {
       {/* Absolute viewport forces a real height so overflow (and thumb) can exist */}
       <div
         ref={viewportRef}
-        className="orwix-scroll-hide absolute inset-0 overflow-y-auto overscroll-contain pr-4"
+        className="orwix-scroll-hide absolute inset-0 overflow-y-auto overscroll-contain pr-1 md:pr-4"
       >
         {children}
       </div>
@@ -173,7 +173,7 @@ export function ChatScrollArea({ children, className }: ChatScrollAreaProps) {
         ref={trackRef}
         onPointerDown={onTrackPointerDown}
         className={cn(
-          "orwix-chat-scroll-track absolute inset-y-4 right-1.5 z-30 w-3 rounded-full",
+          "orwix-chat-scroll-track absolute inset-y-4 right-1.5 z-30 hidden w-3 rounded-full md:block",
           thumb.visible ? "opacity-100" : "pointer-events-none opacity-0",
         )}
         aria-hidden={!thumb.visible}

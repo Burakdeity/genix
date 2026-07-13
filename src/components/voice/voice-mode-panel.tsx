@@ -80,7 +80,13 @@ export function VoiceModePanel() {
       return;
     }
 
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
     void connectRef.current();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -153,7 +159,12 @@ export function VoiceModePanel() {
   const orbSpeaking = status === "speaking";
 
   return (
-    <div className="orwix-voice-shell fixed inset-0 z-[400] flex flex-col">
+    <div
+      className="orwix-voice-shell fixed inset-0 z-[400] flex flex-col"
+      role="dialog"
+      aria-modal="true"
+      aria-label={brandBriefingMode ? "Sesli marka brifingi" : "Canlı ses"}
+    >
       <div className="orwix-voice-backdrop" aria-hidden />
 
       <header className="relative z-20 flex shrink-0 items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
@@ -337,7 +348,7 @@ export function VoiceModePanel() {
             )}
           </div>
 
-          <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground [@media(max-height:700px)]:hidden">
             <Headphones className="size-3 shrink-0 opacity-70" />
             Kulaklık önerilir
           </p>
