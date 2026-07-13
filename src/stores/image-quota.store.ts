@@ -7,6 +7,10 @@ import {
   GUEST_IMAGE_LIMIT,
   PRO_IMAGE_LIMIT,
 } from "@/lib/billing/plans";
+import {
+  isUnlimitedAccountId,
+  UNLIMITED_DAILY_QUOTA,
+} from "@/lib/billing/unlimited-accounts";
 
 export {
   FREE_SIGNED_IN_IMAGE_LIMIT,
@@ -59,6 +63,7 @@ function resolveLimit(
   accountId: string | null,
 ): number {
   if (!accountId) return GUEST_IMAGE_LIMIT;
+  if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
   if (hasActivePro(proByAccountId, accountId)) return PRO_IMAGE_LIMIT;
   return FREE_SIGNED_IN_IMAGE_LIMIT;
 }
@@ -88,11 +93,15 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
 
       isPro: (accountId) => {
         if (!accountId) return false;
+        if (isUnlimitedAccountId(accountId)) return true;
         return hasActivePro(get().proByAccountId, accountId);
       },
 
       getProExpiresAt: (accountId) => {
         if (!accountId) return null;
+        if (isUnlimitedAccountId(accountId)) {
+          return Date.now() + 1000 * 60 * 60 * 24 * 365 * 50;
+        }
         const entitlement = get().proByAccountId[accountId];
         if (!entitlement || entitlement.expiresAt <= Date.now()) return null;
         return entitlement.expiresAt;
@@ -102,6 +111,7 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
         resolveLimit(get().proByAccountId, accountId),
 
       getRemaining: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
         const day = billingDayKey();
         const state = get();
         const limit = resolveLimit(state.proByAccountId, accountId);
@@ -114,9 +124,13 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
         );
       },
 
-      canGenerate: (accountId) => get().getRemaining(accountId) > 0,
+      canGenerate: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return true;
+        return get().getRemaining(accountId) > 0;
+      },
 
       consume: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return;
         const day = billingDayKey();
         const limit = resolveLimit(get().proByAccountId, accountId);
 

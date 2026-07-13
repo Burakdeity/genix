@@ -7,6 +7,10 @@ import {
   GUEST_VIDEO_LIMIT,
   PRO_VIDEO_LIMIT,
 } from "@/lib/billing/plans";
+import {
+  isUnlimitedAccountId,
+  UNLIMITED_DAILY_QUOTA,
+} from "@/lib/billing/unlimited-accounts";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export {
@@ -33,6 +37,7 @@ function readCount(entry: DayUsage | undefined, day: string): number {
 
 function resolveLimit(accountId: string | null): number {
   if (!accountId) return GUEST_VIDEO_LIMIT;
+  if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
   if (useImageQuotaStore.getState().isPro(accountId)) return PRO_VIDEO_LIMIT;
   return FREE_SIGNED_IN_VIDEO_LIMIT;
 }
@@ -46,6 +51,7 @@ export const useVideoQuotaStore = create<VideoQuotaState>()(
       getLimit: (accountId) => resolveLimit(accountId),
 
       getRemaining: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
         const day = billingDayKey();
         const limit = resolveLimit(accountId);
         const state = get();
@@ -58,9 +64,13 @@ export const useVideoQuotaStore = create<VideoQuotaState>()(
         );
       },
 
-      canGenerate: (accountId) => get().getRemaining(accountId) > 0,
+      canGenerate: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return true;
+        return get().getRemaining(accountId) > 0;
+      },
 
       consume: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return;
         const day = billingDayKey();
         const limit = resolveLimit(accountId);
 

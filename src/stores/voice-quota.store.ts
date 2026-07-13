@@ -7,6 +7,10 @@ import {
   GUEST_VOICE_MINUTES,
   PRO_VOICE_MINUTES,
 } from "@/lib/billing/plans";
+import {
+  isUnlimitedAccountId,
+  UNLIMITED_DAILY_QUOTA,
+} from "@/lib/billing/unlimited-accounts";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export {
@@ -33,6 +37,7 @@ function readSeconds(entry: DayUsage | undefined, day: string): number {
 
 function resolveLimitMinutes(accountId: string | null): number {
   if (!accountId) return GUEST_VOICE_MINUTES;
+  if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
   if (useImageQuotaStore.getState().isPro(accountId)) return PRO_VOICE_MINUTES;
   return FREE_VOICE_MINUTES;
 }
@@ -46,6 +51,9 @@ export const useVoiceQuotaStore = create<VoiceQuotaState>()(
       getLimitMinutes: (accountId) => resolveLimitMinutes(accountId),
 
       getRemainingSeconds: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) {
+          return UNLIMITED_DAILY_QUOTA * 60;
+        }
         const day = billingDayKey();
         const limitSeconds = resolveLimitMinutes(accountId) * 60;
         const state = get();
@@ -57,10 +65,14 @@ export const useVoiceQuotaStore = create<VoiceQuotaState>()(
         return Math.max(0, limitSeconds - used);
       },
 
-      canStart: (accountId) => get().getRemainingSeconds(accountId) > 0,
+      canStart: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return true;
+        return get().getRemainingSeconds(accountId) > 0;
+      },
 
       consumeSeconds: (accountId, seconds) => {
         if (seconds <= 0) return;
+        if (isUnlimitedAccountId(accountId)) return;
         const day = billingDayKey();
         const add = Math.ceil(seconds);
 

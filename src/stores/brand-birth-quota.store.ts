@@ -7,6 +7,10 @@ import {
   GUEST_BRAND_BIRTH_PER_DAY,
   PRO_BRAND_BIRTH_PER_DAY,
 } from "@/lib/billing/plans";
+import {
+  isUnlimitedAccountId,
+  UNLIMITED_DAILY_QUOTA,
+} from "@/lib/billing/unlimited-accounts";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export {
@@ -33,6 +37,7 @@ function readCount(entry: DayUsage | undefined, day: string): number {
 
 function resolveLimit(accountId: string | null): number {
   if (!accountId) return GUEST_BRAND_BIRTH_PER_DAY;
+  if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
   if (useImageQuotaStore.getState().isPro(accountId)) {
     return PRO_BRAND_BIRTH_PER_DAY;
   }
@@ -48,6 +53,7 @@ export const useBrandBirthQuotaStore = create<BrandBirthQuotaState>()(
       getLimit: (accountId) => resolveLimit(accountId),
 
       getRemaining: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return UNLIMITED_DAILY_QUOTA;
         const day = billingDayKey();
         const limit = resolveLimit(accountId);
         const state = get();
@@ -60,9 +66,13 @@ export const useBrandBirthQuotaStore = create<BrandBirthQuotaState>()(
         );
       },
 
-      canGenerate: (accountId) => get().getRemaining(accountId) > 0,
+      canGenerate: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return true;
+        return get().getRemaining(accountId) > 0;
+      },
 
       consume: (accountId) => {
+        if (isUnlimitedAccountId(accountId)) return;
         const day = billingDayKey();
         const limit = resolveLimit(accountId);
 
