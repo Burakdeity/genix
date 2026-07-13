@@ -62,7 +62,7 @@ function AuthButtons({ className }: { className?: string }) {
         type="button"
         variant="ghost"
         size="sm"
-        className="orwix-nav-link hidden h-9 rounded-full px-2 text-sm font-medium hover:bg-primary/10 sm:inline-flex sm:px-4"
+        className="orwix-nav-link hidden h-8 rounded-full px-2 text-xs font-medium hover:bg-primary/10 sm:inline-flex sm:h-9 sm:px-4 sm:text-sm"
         onClick={() => openAuthModal("picker")}
       >
         Giriş yap
@@ -70,7 +70,7 @@ function AuthButtons({ className }: { className?: string }) {
       <Button
         type="button"
         size="sm"
-        className="orwix-cta-btn h-8 shrink-0 rounded-full border-0 px-3 text-xs font-semibold text-white sm:h-9 sm:px-5 sm:text-sm"
+        className="orwix-cta-btn h-8 shrink-0 rounded-full border-0 px-2.5 text-xs font-semibold text-white sm:h-9 sm:px-5 sm:text-sm"
         onClick={() => openAuthModal("picker")}
       >
         Kaydol
@@ -134,7 +134,7 @@ function NavDropdown({
       <button
         type="button"
         className={cn(
-          "orwix-nav-link flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium tracking-[-0.01em] transition-all hover:bg-primary/10",
+          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-medium tracking-[-0.01em] transition-all hover:bg-primary/10 sm:gap-1 sm:px-2.5 sm:text-sm",
           open && "bg-primary/10 text-foreground",
         )}
         aria-expanded={open}
@@ -145,7 +145,7 @@ function NavDropdown({
         {label}
         <ChevronDown
           className={cn(
-            "size-3.5 opacity-60 transition-transform",
+            "size-3 opacity-60 transition-transform sm:size-3.5",
             open && "rotate-180",
           )}
         />
@@ -155,7 +155,7 @@ function NavDropdown({
         <div
           id={menuId}
           role="menu"
-          className="orwix-glass absolute left-1/2 top-[calc(100%+0.5rem)] z-50 w-72 -translate-x-1/2 overflow-hidden rounded-2xl border border-border/60 p-1.5 shadow-xl shadow-black/10"
+          className="orwix-glass absolute left-0 top-[calc(100%+0.5rem)] z-50 w-[min(18rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-border/60 p-1.5 shadow-xl shadow-black/10 sm:left-1/2 sm:w-72 sm:-translate-x-1/2"
         >
           {items.map((item) => (
             <button
@@ -399,7 +399,7 @@ function PlansDropdown({
         ref={buttonRef}
         type="button"
         className={cn(
-          "orwix-nav-link flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium tracking-[-0.01em] transition-all hover:bg-primary/10",
+          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-medium tracking-[-0.01em] transition-all hover:bg-primary/10 sm:gap-1 sm:px-2.5 sm:text-sm",
           open && "bg-primary/10 text-foreground",
         )}
         aria-expanded={open}
@@ -410,7 +410,7 @@ function PlansDropdown({
         Planlar
         <ChevronDown
           className={cn(
-            "size-3.5 opacity-60 transition-transform",
+            "size-3 opacity-60 transition-transform sm:size-3.5",
             open && "rotate-180",
           )}
         />
@@ -454,25 +454,25 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
   return (
     <header className="relative z-20 px-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 md:px-6">
       {/* Glass blur on a separate layer — backdrop-filter clips rounded children otherwise */}
-      <div className="relative mx-auto h-12 max-w-5xl sm:h-14">
+      <div className="relative mx-auto min-h-12 max-w-5xl sm:min-h-14">
         <div
           className="orwix-glass pointer-events-none absolute inset-0 rounded-2xl"
           aria-hidden
         />
-        <div className="relative z-10 flex h-full items-center justify-between gap-1.5 px-2 sm:gap-4 sm:px-4">
-          <div className="flex min-w-0 items-center gap-1 sm:gap-3 md:gap-5">
+        <div className="relative z-10 flex min-h-12 items-center justify-between gap-1 px-1.5 sm:min-h-14 sm:gap-3 sm:px-4">
+          <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-3 md:gap-5">
             <button
               type="button"
               onClick={goHome}
               className="shrink-0 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label="Ana sayfaya git"
             >
-              <OrwixWordmark className="h-6 w-auto sm:h-7" />
+              <OrwixWordmark className="h-5 w-auto sm:h-7" />
             </button>
 
-            <nav className="flex items-center gap-0.5 sm:gap-1">
+            <nav className="flex min-w-0 items-center gap-0 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-1 [&::-webkit-scrollbar]:hidden">
               {ORWIX_HEADER_NAV.dropdowns.map((dropdown) => (
-                <div key={dropdown.label} className="hidden md:block">
+                <div key={dropdown.label} className="shrink-0">
                   <NavDropdown
                     label={dropdown.label}
                     items={dropdown.items}
@@ -487,7 +487,7 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
                   />
                 </div>
               ))}
-              <div className="hidden md:block">
+              <div className="shrink-0">
                 <PlansDropdown
                   open={openMenu === "Planlar"}
                   onToggle={() =>
@@ -501,7 +501,7 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
             </nav>
           </div>
 
-          <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+          <div className="flex shrink-0 items-center gap-0 sm:gap-1">
             <button
               type="button"
               onClick={goHome}
@@ -520,10 +520,8 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
             >
               <Clock className="size-4" strokeWidth={1.75} />
             </button>
-            <ClientOnly fallback={<div className="hidden size-8 shrink-0 sm:block sm:size-9" />}>
-              <div className="hidden sm:block">
-                <BackgroundPicker />
-              </div>
+            <ClientOnly fallback={<div className="size-8 shrink-0 sm:size-9" />}>
+              <BackgroundPicker />
             </ClientOnly>
             <ClientOnly fallback={<div className="size-8 shrink-0 sm:size-9" />}>
               <ThemeToggle />

@@ -588,7 +588,7 @@ export function OrwixHero({
       ) : null}
 
       {mode === "general" && !hasMessages ? (
-        <div className="orwix-hero-rise orwix-hero-rise-5 relative mt-6 flex w-full flex-nowrap justify-start gap-2.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] md:mt-7 md:flex-wrap md:justify-center md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden">
+        <div className="orwix-hero-rise orwix-hero-rise-5 relative mt-6 flex w-full flex-wrap justify-center gap-2.5 md:mt-7">
           {ORWIX_SUGGESTIONS.map((item) => (
             <button
               key={item.label}

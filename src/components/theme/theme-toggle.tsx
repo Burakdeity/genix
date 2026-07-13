@@ -41,14 +41,14 @@ export function ThemeToggle({
       title={isDark ? "Açık temaya geç" : "Koyu temaya geç"}
       aria-label={isDark ? "Açık temaya geç" : "Koyu temaya geç"}
       className={cn(
-        "orwix-nav-link flex size-9 items-center justify-center rounded-full transition-colors hover:bg-primary/10 sm:size-10",
+        "orwix-nav-link flex size-8 items-center justify-center rounded-full transition-colors hover:bg-primary/10 sm:size-9",
         className,
       )}
     >
       {isDark ? (
-        <Sun className="size-4 sm:size-5" strokeWidth={1.75} />
+        <Sun className="size-4" strokeWidth={1.75} />
       ) : (
-        <Moon className="size-4 sm:size-5" strokeWidth={1.75} />
+        <Moon className="size-4" strokeWidth={1.75} />
       )}
     </button>
   );
