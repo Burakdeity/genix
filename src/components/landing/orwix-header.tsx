@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, Clock, Minus, Sparkles, SquarePen } from "lucide-react";
+import { Check, ChevronDown, Clock, Minus, Sparkles } from "lucide-react";
 
 import { ProfileMenu } from "@/components/auth/profile-menu";
 import { OrwixWordmark } from "@/components/brand/orwix-logo";
@@ -298,7 +298,7 @@ function PlansDropdown({
         ref={buttonRef}
         type="button"
         className={cn(
-          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-1.5 py-1.5 text-xs font-medium tracking-[-0.01em] transition-all hover:bg-primary/10 sm:gap-1 sm:px-2.5 sm:text-sm",
+          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-1 py-1.5 text-xs font-medium tracking-[-0.01em] transition-all hover:bg-primary/10 sm:gap-1 sm:px-2.5 sm:text-sm",
           open && "bg-primary/10 text-foreground",
         )}
         aria-expanded={open}
@@ -343,7 +343,7 @@ export function OrwixHeader(_props: OrwixHeaderProps = {}) {
           aria-hidden
         />
         <div className="relative z-10 flex min-h-12 items-center justify-between gap-1 px-1.5 sm:min-h-14 sm:gap-3 sm:px-4">
-          <div className="flex min-w-0 flex-1 items-center gap-0.5 sm:gap-3 md:gap-5">
+          <div className="flex min-w-0 flex-1 items-center gap-0 sm:gap-3 md:gap-5">
             <button
               type="button"
               onClick={goHome}
@@ -353,7 +353,7 @@ export function OrwixHeader(_props: OrwixHeaderProps = {}) {
               <OrwixWordmark className="h-7 w-auto sm:h-8" />
             </button>
 
-            <nav className="flex min-w-0 items-center gap-0 sm:gap-1">
+            <nav className="-ml-1 flex min-w-0 items-center gap-0 sm:ml-0 sm:gap-1">
               <div className="shrink-0">
                 <PlansDropdown
                   open={openMenu === "Planlar"}
@@ -369,15 +369,6 @@ export function OrwixHeader(_props: OrwixHeaderProps = {}) {
           </div>
 
           <div className="flex shrink-0 items-center gap-0 sm:gap-1">
-            <button
-              type="button"
-              onClick={goHome}
-              title="Yeni sohbet"
-              aria-label="Yeni sohbet"
-              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground sm:size-9"
-            >
-              <SquarePen className="size-4" strokeWidth={1.75} />
-            </button>
             <button
               type="button"
               onClick={() => setHistoryOpen(true)}
