@@ -62,11 +62,12 @@ export function OrwixAppShell({
   const [promptRequest, setPromptRequest] = useState<PromptRequest | null>(null);
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const accountId =
-    useAuthStore((state) => state.activeAccountId) ?? GUEST_CHAT_ACCOUNT_ID;
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const accountId = activeAccountId ?? GUEST_CHAT_ACCOUNT_ID;
   const hasSavedSessions = useChatStore(
     (state) => (state.sessionsByAccountId[accountId] ?? []).length > 0,
   );
+  const showChatHistory = Boolean(activeAccountId) && hasSavedSessions;
 
   const handleSelectPrompt = (
     text: string,
@@ -201,7 +202,7 @@ export function OrwixAppShell({
 
         {!hasMessages ? (
           <>
-            {hasSavedSessions ? (
+            {showChatHistory ? (
               <ClientOnly>
                 <section className="mx-auto w-full max-w-xl px-5 pb-8 md:px-6">
                   <ChatHistoryList limit={12} />

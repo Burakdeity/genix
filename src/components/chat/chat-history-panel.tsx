@@ -88,9 +88,14 @@ export function ChatHistoryList({
 export function ChatHistoryPanel() {
   const open = useChatStore((state) => state.historyOpen);
   const setHistoryOpen = useChatStore((state) => state.setHistoryOpen);
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
 
   useEffect(() => {
     if (!open) return;
+    if (!activeAccountId) {
+      setHistoryOpen(false);
+      return;
+    }
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setHistoryOpen(false);
@@ -98,9 +103,9 @@ export function ChatHistoryPanel() {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, setHistoryOpen]);
+  }, [open, activeAccountId, setHistoryOpen]);
 
-  if (!open) return null;
+  if (!open || !activeAccountId) return null;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start justify-center px-4 pt-[12vh] sm:pt-[14vh]">

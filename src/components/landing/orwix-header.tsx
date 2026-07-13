@@ -369,15 +369,17 @@ export function OrwixHeader(_props: OrwixHeaderProps = {}) {
           </div>
 
           <div className="flex shrink-0 items-center gap-0 sm:gap-1">
-            <button
-              type="button"
-              onClick={() => setHistoryOpen(true)}
-              title="Geçmiş"
-              aria-label="Sohbet geçmişi"
-              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground sm:size-9"
-            >
-              <Clock className="size-4" strokeWidth={1.75} />
-            </button>
+            {activeAccountId ? (
+              <button
+                type="button"
+                onClick={() => setHistoryOpen(true)}
+                title="Geçmiş"
+                aria-label="Sohbet geçmişi"
+                className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground sm:size-9"
+              >
+                <Clock className="size-4" strokeWidth={1.75} />
+              </button>
+            ) : null}
             <ClientOnly fallback={<div className="size-8 shrink-0 sm:size-9" />}>
               <BackgroundPicker />
             </ClientOnly>
