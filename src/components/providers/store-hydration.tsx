@@ -14,6 +14,8 @@ import {
   applyBackgroundToDocument,
   useBackgroundStore,
 } from "@/stores/background.store";
+import { useBrandMemoryStore } from "@/stores/brand-memory.store";
+import { useBrandBirthQuotaStore } from "@/stores/brand-birth-quota.store";
 import { useChatStore } from "@/stores/chat.store";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
 import { useVideoQuotaStore } from "@/stores/video-quota.store";
@@ -31,6 +33,8 @@ const persistApis = [
   useImageQuotaStore.persist,
   useVideoQuotaStore.persist,
   useVoiceQuotaStore.persist,
+  useBrandMemoryStore.persist,
+  useBrandBirthQuotaStore.persist,
 ] as const;
 
 const StoresHydrationContext = createContext(false);

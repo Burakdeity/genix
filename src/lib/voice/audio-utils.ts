@@ -2,9 +2,9 @@ export const LIVE_INPUT_SAMPLE_RATE = 16_000;
 export const LIVE_OUTPUT_SAMPLE_RATE = 24_000;
 
 /** RMS threshold for barge-in while assistant is speaking (0–1). */
-export const BARGE_IN_RMS = 0.07;
+export const BARGE_IN_RMS = 0.085;
 /** Ignore barge-in briefly after assistant starts talking (echo settle). */
-export const BARGE_IN_GUARD_MS = 650;
+export const BARGE_IN_GUARD_MS = 900;
 
 export function float32ToInt16(input: Float32Array): Int16Array {
   const output = new Int16Array(input.length);
@@ -83,6 +83,8 @@ export class PcmPlaybackQueue {
   private activeSources = new Set<AudioBufferSourceNode>();
   private onDrain: (() => void) | null = null;
   private drainTimer: ReturnType<typeof setTimeout> | null = null;
+  private latestLevel = 0;
+  private levelDecayTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(context: AudioContext) {
     this.context = context;
@@ -91,6 +93,11 @@ export class PcmPlaybackQueue {
 
   setOnDrain(callback: (() => void) | null): void {
     this.onDrain = callback;
+  }
+
+  /** 0–1 approximate loudness of the most recent audio chunk (for lip sync). */
+  get level(): number {
+    return this.latestLevel;
   }
 
   get isPlaying(): boolean {
@@ -114,6 +121,13 @@ export class PcmPlaybackQueue {
     void this.ensureRunning();
 
     const floats = int16ToFloat32(pcm);
+    this.latestLevel = Math.min(1, rmsLevel(floats) * 4.2);
+    if (this.levelDecayTimer) clearTimeout(this.levelDecayTimer);
+    this.levelDecayTimer = setTimeout(() => {
+      this.latestLevel = 0;
+      this.levelDecayTimer = null;
+    }, Math.max(80, (floats.length / sampleRate) * 1000));
+
     const buffer = this.context.createBuffer(1, floats.length, sampleRate);
     buffer.copyToChannel(new Float32Array(floats), 0);
 
@@ -137,6 +151,11 @@ export class PcmPlaybackQueue {
 
   flush(): void {
     this.clearDrainTimer();
+    if (this.levelDecayTimer) {
+      clearTimeout(this.levelDecayTimer);
+      this.levelDecayTimer = null;
+    }
+    this.latestLevel = 0;
     for (const source of this.activeSources) {
       try {
         source.stop();

@@ -6,20 +6,68 @@ import { Loader2, Sparkles, Wand2 } from "lucide-react";
 import { ORWIX_FOOTER } from "@/content/orwix-content";
 import type { OrwixMode } from "@/content/orwix-content";
 import { createBrandBirth } from "@/lib/chat/brand-seed";
+import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
+import {
+  FREE_BRAND_BIRTH_PER_DAY,
+  PRO_BRAND_BIRTH_PER_DAY,
+  useBrandBirthQuotaStore,
+} from "@/stores/brand-birth-quota.store";
+import { useAuthStore } from "@/stores/auth.store";
+import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 interface OrwixFooterProps {
   onSelectPrompt: (
     prompt: string,
-    options?: { mode?: OrwixMode; autoSend?: boolean },
+    options?: {
+      mode?: OrwixMode;
+      autoSend?: boolean;
+      brandBirth?: boolean;
+    },
   ) => void;
 }
 
 export function OrwixFooter({ onSelectPrompt }: OrwixFooterProps) {
   const [busy, setBusy] = useState(false);
   const [tease, setTease] = useState<string | null>(null);
+  const [limitHint, setLimitHint] = useState<string | null>(null);
+
+  const hydrated = useStoresHydrated();
+  const activeAccountId = useAuthStore((state) => state.activeAccountId);
+  const isPro = useImageQuotaStore((state) =>
+    hydrated ? state.isPro(activeAccountId) : false,
+  );
+  const remaining = useBrandBirthQuotaStore((state) =>
+    hydrated ? state.getRemaining(activeAccountId) : null,
+  );
+  const limit = useBrandBirthQuotaStore((state) =>
+    hydrated ? state.getLimit(activeAccountId) : FREE_BRAND_BIRTH_PER_DAY,
+  );
+  const openProModal = useImageQuotaStore((state) => state.openProModal);
 
   const handleBrandBirth = async () => {
     if (busy) return;
+
+    const accountId = useAuthStore.getState().activeAccountId;
+    const birthQuota = useBrandBirthQuotaStore.getState();
+    if (!birthQuota.canGenerate(accountId)) {
+      if (accountId && !useImageQuotaStore.getState().isPro(accountId)) {
+        setLimitHint(
+          `Günlük Marka doğur hakkın bitti (${FREE_BRAND_BIRTH_PER_DAY}). Pro ile ${PRO_BRAND_BIRTH_PER_DAY}/gün.`,
+        );
+        openProModal();
+      } else if (accountId) {
+        setLimitHint(
+          `Pro Marka doğur kotan bugün doldu (${PRO_BRAND_BIRTH_PER_DAY}/gün). Yarın yenilenir.`,
+        );
+      } else {
+        setLimitHint(
+          `Bugünkü Marka doğur hakkın bitti (${FREE_BRAND_BIRTH_PER_DAY}/gün). Yarın tekrar dene.`,
+        );
+      }
+      return;
+    }
+
+    setLimitHint(null);
     setBusy(true);
 
     const birth = createBrandBirth();
@@ -28,10 +76,23 @@ export function OrwixFooter({ onSelectPrompt }: OrwixFooterProps) {
     // Short beat so the "birth" feels intentional, not a random paste.
     await new Promise((resolve) => setTimeout(resolve, 700));
 
-    onSelectPrompt(birth.prompt, { mode: birth.mode, autoSend: true });
+    onSelectPrompt(birth.prompt, {
+      mode: birth.mode,
+      autoSend: true,
+      brandBirth: true,
+    });
     setBusy(false);
     setTease(null);
   };
+
+  const remainingLabel =
+    remaining == null
+      ? null
+      : remaining > 0
+        ? `Bugün ${remaining}/${limit} hak`
+        : isPro
+          ? `Bugün ${PRO_BRAND_BIRTH_PER_DAY}/${PRO_BRAND_BIRTH_PER_DAY} doldu`
+          : `Bugün hak bitti · Pro ${PRO_BRAND_BIRTH_PER_DAY}/gün`;
 
   return (
     <footer className="orwix-footer relative z-10 mt-10 w-full overflow-hidden">
@@ -44,7 +105,7 @@ export function OrwixFooter({ onSelectPrompt }: OrwixFooterProps) {
           <h2 className="font-heading text-3xl font-semibold leading-tight md:text-5xl">
             <span className="orwix-gradient-text">{ORWIX_FOOTER.tagline}</span>
           </h2>
-          <p className="mt-3 text-base text-muted-foreground md:text-lg">
+          <p className="orwix-footer-lead mt-3 text-base font-medium md:text-lg">
             {ORWIX_FOOTER.subtitle}
           </p>
           <button
@@ -60,9 +121,18 @@ export function OrwixFooter({ onSelectPrompt }: OrwixFooterProps) {
             )}
             {busy ? tease ?? "Doğuyor…" : ORWIX_FOOTER.surpriseLabel}
           </button>
-          <p className="mx-auto mt-3 max-w-md text-xs text-muted-foreground">
-            Her tıkta uydurma bir marka: site, logo, film veya yatırımcı sunumu —
-            sıradan “şaşırt beni” değil.
+          {remainingLabel ? (
+            <p className="mt-2 text-xs font-medium text-muted-foreground">
+              {remainingLabel}
+              <span className="mx-1.5 opacity-40">·</span>
+              Görsel hakkından düşmez
+            </p>
+          ) : null}
+          {limitHint ? (
+            <p className="mt-2 text-sm text-destructive">{limitHint}</p>
+          ) : null}
+          <p className="orwix-footer-hint mx-auto mt-3 max-w-lg text-sm leading-relaxed md:text-[15px]">
+            İsim, dünya, ses — tek dokunuşta yeni bir markanın ilk sahnesi.
           </p>
         </div>
 

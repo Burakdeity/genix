@@ -134,7 +134,7 @@ function NavDropdown({
       <button
         type="button"
         className={cn(
-          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-3 py-2 text-sm transition-all hover:bg-primary/10",
+          "orwix-nav-link flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium tracking-[-0.01em] transition-all hover:bg-primary/10",
           open && "bg-primary/10 text-foreground",
         )}
         aria-expanded={open}
@@ -399,7 +399,7 @@ function PlansDropdown({
         ref={buttonRef}
         type="button"
         className={cn(
-          "orwix-nav-link flex items-center gap-0.5 rounded-lg px-2.5 py-2 text-sm transition-all hover:bg-primary/10 sm:px-3",
+          "orwix-nav-link flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-sm font-medium tracking-[-0.01em] transition-all hover:bg-primary/10",
           open && "bg-primary/10 text-foreground",
         )}
         aria-expanded={open}
@@ -452,50 +452,52 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
   };
 
   return (
-    <header className="relative z-20 px-2 pt-3 sm:px-4 sm:pt-4 md:px-6">
+    <header className="relative z-20 px-3 pt-3 sm:px-4 sm:pt-4 md:px-6">
       {/* Glass blur on a separate layer — backdrop-filter clips rounded children otherwise */}
-      <div className="relative mx-auto h-14 max-w-6xl">
+      <div className="relative mx-auto h-12 max-w-5xl sm:h-14">
         <div
           className="orwix-glass pointer-events-none absolute inset-0 rounded-2xl"
           aria-hidden
         />
-        <div className="relative z-10 flex h-full items-center justify-between gap-1 px-2 sm:gap-3 sm:px-3 md:gap-4 md:px-5">
-          <button
-            type="button"
-            onClick={goHome}
-            className="shrink-0 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-            aria-label="Ana sayfaya git"
-          >
-            <OrwixWordmark className="h-6 w-auto sm:h-8" />
-          </button>
+        <div className="relative z-10 flex h-full items-center justify-between gap-3 px-2.5 sm:gap-4 sm:px-4">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-3 md:gap-5">
+            <button
+              type="button"
+              onClick={goHome}
+              className="shrink-0 rounded-lg transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+              aria-label="Ana sayfaya git"
+            >
+              <OrwixWordmark className="h-6 w-auto sm:h-7" />
+            </button>
 
-          <nav className="flex min-w-0 flex-1 items-center justify-center gap-0.5">
-            {ORWIX_HEADER_NAV.dropdowns.map((dropdown) => (
-              <div key={dropdown.label} className="hidden lg:block">
-                <NavDropdown
-                  label={dropdown.label}
-                  items={dropdown.items}
-                  open={openMenu === dropdown.label}
-                  onToggle={() =>
-                    setOpenMenu((current) =>
-                      current === dropdown.label ? null : dropdown.label,
-                    )
-                  }
-                  onClose={() => setOpenMenu(null)}
-                  onSelectItem={handleNavItem}
-                />
-              </div>
-            ))}
-            <PlansDropdown
-              open={openMenu === "Planlar"}
-              onToggle={() =>
-                setOpenMenu((current) =>
-                  current === "Planlar" ? null : "Planlar",
-                )
-              }
-              onClose={() => setOpenMenu(null)}
-            />
-          </nav>
+            <nav className="flex items-center gap-0.5 sm:gap-1">
+              {ORWIX_HEADER_NAV.dropdowns.map((dropdown) => (
+                <div key={dropdown.label} className="hidden md:block">
+                  <NavDropdown
+                    label={dropdown.label}
+                    items={dropdown.items}
+                    open={openMenu === dropdown.label}
+                    onToggle={() =>
+                      setOpenMenu((current) =>
+                        current === dropdown.label ? null : dropdown.label,
+                      )
+                    }
+                    onClose={() => setOpenMenu(null)}
+                    onSelectItem={handleNavItem}
+                  />
+                </div>
+              ))}
+              <PlansDropdown
+                open={openMenu === "Planlar"}
+                onToggle={() =>
+                  setOpenMenu((current) =>
+                    current === "Planlar" ? null : "Planlar",
+                  )
+                }
+                onClose={() => setOpenMenu(null)}
+              />
+            </nav>
+          </div>
 
           <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
             <button
@@ -503,7 +505,7 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
               onClick={goHome}
               title="Yeni sohbet"
               aria-label="Yeni sohbet"
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground sm:size-9"
             >
               <SquarePen className="size-4" strokeWidth={1.75} />
             </button>
@@ -512,14 +514,14 @@ export function OrwixHeader({ onSelectPrompt }: OrwixHeaderProps = {}) {
               onClick={() => setHistoryOpen(true)}
               title="Geçmiş"
               aria-label="Sohbet geçmişi"
-              className="flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground"
+              className="flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-primary/10 hover:text-foreground sm:size-9"
             >
               <Clock className="size-4" strokeWidth={1.75} />
             </button>
-            <ClientOnly fallback={<div className="size-9 shrink-0" />}>
+            <ClientOnly fallback={<div className="size-8 shrink-0 sm:size-9" />}>
               <BackgroundPicker />
             </ClientOnly>
-            <ClientOnly fallback={<div className="size-9 shrink-0" />}>
+            <ClientOnly fallback={<div className="size-8 shrink-0 sm:size-9" />}>
               <ThemeToggle />
             </ClientOnly>
             <AuthButtons />

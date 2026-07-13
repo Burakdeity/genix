@@ -9,7 +9,7 @@ import {
 } from "@/server/types/gemini.types";
 
 const videoRequestSchema = z.object({
-  prompt: z.string().min(1).max(2000),
+  prompt: z.string().min(1).max(4000),
   model: z
     .enum([
       GEMINI_VIDEO_MODELS.FAST,

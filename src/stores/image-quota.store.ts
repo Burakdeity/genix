@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import {
-  billingMonthKey,
+  billingDayKey,
   FREE_SIGNED_IN_IMAGE_LIMIT,
   GUEST_IMAGE_LIMIT,
   PRO_IMAGE_LIMIT,
@@ -14,12 +14,12 @@ export {
   PRO_IMAGE_LIMIT,
 } from "@/lib/billing/plans";
 
-type PeriodUsage = { period: string; count: number };
+type DayUsage = { day: string; count: number };
 type ProEntitlement = { expiresAt: number };
 
 interface ImageQuotaState {
-  guestUsed: number;
-  usedByAccountId: Record<string, PeriodUsage>;
+  guest: DayUsage;
+  usedByAccountId: Record<string, DayUsage>;
   /** Paid Pro entitlements — unlocked only after Stripe confirmation */
   proByAccountId: Record<string, ProEntitlement>;
   loginModalOpen: boolean;
@@ -40,15 +40,9 @@ interface ImageQuotaState {
   claimLoginBonus: (accountId: string) => boolean;
 }
 
-function readUsage(
-  entry: PeriodUsage | number | undefined,
-  period: string,
-): number {
-  if (entry == null) return 0;
-  if (typeof entry === "number") {
-    return entry;
-  }
-  return entry.period === period ? entry.count : 0;
+function readCount(entry: DayUsage | undefined, day: string): number {
+  if (!entry || entry.day !== day) return 0;
+  return entry.count;
 }
 
 function hasActivePro(
@@ -60,10 +54,19 @@ function hasActivePro(
   return entitlement.expiresAt > Date.now();
 }
 
+function resolveLimit(
+  proByAccountId: Record<string, ProEntitlement>,
+  accountId: string | null,
+): number {
+  if (!accountId) return GUEST_IMAGE_LIMIT;
+  if (hasActivePro(proByAccountId, accountId)) return PRO_IMAGE_LIMIT;
+  return FREE_SIGNED_IN_IMAGE_LIMIT;
+}
+
 export const useImageQuotaStore = create<ImageQuotaState>()(
   persist(
     (set, get) => ({
-      guestUsed: 0,
+      guest: { day: "", count: 0 },
       usedByAccountId: {},
       proByAccountId: {},
       loginModalOpen: false,
@@ -80,8 +83,7 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
       dismissLoginModal: () =>
         set({ loginModalOpen: false, awaitingLoginBonus: false }),
 
-      openProModal: () =>
-        set({ proModalOpen: true, loginModalOpen: false }),
+      openProModal: () => set({ proModalOpen: true, loginModalOpen: false }),
       closeProModal: () => set({ proModalOpen: false }),
 
       isPro: (accountId) => {
@@ -96,51 +98,50 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
         return entitlement.expiresAt;
       },
 
-      getLimit: (accountId) => {
-        if (!accountId) return GUEST_IMAGE_LIMIT;
-        if (hasActivePro(get().proByAccountId, accountId)) return PRO_IMAGE_LIMIT;
-        return FREE_SIGNED_IN_IMAGE_LIMIT;
-      },
+      getLimit: (accountId) =>
+        resolveLimit(get().proByAccountId, accountId),
 
       getRemaining: (accountId) => {
+        const day = billingDayKey();
         const state = get();
+        const limit = resolveLimit(state.proByAccountId, accountId);
         if (!accountId) {
-          return Math.max(0, GUEST_IMAGE_LIMIT - state.guestUsed);
+          return Math.max(0, limit - readCount(state.guest, day));
         }
-        const period = billingMonthKey();
-        const used = readUsage(state.usedByAccountId[accountId], period);
-        const limit = hasActivePro(state.proByAccountId, accountId)
-          ? PRO_IMAGE_LIMIT
-          : FREE_SIGNED_IN_IMAGE_LIMIT;
-        return Math.max(0, limit - used);
+        return Math.max(
+          0,
+          limit - readCount(state.usedByAccountId[accountId], day),
+        );
       },
 
       canGenerate: (accountId) => get().getRemaining(accountId) > 0,
 
       consume: (accountId) => {
+        const day = billingDayKey();
+        const limit = resolveLimit(get().proByAccountId, accountId);
+
         if (!accountId) {
           set((state) => ({
-            guestUsed: Math.min(GUEST_IMAGE_LIMIT, state.guestUsed + 1),
+            guest: {
+              day,
+              count: Math.min(limit, readCount(state.guest, day) + 1),
+            },
           }));
           return;
         }
 
-        const period = billingMonthKey();
-        set((state) => {
-          const used = readUsage(state.usedByAccountId[accountId], period);
-          const limit = hasActivePro(state.proByAccountId, accountId)
-            ? PRO_IMAGE_LIMIT
-            : FREE_SIGNED_IN_IMAGE_LIMIT;
-          return {
-            usedByAccountId: {
-              ...state.usedByAccountId,
-              [accountId]: {
-                period,
-                count: Math.min(limit, used + 1),
-              },
+        set((state) => ({
+          usedByAccountId: {
+            ...state.usedByAccountId,
+            [accountId]: {
+              day,
+              count: Math.min(
+                limit,
+                readCount(state.usedByAccountId[accountId], day) + 1,
+              ),
             },
-          };
-        });
+          },
+        }));
       },
 
       activatePro: (accountId, expiresAt) => {
@@ -166,13 +167,13 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
           return false;
         }
 
-        const period = billingMonthKey();
+        const day = billingDayKey();
         set((prev) => ({
           awaitingLoginBonus: false,
           loginModalOpen: false,
           usedByAccountId: {
             ...prev.usedByAccountId,
-            [accountId]: { period, count: 0 },
+            [accountId]: { day, count: 0 },
           },
         }));
         return true;
@@ -181,9 +182,9 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
     {
       name: "orwix-image-quota",
       skipHydration: true,
-      version: 3,
+      version: 4,
       partialize: (state) => ({
-        guestUsed: state.guestUsed,
+        guest: state.guest,
         usedByAccountId: state.usedByAccountId,
         proByAccountId: state.proByAccountId,
         awaitingLoginBonus: state.awaitingLoginBonus,
@@ -191,30 +192,35 @@ export const useImageQuotaStore = create<ImageQuotaState>()(
       migrate: (persisted) => {
         const data = persisted as {
           guestUsed?: number;
-          usedByAccountId?: Record<string, PeriodUsage | number>;
-          proAccountIds?: string[];
+          guest?: DayUsage;
+          usedByAccountId?: Record<
+            string,
+            DayUsage | { period?: string; day?: string; count: number } | number
+          >;
           proByAccountId?: Record<string, ProEntitlement>;
           awaitingLoginBonus?: boolean;
         };
-        const period = billingMonthKey();
-        const nextUsage: Record<string, PeriodUsage> = {};
+        const day = billingDayKey();
+        const nextUsage: Record<string, DayUsage> = {};
         for (const [id, value] of Object.entries(data.usedByAccountId ?? {})) {
           if (typeof value === "number") {
-            nextUsage[id] = { period, count: value };
+            nextUsage[id] = { day, count: 0 };
           } else if (value && typeof value === "object") {
-            nextUsage[id] = value;
+            const entryDay =
+              "day" in value && typeof value.day === "string"
+                ? value.day
+                : day;
+            nextUsage[id] = {
+              day: entryDay === day ? entryDay : day,
+              count: entryDay === day ? value.count : 0,
+            };
           }
         }
 
-        // Drop legacy free Pro unlocks — paid Stripe entitlement required.
-        const proByAccountId: Record<string, ProEntitlement> = {
-          ...(data.proByAccountId ?? {}),
-        };
-
         return {
-          guestUsed: data.guestUsed ?? 0,
+          guest: data.guest ?? { day, count: 0 },
           usedByAccountId: nextUsage,
-          proByAccountId,
+          proByAccountId: data.proByAccountId ?? {},
           awaitingLoginBonus: data.awaitingLoginBonus ?? false,
         };
       },

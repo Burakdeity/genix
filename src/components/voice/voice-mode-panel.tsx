@@ -14,6 +14,7 @@ import {
 
 import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { Button } from "@/components/ui/button";
+import { LivePresenceAvatar } from "@/components/voice/live-presence-avatar";
 import { useGeminiLive } from "@/hooks/use-gemini-live";
 import { FREE_VOICE_MINUTES, PRO_VOICE_MINUTES } from "@/lib/billing/plans";
 import { primeVoiceAudio } from "@/lib/voice/audio-utils";
@@ -34,13 +35,13 @@ function statusLabel(
   if (isMuted) return "Mikrofon kapalı";
   switch (status) {
     case "connecting":
-      return "Güvenli oturum açılıyor…";
+      return "Bağlanıyor…";
     case "listening":
       return "Seni dinliyorum";
     case "speaking":
-      return "Orwix konuşuyor";
+      return "Konuşuyor";
     case "error":
-      return "Bağlantı kesildi";
+      return "Bağlantı koptu";
     default:
       return "Hazırlanıyor…";
   }
@@ -49,6 +50,7 @@ function statusLabel(
 export function VoiceModePanel() {
   const isOpen = useVoiceStore((state) => state.isOpen);
   const close = useVoiceStore((state) => state.close);
+  const brandBriefingMode = useVoiceStore((state) => state.brandBriefingMode);
   const profileId = useVoiceStore((state) => state.profileId);
   const setProfileId = useVoiceStore((state) => state.setProfileId);
   const activeAccountId = useAuthStore((state) => state.activeAccountId);
@@ -62,6 +64,7 @@ export function VoiceModePanel() {
     error,
     inputTranscript,
     outputTranscript,
+    outputLevel,
     isMuted,
     connect,
     disconnect,
@@ -155,187 +158,191 @@ export function VoiceModePanel() {
     <div className="orwix-voice-shell fixed inset-0 z-[400] flex flex-col">
       <div className="orwix-voice-backdrop" aria-hidden />
 
-      <header className="relative z-10 flex items-center justify-between px-4 pt-[max(0.85rem,env(safe-area-inset-top))] sm:px-6">
-        <div>
+      <header className="relative z-20 flex shrink-0 items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6">
+        <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            Canlı ses
+            {brandBriefingMode ? "Sesli marka brifingi" : "Canlı ses"}
           </p>
-          <p className="mt-0.5 text-sm font-medium text-foreground/80">
-            Orwix Voice · {remainingMinutes} dk kaldı
-            {isPro ? ` · Pro (${PRO_VOICE_MINUTES})` : ` · ücretsiz (${FREE_VOICE_MINUTES})`}
+          <p className="mt-0.5 truncate text-sm font-medium text-foreground/80">
+            {remainingMinutes} dk kaldı
+            {isPro
+              ? ` · Pro (${PRO_VOICE_MINUTES})`
+              : ` · ücretsiz (${FREE_VOICE_MINUTES})`}
           </p>
         </div>
         <button
           type="button"
           onClick={handleClose}
-          className="flex size-10 items-center justify-center rounded-full border border-border/50 bg-background/70 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground"
+          className="flex size-10 shrink-0 items-center justify-center rounded-full border border-border/50 bg-background/80 text-muted-foreground backdrop-blur hover:bg-muted hover:text-foreground"
           aria-label="Kapat"
         >
           <X className="size-5" />
         </button>
       </header>
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center px-5 pb-8">
-        <div className="mb-8 max-w-md text-center">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-foreground sm:text-3xl">
-            Orwix ile konuş
+      {/* Scrollable middle — avatar + status + transcript */}
+      <div className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-4 pb-3 pt-3 sm:px-6">
+        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col items-center">
+          <h2 className="mb-1 text-center text-xl font-semibold tracking-[-0.03em] text-foreground sm:text-2xl">
+            {brandBriefingMode ? "Markanı birlikte doğuralım" : "Orwix ile konuş"}
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Samimi, biraz cilveli — komik olunca güler, sohbeti hafif tutar.
-          </p>
-        </div>
 
-        <div
-          className={cn(
-            "orwix-voice-stage mb-8",
-            orbActive && "orwix-voice-stage-active",
-            orbSpeaking && "orwix-voice-stage-speaking",
-            isMuted && "opacity-70",
-          )}
-        >
-          <div className="orwix-voice-ring" aria-hidden />
           <div
             className={cn(
-              "orwix-voice-orb",
-              orbActive && "orwix-voice-orb-active",
-              orbSpeaking && "orwix-voice-orb-speaking",
+              "orwix-voice-stage my-3 shrink-0",
+              orbActive && "orwix-voice-stage-active",
+              orbSpeaking && "orwix-voice-stage-speaking",
+              isMuted && "opacity-80",
             )}
-            aria-hidden
-          />
-        </div>
-
-        <div className="mb-7 flex flex-col items-center gap-2">
-          <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
-            {statusLabel(status, isMuted)}
-          </p>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span
-              className={cn(
-                "size-1.5 rounded-full",
-                status === "error"
-                  ? "bg-destructive"
-                  : status === "connecting"
-                    ? "bg-amber-500"
-                    : "bg-emerald-500",
-              )}
+          >
+            <div className="orwix-voice-ring" aria-hidden />
+            <div className="orwix-voice-ring orwix-voice-ring-delay" aria-hidden />
+            <LivePresenceAvatar
+              state={status}
+              muted={isMuted}
+              profileId={profileId}
+              outputLevel={outputLevel}
+              className="orwix-voice-presence"
             />
-            {status === "connecting"
-              ? "Bağlanıyor"
-              : status === "error"
-                ? "Yeniden dene"
-                : "Canlı"}
-          </div>
-        </div>
-
-        <div className="orwix-voice-transcript mb-8 w-full max-w-lg space-y-3">
-          {inputTranscript ? (
-            <div className="rounded-2xl border border-border/40 bg-background/55 px-4 py-3 text-left backdrop-blur">
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Sen
-              </p>
-              <MessageMarkdown
-                text={inputTranscript}
-                className="text-sm leading-relaxed text-foreground/85"
-              />
-            </div>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border/40 bg-background/35 px-4 py-3 text-center text-sm text-muted-foreground backdrop-blur">
-              Konuşmaya başla — metin burada görünecek
-            </div>
-          )}
-          {outputTranscript ? (
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-left backdrop-blur">
-              <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary/80">
-                Orwix
-              </p>
-              <MessageMarkdown
-                text={outputTranscript}
-                className="text-sm leading-relaxed text-foreground"
-              />
-            </div>
-          ) : null}
-          {error ? (
-            <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-center text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
-        </div>
-
-        <div className="mb-8 flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/60 px-3 py-3 backdrop-blur">
-          <button
-            type="button"
-            onClick={() => selectProfile(-1)}
-            disabled={status === "connecting"}
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-50"
-            aria-label="Önceki ses"
-          >
-            <ChevronLeft className="size-5" />
-          </button>
-
-          <div className="min-w-0 flex-1 text-center">
-            <p className="text-lg font-semibold tracking-[-0.02em] text-foreground">
-              {activeProfile.name}
-            </p>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {activeProfile.description}
-            </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => selectProfile(1)}
-            disabled={status === "connecting"}
-            className="flex size-10 items-center justify-center rounded-full text-muted-foreground hover:bg-muted disabled:opacity-50"
-            aria-label="Sonraki ses"
-          >
-            <ChevronRight className="size-5" />
-          </button>
-        </div>
+          <div className="mb-3 flex flex-col items-center gap-1">
+            <p className="text-sm font-semibold tracking-[-0.01em] text-foreground">
+              {statusLabel(status, isMuted)}
+            </p>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  status === "error"
+                    ? "bg-destructive"
+                    : status === "connecting"
+                      ? "bg-amber-500"
+                      : "bg-emerald-500",
+                )}
+              />
+              {status === "connecting"
+                ? "Bağlanıyor"
+                : status === "error"
+                  ? "Yeniden dene"
+                  : "Canlı"}
+            </div>
+          </div>
 
-        <div className="flex items-center gap-4">
-          <Button
-            type="button"
-            size="lg"
-            variant={isMuted ? "secondary" : "default"}
-            onClick={toggleMute}
-            disabled={status === "connecting" || status === "idle"}
-            className="h-16 w-16 rounded-full p-0 shadow-lg"
-            aria-label={isMuted ? "Mikrofonu aç" : "Mikrofonu kapat"}
-          >
-            {isMuted ? (
-              <MicOff className="size-6" />
+          <div className="orwix-voice-transcript mb-2 w-full space-y-2">
+            {error ? (
+              <p className="rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2 text-center text-sm text-destructive">
+                {error}
+              </p>
+            ) : null}
+            {inputTranscript ? (
+              <div className="rounded-2xl border border-border/40 bg-background/55 px-3 py-2.5 text-left backdrop-blur">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                  Sen
+                </p>
+                <MessageMarkdown
+                  text={inputTranscript}
+                  className="text-sm leading-relaxed text-foreground/85"
+                />
+              </div>
+            ) : null}
+            {outputTranscript ? (
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 px-3 py-2.5 text-left backdrop-blur">
+                <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-primary/80">
+                  Orwix
+                </p>
+                <MessageMarkdown
+                  text={outputTranscript}
+                  className="text-sm leading-relaxed text-foreground"
+                />
+              </div>
+            ) : null}
+            {!inputTranscript && !outputTranscript && !error ? (
+              <p className="text-center text-xs text-muted-foreground">
+                Konuşmaya başla — metin burada görünür
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      {/* Sticky controls — always visible */}
+      <div className="relative z-20 shrink-0 border-t border-border/40 bg-background/85 px-4 pb-[max(0.85rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl sm:px-6">
+        <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3">
+          <div className="flex w-full items-center justify-between gap-2 rounded-2xl border border-border/50 bg-background/70 px-2 py-2">
+            <button
+              type="button"
+              onClick={() => selectProfile(-1)}
+              className="flex size-11 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95"
+              aria-label="Önceki ses"
+            >
+              <ChevronLeft className="size-5" />
+            </button>
+
+            <div className="min-w-0 flex-1 text-center">
+              <p className="text-base font-semibold tracking-[-0.02em] text-foreground">
+                {activeProfile.name}
+              </p>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {activeProfile.description}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => selectProfile(1)}
+              className="flex size-11 shrink-0 items-center justify-center rounded-full text-foreground hover:bg-muted active:scale-95"
+              aria-label="Sonraki ses"
+            >
+              <ChevronRight className="size-5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              size="lg"
+              variant={isMuted ? "secondary" : "default"}
+              onClick={toggleMute}
+              disabled={status === "connecting" || status === "idle"}
+              className="h-14 w-14 rounded-full p-0 shadow-lg"
+              aria-label={isMuted ? "Mikrofonu aç" : "Mikrofonu kapat"}
+            >
+              {isMuted ? (
+                <MicOff className="size-5" />
+              ) : (
+                <Mic className="size-5" />
+              )}
+            </Button>
+
+            {status === "error" ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => void handleRetry()}
+                className="h-11 gap-2 rounded-full px-4"
+              >
+                <RefreshCw className="size-4" />
+                Tekrar bağlan
+              </Button>
             ) : (
-              <Mic className="size-6" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleClose}
+                className="h-11 gap-2 rounded-full px-4"
+              >
+                <PhoneOff className="size-4" />
+                Bitir
+              </Button>
             )}
-          </Button>
+          </div>
 
-          {status === "error" ? (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => void handleRetry()}
-              className="h-12 gap-2 rounded-full px-5"
-            >
-              <RefreshCw className="size-4" />
-              Tekrar bağlan
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleClose}
-              className="h-12 gap-2 rounded-full px-5"
-            >
-              <PhoneOff className="size-4" />
-              Bitir
-            </Button>
-          )}
+          <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted-foreground">
+            <Headphones className="size-3 shrink-0 opacity-70" />
+            Kulaklık önerilir
+          </p>
         </div>
-
-        <p className="mt-7 flex max-w-md items-center justify-center gap-2 text-center text-xs text-muted-foreground">
-          <Headphones className="size-3.5 shrink-0 opacity-70" />
-          Kulaklık önerilir — yankı azalır, konuşman daha net kesilmez.
-        </p>
       </div>
     </div>
   );

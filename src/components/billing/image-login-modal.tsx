@@ -52,7 +52,7 @@ export function ImageLoginModal() {
         </p>
 
         <ul className="mt-4 space-y-2 text-sm text-foreground">
-          <li>• Giriş = ayda {FREE_SIGNED_IN_IMAGE_LIMIT} görsel</li>
+          <li>• Giriş = günde {FREE_SIGNED_IN_IMAGE_LIMIT} görsel</li>
           <li>• Video ve canlı ses için de ücretsiz kota</li>
           <li>• Daha fazlası için Orwix Pro</li>
         </ul>

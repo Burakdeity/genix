@@ -12,6 +12,7 @@ import {
   GEMINI_LIVE_MODEL_FALLBACK,
   getGeminiLiveVoiceName,
 } from "@/lib/voice/gemini-voice-map";
+import { LIVE_BRAND_BRIEFING_ADDON } from "@/lib/voice/live-brand-briefing";
 import { LIVE_SYSTEM_INSTRUCTION } from "@/lib/voice/live-system-prompt";
 
 const sessionRequestSchema = z.object({
@@ -19,6 +20,7 @@ const sessionRequestSchema = z.object({
     .enum(["juniper", "ember", "breeze"])
     .optional()
     .default("juniper"),
+  brandBriefing: z.boolean().optional().default(false),
 });
 
 export type LiveSessionRequest = z.infer<typeof sessionRequestSchema>;
@@ -31,10 +33,15 @@ function getClientKey(request: Request): string {
   return request.headers.get("x-real-ip") ?? "local";
 }
 
-function buildLiveConfig(voiceName: string) {
+function resolveSystemInstruction(brandBriefing: boolean): string {
+  if (!brandBriefing) return LIVE_SYSTEM_INSTRUCTION;
+  return `${LIVE_SYSTEM_INSTRUCTION}${LIVE_BRAND_BRIEFING_ADDON}`;
+}
+
+function buildLiveConfig(voiceName: string, systemInstruction: string) {
   return {
     responseModalities: [Modality.AUDIO],
-    systemInstruction: LIVE_SYSTEM_INSTRUCTION,
+    systemInstruction,
     speechConfig: {
       voiceConfig: {
         prebuiltVoiceConfig: { voiceName },
@@ -49,8 +56,8 @@ function buildLiveConfig(voiceName: string) {
         disabled: false,
         startOfSpeechSensitivity: "START_SENSITIVITY_LOW",
         endOfSpeechSensitivity: "END_SENSITIVITY_LOW",
-        prefixPaddingMs: 350,
-        silenceDurationMs: 1300,
+        prefixPaddingMs: 400,
+        silenceDurationMs: 1500,
       },
       // Echo from speakers often falsely "interrupts"; client also gates mic.
       activityHandling: "START_OF_ACTIVITY_INTERRUPTS",
@@ -63,6 +70,7 @@ async function createLiveToken(
   model: string,
   voiceName: string,
   includeVadConfig: boolean,
+  systemInstruction: string,
 ) {
   const ai = new GoogleGenAI({
     apiKey,
@@ -76,7 +84,7 @@ async function createLiveToken(
 
   const baseConfig = {
     responseModalities: [Modality.AUDIO],
-    systemInstruction: LIVE_SYSTEM_INSTRUCTION,
+    systemInstruction,
     speechConfig: {
       voiceConfig: {
         prebuiltVoiceConfig: { voiceName },
@@ -95,7 +103,7 @@ async function createLiveToken(
       liveConnectConstraints: {
         model,
         config: includeVadConfig
-          ? buildLiveConfig(voiceName)
+          ? buildLiveConfig(voiceName, systemInstruction)
           : baseConfig,
       },
       httpOptions: { apiVersion: "v1alpha" },
@@ -127,8 +135,9 @@ export async function handleLiveSessionRequest(
       );
     }
 
-    const { voiceProfile } = parsed.data;
+    const { voiceProfile, brandBriefing } = parsed.data;
     const voiceName = getGeminiLiveVoiceName(voiceProfile);
+    const systemInstruction = resolveSystemInstruction(brandBriefing);
     const { GEMINI_API_KEY } = getServerEnv();
 
     const models = [GEMINI_LIVE_MODEL, GEMINI_LIVE_MODEL_FALLBACK];
@@ -142,6 +151,7 @@ export async function handleLiveSessionRequest(
             model,
             voiceName,
             includeVad,
+            systemInstruction,
           );
           const tokenValue = token.name?.trim();
           if (!tokenValue) {

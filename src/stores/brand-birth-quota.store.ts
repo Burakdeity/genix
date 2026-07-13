@@ -3,21 +3,21 @@ import { persist } from "zustand/middleware";
 
 import {
   billingDayKey,
-  FREE_SIGNED_IN_VIDEO_LIMIT,
-  GUEST_VIDEO_LIMIT,
-  PRO_VIDEO_LIMIT,
+  FREE_BRAND_BIRTH_PER_DAY,
+  GUEST_BRAND_BIRTH_PER_DAY,
+  PRO_BRAND_BIRTH_PER_DAY,
 } from "@/lib/billing/plans";
 import { useImageQuotaStore } from "@/stores/image-quota.store";
 
 export {
-  FREE_SIGNED_IN_VIDEO_LIMIT,
-  GUEST_VIDEO_LIMIT,
-  PRO_VIDEO_LIMIT,
+  FREE_BRAND_BIRTH_PER_DAY,
+  GUEST_BRAND_BIRTH_PER_DAY,
+  PRO_BRAND_BIRTH_PER_DAY,
 } from "@/lib/billing/plans";
 
 type DayUsage = { day: string; count: number };
 
-interface VideoQuotaState {
+interface BrandBirthQuotaState {
   guest: DayUsage;
   usedByAccountId: Record<string, DayUsage>;
   getLimit: (accountId: string | null) => number;
@@ -32,12 +32,14 @@ function readCount(entry: DayUsage | undefined, day: string): number {
 }
 
 function resolveLimit(accountId: string | null): number {
-  if (!accountId) return GUEST_VIDEO_LIMIT;
-  if (useImageQuotaStore.getState().isPro(accountId)) return PRO_VIDEO_LIMIT;
-  return FREE_SIGNED_IN_VIDEO_LIMIT;
+  if (!accountId) return GUEST_BRAND_BIRTH_PER_DAY;
+  if (useImageQuotaStore.getState().isPro(accountId)) {
+    return PRO_BRAND_BIRTH_PER_DAY;
+  }
+  return FREE_BRAND_BIRTH_PER_DAY;
 }
 
-export const useVideoQuotaStore = create<VideoQuotaState>()(
+export const useBrandBirthQuotaStore = create<BrandBirthQuotaState>()(
   persist(
     (set, get) => ({
       guest: { day: "", count: 0 },
@@ -89,43 +91,12 @@ export const useVideoQuotaStore = create<VideoQuotaState>()(
       },
     }),
     {
-      name: "orwix-video-quota",
+      name: "orwix-brand-birth-quota",
       skipHydration: true,
-      version: 3,
       partialize: (state) => ({
         guest: state.guest,
         usedByAccountId: state.usedByAccountId,
       }),
-      migrate: (persisted) => {
-        const data = persisted as {
-          guestUsed?: number;
-          guest?: DayUsage;
-          usedByAccountId?: Record<
-            string,
-            DayUsage | { period?: string; day?: string; count: number } | number
-          >;
-        };
-        const day = billingDayKey();
-        const nextUsage: Record<string, DayUsage> = {};
-        for (const [id, value] of Object.entries(data.usedByAccountId ?? {})) {
-          if (typeof value === "number") {
-            nextUsage[id] = { day, count: 0 };
-          } else if (value && typeof value === "object") {
-            const entryDay =
-              "day" in value && typeof value.day === "string"
-                ? value.day
-                : day;
-            nextUsage[id] = {
-              day: entryDay === day ? entryDay : day,
-              count: entryDay === day ? value.count : 0,
-            };
-          }
-        }
-        return {
-          guest: data.guest ?? { day, count: 0 },
-          usedByAccountId: nextUsage,
-        };
-      },
     },
   ),
 );

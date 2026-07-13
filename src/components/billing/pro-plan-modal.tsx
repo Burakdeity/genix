@@ -79,7 +79,7 @@ export function ProPlanModal() {
         </p>
         <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
           Ücretsiz haklarınız doldu (ör. {FREE_SIGNED_IN_IMAGE_LIMIT} görsel /
-          ay). Güvenli Stripe ödemesiyle Pro&apos;ya geçin.
+          gün). Güvenli Stripe ödemesiyle Pro&apos;ya geçin.
         </p>
 
         <ul className="mt-4 space-y-2 text-sm text-foreground">

@@ -703,16 +703,19 @@ export class GeminiService {
           },
         });
 
-        const maxPolls = 36;
+        // Veo can take several minutes; poll a bit more patiently.
+        const maxPolls = 48;
         for (let i = 0; i < maxPolls && !operation.done; i += 1) {
-          await sleep(8000);
+          await sleep(i < 6 ? 5000 : 8000);
           operation = await this.client.operations.getVideosOperation({
             operation,
           });
         }
 
         if (!operation.done) {
-          throw new Error("Video üretimi zaman aşımına uğradı.");
+          throw new Error(
+            "Video üretimi zaman aşımına uğradı. Lütfen sahneyi kısaltıp tekrar deneyin.",
+          );
         }
 
         const generated =
@@ -720,11 +723,25 @@ export class GeminiService {
             operation as {
               response?: {
                 generatedVideos?: Array<{ video?: unknown } | unknown>;
+                raiMediaFilteredCount?: number;
+                raiMediaFilteredReasons?: string[];
               };
             }
           ).response?.generatedVideos ?? [];
 
+        const filteredCount =
+          (
+            operation as {
+              response?: { raiMediaFilteredCount?: number };
+            }
+          ).response?.raiMediaFilteredCount ?? 0;
+
         if (!generated.length) {
+          if (filteredCount > 0) {
+            throw new Error(
+              "Bu video isteği güvenlik filtresine takıldı. Sahneyi daha nötr anlatıp tekrar deneyin.",
+            );
+          }
           throw new Error(`Gemini video üretemedi (${model}).`);
         }
 

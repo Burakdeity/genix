@@ -18,6 +18,7 @@ import {
   takePrimedVoiceAudio,
 } from "@/lib/voice/audio-utils";
 import type { VoiceProfileId } from "@/types/voice.types";
+import { useVoiceStore } from "@/stores/voice.store";
 
 export type GeminiLiveStatus =
   | "idle"
@@ -101,6 +102,7 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   const [outputTranscript, setOutputTranscript] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [outputLevel, setOutputLevel] = useState(0);
 
   const sessionRef = useRef<LiveSession | null>(null);
   const captureContextRef = useRef<AudioContext | null>(null);
@@ -295,8 +297,8 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
           }
 
           bargeInHitsRef.current += 1;
-          // Need 2 hot frames (~0.3s) so a cough/echo doesn't cut speech.
-          if (bargeInHitsRef.current < 2) return;
+          // Need 3 hot frames so a cough/echo doesn't cut speech mid-word.
+          if (bargeInHitsRef.current < 3) return;
 
           playbackQueueRef.current?.flush();
           markListening();
@@ -344,7 +346,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
       const response = await fetch("/api/gemini/live/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ voiceProfile: voiceProfileRef.current }),
+        body: JSON.stringify({
+          voiceProfile: voiceProfileRef.current,
+          brandBriefing: useVoiceStore.getState().brandBriefingMode,
+        }),
       });
 
       if (connectId !== connectIdRef.current) return;
@@ -420,10 +425,10 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         return;
       }
 
-      // Soft opener so the voice starts warm and playful.
+      // Soft opener — force clear Istanbul Turkish from the first utterance.
       try {
         session.sendRealtimeInput({
-          text: "Kullanıcı yeni bağlandı. Çok kısa, samimi ve tatlı bir şekilde selamla; kendini Orwix olarak tanıt. Abartma.",
+          text: "Kullanıcı yeni bağlandı. Yalnızca net İstanbul Türkçesiyle, çok kısa ve samimi selamla; kendini Orwix olarak tanıt. İngilizce kelime, yabancı şive veya abartılı kahkaha yok. Kelimeleri yutma.",
         });
       } catch {
         // optional greeting
@@ -467,6 +472,17 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
   }, [isMuted]);
 
   useEffect(() => {
+    let frame = 0;
+    const tick = () => {
+      const level = playbackQueueRef.current?.level ?? 0;
+      setOutputLevel((prev) => prev * 0.55 + level * 0.45);
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     return () => {
       disconnect();
     };
@@ -477,6 +493,7 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
     error,
     inputTranscript,
     outputTranscript,
+    outputLevel,
     isMuted,
     connect,
     disconnect,

@@ -14,6 +14,13 @@ assert.equal(isImageGenerationPrompt("bir kedi resmi oluştur"), true);
 assert.equal(isImageGenerationPrompt("afiş oluştur"), true);
 assert.equal(isVideoGenerationPrompt("kısa bir video çek"), true);
 assert.equal(isVideoGenerationPrompt("reels klip oluştur"), true);
+assert.equal(isVideoGenerationPrompt("yağmurda yürüyen adam videosu"), true);
+assert.equal(
+  isVideoGenerationPrompt("bana bir video: sahilde koşan köpek"),
+  true,
+);
+assert.equal(isVideoGenerationPrompt("bunu videoya çevir"), true);
+assert.equal(isVideoGenerationPrompt("dikey story videosu yap"), true);
 assert.equal(
   shouldRouteToImageEdit("dosyayı sil", {
     hasPriorImages: false,

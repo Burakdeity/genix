@@ -1,10 +1,14 @@
 import type { OrwixMode } from "@/content/orwix-content";
 
+import {
+  STUDIO_TOOL_OVERLAYS,
+  type StudioToolId,
+} from "@/lib/chat/studio-tools";
 import { normalizeTr, trStem, trWord, TR_LEFT, TR_RIGHT } from "@/lib/chat/tr-text";
 
 const MODE_OVERLAYS: Record<Exclude<OrwixMode, "general">, string> = {
   image: `Mod: Görsel stüdyosu. Net, zengin görsel promptu üret.`,
-  video: `Mod: Video stüdyosu. Kısa sinematik sahne tanımı ver.`,
+  video: `Mod: Video stüdyosu. Kullanıcının Türkçe isteğini birebir anla; sahne, aksiyon, kamera ve atmosferi netleştir. Kısa sinematik sahne tanımı ver; metin-only yanıtla yetinme — asıl çıktı video üretimine gidecek.`,
   website: `Mod: Web sitesi. Tek dosya çalışır HTML (\`\`\`html) üret. Kısa özet + kod.`,
   slides: `Mod: Sunum. Slayt slayt yapı: başlık, madde, not.`,
   design: `Mod: Tasarım. Renk, tipografi, spacing spesifikasyonu ver.`,
@@ -15,10 +19,21 @@ const MODE_OVERLAYS: Record<Exclude<OrwixMode, "general">, string> = {
 export function buildSystemInstruction(
   base: string,
   mode: OrwixMode = "general",
+  options?: {
+    studioTool?: StudioToolId;
+    brandMemoryBlock?: string | null;
+  },
 ): string {
-  const overlay = mode !== "general" ? MODE_OVERLAYS[mode] : null;
-  if (!overlay) return base;
-  return `${base.trim()}\n\n${overlay}`;
+  const parts = [base.trim()];
+  const modeOverlay = mode !== "general" ? MODE_OVERLAYS[mode] : null;
+  if (modeOverlay) parts.push(modeOverlay);
+  if (options?.studioTool) {
+    parts.push(STUDIO_TOOL_OVERLAYS[options.studioTool]);
+  }
+  if (options?.brandMemoryBlock?.trim()) {
+    parts.push(options.brandMemoryBlock.trim());
+  }
+  return parts.join("\n\n");
 }
 
 const RESEARCH_RE = new RegExp(

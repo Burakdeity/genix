@@ -9,11 +9,12 @@ import type { VoiceProfileId } from "@/types/voice.types";
 
 interface VoiceState {
   isOpen: boolean;
+  brandBriefingMode: boolean;
   profileId: VoiceProfileId;
   autoSpeak: boolean;
   open: () => void;
   /** Prime mic + AudioContext during the user gesture, then open. */
-  openLive: () => Promise<void>;
+  openLive: (options?: { brandBriefing?: boolean }) => Promise<void>;
   close: () => void;
   setProfileId: (id: VoiceProfileId) => void;
   setAutoSpeak: (value: boolean) => void;
@@ -23,10 +24,11 @@ export const useVoiceStore = create<VoiceState>()(
   persist(
     (set) => ({
       isOpen: false,
+      brandBriefingMode: false,
       profileId: "juniper",
       autoSpeak: true,
-      open: () => set({ isOpen: true }),
-      openLive: async () => {
+      open: () => set({ isOpen: true, brandBriefingMode: false }),
+      openLive: async (options) => {
         const accountId = useAuthStore.getState().activeAccountId;
         const voiceQuota = useVoiceQuotaStore.getState();
         if (!voiceQuota.canStart(accountId)) {
@@ -43,9 +45,12 @@ export const useVoiceStore = create<VoiceState>()(
         } catch {
           // Panel will still open; connect() surfaces mic permission errors.
         }
-        set({ isOpen: true });
+        set({
+          isOpen: true,
+          brandBriefingMode: options?.brandBriefing === true,
+        });
       },
-      close: () => set({ isOpen: false }),
+      close: () => set({ isOpen: false, brandBriefingMode: false }),
       setProfileId: (profileId) => set({ profileId }),
       setAutoSpeak: (autoSpeak) => set({ autoSpeak }),
     }),

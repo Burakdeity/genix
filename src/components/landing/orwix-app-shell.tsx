@@ -34,6 +34,7 @@ interface PromptRequest {
   text: string;
   mode?: OrwixMode;
   autoSend?: boolean;
+  brandBirth?: boolean;
 }
 
 interface OrwixAppShellProps {
@@ -68,13 +69,14 @@ export function OrwixAppShell({
 
   const handleSelectPrompt = (
     text: string,
-    options?: { mode?: OrwixMode; autoSend?: boolean },
+    options?: { mode?: OrwixMode; autoSend?: boolean; brandBirth?: boolean },
   ) => {
     setPromptRequest({
       id: Date.now(),
       text,
       mode: options?.mode,
       autoSend: options?.autoSend,
+      brandBirth: options?.brandBirth,
     });
   };
 
