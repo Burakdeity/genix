@@ -37,7 +37,7 @@ const VIDEO_FALLBACK_MODELS = [
   GEMINI_VIDEO_MODELS.LITE,
 ] as const;
 
-const DEFAULT_MAX_OUTPUT_TOKENS = 4096;
+const DEFAULT_MAX_OUTPUT_TOKENS = 1024;
 
 type GeminiPart =
   | { text: string }
@@ -58,54 +58,33 @@ function resolveModel(model?: GeminiModelId): GeminiModelId {
 }
 
 function getFallbackModels(primary: GeminiModelId): string[] {
-  // Never fall back TO 3.5 Flash — it is slower and often 503 under load.
-  // Prefer Flash-Lite as the recovery model for speed.
   if (primary === GEMINI_MODELS.FLASH_LITE) {
-    return [primary];
+    return [primary, GEMINI_MODELS.FLASH];
   }
   if (primary === GEMINI_MODELS.FLASH) {
     return [primary, GEMINI_MODELS.FLASH_LITE];
   }
   if (primary === GEMINI_MODELS.PRO) {
-    return [primary, GEMINI_MODELS.FLASH_LITE];
+    return [primary, GEMINI_MODELS.FLASH];
   }
-  return [primary];
+  return [primary, GEMINI_MODELS.FLASH_LITE];
 }
 
-/**
- * Speed path: thinkingBudget 0 (measured ~0.4s TTFT on Flash-Lite).
- * Pro: thinkingLevel low. Never send both — API returns 400.
- */
-function buildThinkingConfig(
+function resolveThinkingLevel(
   model: GeminiModelId,
-  config?: GeminiGenerationConfig,
-): { thinkingBudget: number; includeThoughts: false } | {
-  thinkingLevel: "minimal" | "low" | "medium" | "high";
-  includeThoughts: false;
-} {
-  if (model === GEMINI_MODELS.PRO) {
-    const level = config?.thinkingLevel;
-    return {
-      thinkingLevel:
-        level === "high" || level === "medium" || level === "low"
-          ? level
-          : "low",
-      includeThoughts: false,
-    };
+  requested?: GeminiGenerationConfig["thinkingLevel"],
+): "minimal" | "low" | "medium" | "high" {
+  // Must be lowercase strings — SDK enum "MINIMAL" is ignored by the API.
+  if (
+    requested === "high" ||
+    requested === "medium" ||
+    requested === "low" ||
+    requested === "minimal"
+  ) {
+    return requested;
   }
-
-  if (typeof config?.thinkingBudget === "number") {
-    return {
-      thinkingBudget: config.thinkingBudget,
-      includeThoughts: false,
-    };
-  }
-
-  // Flash / Flash-Lite: disable thinking for lowest latency.
-  return {
-    thinkingBudget: 0,
-    includeThoughts: false,
-  };
+  if (model === GEMINI_MODELS.PRO) return "low";
+  return "minimal";
 }
 
 function buildImageParts(
@@ -125,7 +104,7 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   const imageParts = buildImageParts(request.images);
   const promptText =
     request.prompt.trim() ||
-    (imageParts.length > 0 ? "Bu görseli incele." : "");
+    (imageParts.length > 0 ? "Bu görseli incele ve yardımcı ol." : "");
 
   if (history.length === 0 && imageParts.length === 0) {
     return promptText;
@@ -155,15 +134,13 @@ function buildContents(request: GeminiGenerateRequest): GeminiContent[] | string
   if (
     !last ||
     last.role !== "user" ||
-    lastText !== promptText
+    lastText !== promptText ||
+    imageParts.length > 0
   ) {
     contents.push({
       role: "user",
       parts: [{ text: promptText }, ...imageParts],
     });
-  } else if (imageParts.length > 0) {
-    // Same user text already in history — attach images to that turn (no duplicate).
-    last.parts = [{ text: promptText }, ...imageParts];
   }
 
   return contents;
@@ -184,7 +161,6 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
     }
   }
 
-  // Cast: SDK ThinkingLevel enum vs lowercase API strings ("minimal"/"low"/…).
   return {
     ...(systemInstruction ? { systemInstruction } : {}),
     // Omit temperature unless explicitly set — Gemini 3.x prefers model defaults
@@ -194,7 +170,10 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
     maxOutputTokens: config?.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS,
     ...(config?.topP !== undefined ? { topP: config.topP } : {}),
     ...(config?.topK !== undefined ? { topK: config.topK } : {}),
-    thinkingConfig: buildThinkingConfig(model, config),
+    thinkingConfig: {
+      thinkingLevel: resolveThinkingLevel(model, config?.thinkingLevel),
+      includeThoughts: false,
+    },
     ...(tools.length > 0 ? { tools } : {}),
     ...(structuredOutput
       ? {
@@ -202,9 +181,7 @@ function buildGenerateConfig(request: GeminiGenerateRequest) {
           responseJsonSchema: structuredOutput.responseJsonSchema,
         }
       : {}),
-  } as Parameters<
-    GoogleGenAI["models"]["generateContent"]
-  >[0]["config"];
+  };
 }
 
 type ResponsePart = {
@@ -380,10 +357,7 @@ export class GeminiService {
             const response = await this.client.models.generateContent({
               model,
               contents,
-              config: buildGenerateConfig({
-                ...request,
-                model: model as GeminiModelId,
-              }),
+              config: buildGenerateConfig(request),
             });
 
             const text = extractResponseText(response);
@@ -440,7 +414,6 @@ export class GeminiService {
                   contents,
                   config: buildGenerateConfig({
                     ...request,
-                    model: model as GeminiModelId,
                     enableSearch: false,
                     enableCodeExecution: false,
                   }),
@@ -476,77 +449,51 @@ export class GeminiService {
     const contents = buildContents(request);
 
     for (const model of models) {
-      const attempts: Array<{ stripTools: boolean }> = [{ stripTools: false }];
-      if (request.enableSearch || request.enableCodeExecution) {
-        attempts.push({ stripTools: true });
-      }
+      try {
+        const stream = await this.client.models.generateContentStream({
+          model,
+          contents,
+          config: buildGenerateConfig(request),
+        });
 
-      for (const attempt of attempts) {
-        try {
-          const stream = await this.client.models.generateContentStream({
-            model,
-            contents,
-            config: buildGenerateConfig({
-              ...request,
-              model: model as GeminiModelId,
-              ...(attempt.stripTools
-                ? { enableSearch: false, enableCodeExecution: false }
-                : {}),
-            }),
-          });
+        let hasContent = false;
+        let lastSources: GeminiGroundingSource[] = [];
 
-          let hasContent = false;
-          let lastSources: GeminiGroundingSource[] = [];
-
-          for await (const chunk of stream) {
-            const text = extractChunkText(chunk);
-            const sources = extractGroundingSources(chunk);
-            if (sources.length > 0) {
-              lastSources = sources;
-            }
-            if (text) {
-              hasContent = true;
-              yield { text, done: false };
-            }
+        for await (const chunk of stream) {
+          const text = extractChunkText(chunk);
+          const sources = extractGroundingSources(chunk);
+          if (sources.length > 0) {
+            lastSources = sources;
           }
-
-          if (!hasContent) {
-            throw new Error("Gemini API boş akış yanıtı döndürdü.");
+          if (text) {
+            hasContent = true;
+            yield { text, done: false };
           }
+        }
 
-          yield {
-            text: "",
-            done: true,
-            ...(lastSources.length > 0 ? { sources: lastSources } : {}),
-          };
-          return;
-        } catch (error) {
-          const mapped = mapGeminiError(error);
-          lastMapped = mapped;
-          const message =
-            error instanceof Error ? error.message.toLowerCase() : "";
+        if (!hasContent) {
+          throw new Error("Gemini API boş akış yanıtı döndürdü.");
+        }
 
-          const isToolError =
-            message.includes("tool") ||
-            message.includes("google_search") ||
-            message.includes("code_execution");
+        yield {
+          text: "",
+          done: true,
+          ...(lastSources.length > 0 ? { sources: lastSources } : {}),
+        };
+        return;
+      } catch (error) {
+        const mapped = mapGeminiError(error);
+        lastMapped = mapped;
+        const message =
+          error instanceof Error ? error.message.toLowerCase() : "";
+        const shouldFallback =
+          isRetryableError(mapped) ||
+          message.includes("boş akış") ||
+          message.includes("not found") ||
+          message.includes("no longer available");
 
-          // First attempt + tool error → try same model without tools.
-          if (!attempt.stripTools && isToolError && attempts.length > 1) {
-            continue;
-          }
-
-          const shouldFallback =
-            isRetryableError(mapped) ||
-            message.includes("boş akış") ||
-            message.includes("not found") ||
-            message.includes("no longer available");
-
-          if (!shouldFallback) {
-            throw mapped;
-          }
-
-          break; // next model
+        if (!shouldFallback) {
+          throw mapped;
         }
       }
     }
@@ -663,8 +610,7 @@ export class GeminiService {
             message.includes("not found") ||
             message.includes("no longer available") ||
             message.includes("not supported") ||
-            message.includes("invalid argument") ||
-            message.includes("unsupported");
+            message.includes("invalid");
 
           if (!shouldFallback) {
             throw mapGeminiError(error);
@@ -703,19 +649,16 @@ export class GeminiService {
           },
         });
 
-        // Veo can take several minutes; poll a bit more patiently.
-        const maxPolls = 48;
+        const maxPolls = 36;
         for (let i = 0; i < maxPolls && !operation.done; i += 1) {
-          await sleep(i < 6 ? 5000 : 8000);
+          await sleep(8000);
           operation = await this.client.operations.getVideosOperation({
             operation,
           });
         }
 
         if (!operation.done) {
-          throw new Error(
-            "Video üretimi zaman aşımına uğradı. Lütfen sahneyi kısaltıp tekrar deneyin.",
-          );
+          throw new Error("Video üretimi zaman aşımına uğradı.");
         }
 
         const generated =
@@ -723,25 +666,11 @@ export class GeminiService {
             operation as {
               response?: {
                 generatedVideos?: Array<{ video?: unknown } | unknown>;
-                raiMediaFilteredCount?: number;
-                raiMediaFilteredReasons?: string[];
               };
             }
           ).response?.generatedVideos ?? [];
 
-        const filteredCount =
-          (
-            operation as {
-              response?: { raiMediaFilteredCount?: number };
-            }
-          ).response?.raiMediaFilteredCount ?? 0;
-
         if (!generated.length) {
-          if (filteredCount > 0) {
-            throw new Error(
-              "Bu video isteği güvenlik filtresine takıldı. Sahneyi daha nötr anlatıp tekrar deneyin.",
-            );
-          }
           throw new Error(`Gemini video üretemedi (${model}).`);
         }
 

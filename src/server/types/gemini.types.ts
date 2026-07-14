@@ -74,10 +74,8 @@ export interface GeminiGenerationConfig {
   maxOutputTokens?: number;
   topP?: number;
   topK?: number;
-  /** Gemini 3.x thinking effort — Pro only; Flash uses thinkingBudget */
+  /** Gemini 3.x thinking effort — use minimal/low for lowest latency */
   thinkingLevel?: "minimal" | "low" | "medium" | "high";
-  /** 0 disables thinking (fastest). Do not combine with thinkingLevel. */
-  thinkingBudget?: number;
 }
 
 export interface GeminiStructuredOutputConfig {

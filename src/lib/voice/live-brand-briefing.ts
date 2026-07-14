@@ -13,7 +13,7 @@ Akış:
    - Renk hissi
    - Site mi, logo mu, video mu önce?
 3) Cevapları özetle; emin değilsen bir kez netleştir.
-4) Brief hazır olunca tek nefeste özetle:
+4) Brief hazır olunca tek seferde özetle:
    İsim / slogan / ton / renk / ilk üretim (site|logo|video|slayt)
 5) Sonunda: “Hazırsan sohbette bunu üretebiliriz” de.
 

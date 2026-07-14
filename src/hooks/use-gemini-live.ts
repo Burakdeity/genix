@@ -429,12 +429,12 @@ export function useGeminiLive(voiceProfile: VoiceProfileId) {
         const profile = voiceProfileRef.current;
         const openerTone =
           profile === "breeze"
-            ? "Ela gibi: ekstra tatlı, oyuncu ve belirgin cilveli selamla; hafif nefes + kısa kıkırdama olsun (1–2 kısa cümle)."
+            ? "Ela gibi: ekstra tatlı, oyuncu ve belirgin cilveli selamla (1–2 kısa cümle)."
             : profile === "ember"
-              ? "Kaan gibi: sıcak, samimi, hafif flörtöz ve esprili selamla; doğal nefes + kısa sıcak gülüş (1–2 kısa cümle)."
-              : "Ada gibi: sıcak, neşeli, net cilveli selamla; hafif nefes alıp vererek başla, kısa kıkırdama ekle (1–2 kısa cümle).";
+              ? "Kaan gibi: sıcak, samimi, hafif flörtöz ve esprili selamla (1–2 kısa cümle)."
+              : "Ada gibi: sıcak, neşeli, net cilveli selamla (1–2 kısa cümle).";
         session.sendRealtimeInput({
-          text: `RESPOND IN TURKISH. YOU MUST RESPOND UNMISTAKABLY IN TURKISH. Native Istanbul Turkish only. Kullanıcı yeni bağlandı. ${openerTone} Kendini Orwix olarak tanıt; profil kişiliğini bozma. Düz/resmi selam yok. Gerçek insan gibi konuş: nefes ve gülüş SES OLARAK yapılsın — "[gülüş]" yazma/okuma. Tek İngilizce kelime yok. İngilizce aksan yok. Kelimeleri yutma; harfleri net bitir.`,
+          text: `RESPOND IN TURKISH. YOU MUST RESPOND UNMISTAKABLY IN TURKISH. Native Istanbul Turkish only. Kullanıcı yeni bağlandı. ${openerTone} Kendini Orwix olarak tanıt; profil kişiliğini bozma. Düz/resmi selam yok. ASLA "nefes", "kıkırdama", "hh", "hehe", "haha", "[gülüş]" deme veya oku — sadece anlamlı Türkçe cümleler. Tek İngilizce kelime yok. İngilizce aksan yok. Kelimeleri yutma; harfleri net bitir.`,
         });
       } catch {
         // optional greeting

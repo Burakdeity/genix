@@ -23,11 +23,10 @@ const streamRequestSchema = z
       ])
       .optional()
       .default(GEMINI_MODELS.FLASH_LITE),
-    systemInstruction: z.string().max(16000).optional(),
+    systemInstruction: z.string().max(8000).optional(),
     temperature: z.number().min(0).max(2).optional(),
     enableSearch: z.boolean().optional().default(false),
     enableCodeExecution: z.boolean().optional().default(false),
-    maxOutputTokens: z.number().int().min(256).max(16384).optional(),
   })
   .superRefine((value, ctx) => {
     if (!value.prompt.trim() && value.images.length === 0) {
@@ -61,11 +60,6 @@ export async function* createGeminiStream(
   try {
     const service = getGeminiService();
     const isPro = request.model === GEMINI_MODELS.PRO;
-    const defaultTokens = isPro ? 8192 : 4096;
-    const maxOutputTokens = Math.min(
-      request.maxOutputTokens ?? defaultTokens,
-      isPro ? 16384 : 8192,
-    );
     const stream = service.generateContentStream({
       prompt: request.prompt,
       history: request.history,
@@ -78,8 +72,8 @@ export async function* createGeminiStream(
         ...(request.temperature !== undefined
           ? { temperature: request.temperature }
           : {}),
-        maxOutputTokens,
-        ...(isPro ? { thinkingLevel: "low" as const } : { thinkingBudget: 0 }),
+        maxOutputTokens: isPro ? 4096 : 1024,
+        thinkingLevel: isPro ? "low" : "minimal",
       },
     });
 

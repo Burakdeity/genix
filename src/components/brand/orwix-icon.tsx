@@ -114,6 +114,8 @@ export function OrwixIcon({
           strokeLinecap="round"
           strokeDasharray="36 40"
         />
+        <circle cx="48.5" cy="32" r="2.25" fill="var(--orwix-icon-from)" />
+        <circle cx="48.5" cy="32" r="2" fill="var(--orwix-icon-to)" />
       </g>
 
       {/* X monogram — slightly smaller, gentle rotate + pulse */}

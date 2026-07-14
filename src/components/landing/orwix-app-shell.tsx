@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 
 import { AlertCircle } from "lucide-react";
 
-import { ChatHistoryList } from "@/components/chat/chat-history-panel";
 import { ChatMessageItem } from "@/components/chat/chat-message";
 import { ChatScrollArea } from "@/components/chat/chat-scroll-area";
 import { OrwixBackground } from "@/components/landing/orwix-background";
@@ -14,27 +13,17 @@ import { OrwixHeader } from "@/components/landing/orwix-header";
 import { OrwixHero } from "@/components/landing/orwix-hero";
 import { OrwixMetaBanner } from "@/components/landing/orwix-meta-banner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ClientOnly } from "@/components/ui/client-only";
 import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth.store";
-import {
-  GUEST_CHAT_ACCOUNT_ID,
-  useChatStore,
-} from "@/stores/chat.store";
 import type {
   ChatAttachment,
   ChatMessage,
   ChatSettings,
   SendMessageOptions,
 } from "@/types/chat.types";
-import type { OrwixMode } from "@/content/orwix-content";
 
 interface PromptRequest {
   id: number;
   text: string;
-  mode?: OrwixMode;
-  autoSend?: boolean;
-  brandBirth?: boolean;
 }
 
 interface OrwixAppShellProps {
@@ -60,80 +49,23 @@ export function OrwixAppShell({
 }: OrwixAppShellProps) {
   const hasMessages = messages.length > 0;
   const [promptRequest, setPromptRequest] = useState<PromptRequest | null>(null);
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const activeAccountId = useAuthStore((state) => state.activeAccountId);
-  const accountId = activeAccountId ?? GUEST_CHAT_ACCOUNT_ID;
-  const hasSavedSessions = useChatStore(
-    (state) => (state.sessionsByAccountId[accountId] ?? []).length > 0,
-  );
-  const showChatHistory = Boolean(activeAccountId) && hasSavedSessions;
 
-  const handleSelectPrompt = (
-    text: string,
-    options?: { mode?: OrwixMode; autoSend?: boolean; brandBirth?: boolean },
-  ) => {
-    setPromptRequest({
-      id: Date.now(),
-      text,
-      mode: options?.mode,
-      autoSend: options?.autoSend,
-      brandBirth: options?.brandBirth,
-    });
+  const handleSelectPrompt = (text: string) => {
+    setPromptRequest({ id: Date.now(), text });
   };
-
-  // Consume external prompt requests once handled so they don't retrigger.
-  useEffect(() => {
-    if (!promptRequest) return;
-    const timer = window.setTimeout(() => {
-      setPromptRequest((current) =>
-        current?.id === promptRequest.id ? null : current,
-      );
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [promptRequest]);
 
   useEffect(() => {
     if (!hasMessages) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, hasMessages, isLoading]);
 
-  // Keep chat shell above the iOS keyboard via visualViewport.
-  useEffect(() => {
-    if (!hasMessages) {
-      setViewportHeight(null);
-      return;
-    }
-
-    const vv = window.visualViewport;
-    const sync = () => {
-      const next = vv?.height ?? window.innerHeight;
-      setViewportHeight(Math.round(next));
-    };
-
-    sync();
-    vv?.addEventListener("resize", sync);
-    vv?.addEventListener("scroll", sync);
-    window.addEventListener("resize", sync);
-
-    return () => {
-      vv?.removeEventListener("resize", sync);
-      vv?.removeEventListener("scroll", sync);
-      window.removeEventListener("resize", sync);
-    };
-  }, [hasMessages]);
-
   return (
     <div
       className={cn(
         "orwix-page flex flex-col",
-        hasMessages ? "overflow-hidden" : "min-h-[100dvh]",
+        hasMessages ? "h-[100dvh] overflow-hidden" : "min-h-[100dvh]",
       )}
-      style={
-        hasMessages
-          ? { height: viewportHeight ? `${viewportHeight}px` : "100dvh" }
-          : undefined
-      }
     >
       <OrwixBackground />
       <div
@@ -142,7 +74,7 @@ export function OrwixAppShell({
           hasMessages ? "h-full min-h-0" : "min-h-[100dvh]",
         )}
       >
-        <OrwixHeader onSelectPrompt={handleSelectPrompt} />
+        <OrwixHeader />
         {!hasMessages ? <OrwixMetaBanner /> : null}
 
         <main
@@ -153,7 +85,7 @@ export function OrwixAppShell({
         >
           {hasMessages ? (
             <ChatScrollArea>
-              <div className="px-4 pt-4 sm:px-5 sm:pt-5 md:px-8 md:pt-6">
+              <div className="px-5 pt-5 md:px-8 md:pt-6">
                 <div className="mx-auto max-w-3xl space-y-6 pb-5">
                   {messages.map((message, index) => (
                     <ChatMessageItem
@@ -201,16 +133,7 @@ export function OrwixAppShell({
         </main>
 
         {!hasMessages ? (
-          <>
-            {showChatHistory ? (
-              <ClientOnly>
-                <section className="mx-auto w-full max-w-xl px-5 pb-8 md:px-6">
-                  <ChatHistoryList limit={12} />
-                </section>
-              </ClientOnly>
-            ) : null}
-            <OrwixFooter onSelectPrompt={handleSelectPrompt} />
-          </>
+          <OrwixFooter onSelectPrompt={handleSelectPrompt} />
         ) : null}
         <OrwixCookieConsent />
       </div>

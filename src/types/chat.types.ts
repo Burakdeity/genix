@@ -5,7 +5,6 @@ import type {
   GeminiModelId,
 } from "@/server/types/gemini.types";
 import type { OrwixMode } from "@/content/orwix-content";
-import type { StudioToolId } from "@/lib/chat/studio-tools";
 
 export type MessageRole = "user" | "assistant";
 
@@ -61,7 +60,6 @@ export interface GeneratePayload {
   structured: boolean;
   enableSearch?: boolean;
   enableCodeExecution?: boolean;
-  maxOutputTokens?: number;
 }
 
 export interface ImageGeneratePayload {
@@ -84,9 +82,6 @@ export interface VideoGeneratePayload {
 
 export type SendMessageOptions = {
   mode?: OrwixMode;
-  studioTool?: StudioToolId;
-  /** Marka doğur — ayrı günlük kota; görsel/video hakkından düşmez. */
-  brandBirth?: boolean;
 };
 
 export type { ApiResponse, GeminiGenerateResponse, ChatStructuredResponse };

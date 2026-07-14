@@ -3,45 +3,34 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowUp,
-  AudioLines,
+  Calendar,
   Clapperboard,
   Globe,
   ImageIcon,
   Loader2,
-  Mic,
   MonitorSmartphone,
   Plus,
   Presentation,
   Search,
   Sparkles,
-  Wand2,
   X,
 } from "lucide-react";
 
 import { OrwixLogo } from "@/components/brand/orwix-logo";
 import { QualityModeToggle } from "@/components/chat/quality-mode-toggle";
-import { HeroShimmerTitle } from "@/components/landing/hero-shimmer-title";
+import { OrwixAppStudio } from "@/components/landing/orwix-app-studio";
 import {
   ORWIX_HERO,
   ORWIX_IMAGE_TEMPLATES,
   ORWIX_MORE_SUGGESTIONS,
   ORWIX_SUGGESTIONS,
   ORWIX_TEMPLATES,
-  ORWIX_APP_TEMPLATES,
   ORWIX_VIDEO_TEMPLATES,
   type OrwixMode,
 } from "@/content/orwix-content";
-import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
-import {
-  ORWIX_STUDIO_TOOLS,
-  type StudioTool,
-  type StudioToolId,
-} from "@/lib/chat/studio-tools";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
-import { useImageQuotaStore } from "@/stores/image-quota.store";
-import { useVoiceStore } from "@/stores/voice.store";
 import type {
   ChatAttachment,
   ChatSettings,
@@ -109,14 +98,6 @@ function AttachmentPreview({
   );
 }
 
-interface PromptRequest {
-  id: number;
-  text: string;
-  mode?: OrwixMode;
-  autoSend?: boolean;
-  brandBirth?: boolean;
-}
-
 interface OrwixHeroProps {
   onSend: (
     message: string,
@@ -125,7 +106,7 @@ interface OrwixHeroProps {
   ) => Promise<void>;
   isLoading: boolean;
   hasMessages: boolean;
-  promptRequest?: PromptRequest | null;
+  promptRequest?: { id: number; text: string } | null;
   model: ChatSettings["model"];
   onModelChange: (model: ChatSettings["model"]) => void;
 }
@@ -140,7 +121,7 @@ function SuggestionIcon({
   if (icon === "video") return <Clapperboard className={className} />;
   if (icon === "research") return <Search className={className} />;
   if (icon === "slides") return <Presentation className={className} />;
-  if (icon === "website") return <Globe className={className} />;
+  if (icon === "website") return <Calendar className={className} />;
   if (icon === "design") return <Sparkles className={className} />;
   return <MonitorSmartphone className={className} />;
 }
@@ -173,8 +154,6 @@ function ComposerBlock({
   onModelChange,
   attachments,
   onRemoveAttachment,
-  breathe = false,
-  compact = false,
 }: {
   value: string;
   setValue: (value: string) => void;
@@ -191,109 +170,31 @@ function ComposerBlock({
   onModelChange: (model: ChatSettings["model"]) => void;
   attachments: ChatAttachment[];
   onRemoveAttachment: (index: number) => void;
-  breathe?: boolean;
-  compact?: boolean;
 }) {
-  const openVoiceMode = useVoiceStore((state) => state.openLive);
-  const dictationBaseRef = useRef(value);
-  const {
-    isSupported: dictationSupported,
-    isListening,
-    error: dictationError,
-    start: startDictation,
-    stop: stopDictation,
-  } = useSpeechRecognition({
-    lang: "tr-TR",
-    continuous: true,
-    onFinalTranscript: (text) => {
-      const next = `${dictationBaseRef.current} ${text}`.replace(/\s+/g, " ").trim();
-      dictationBaseRef.current = next;
-      setValue(next);
-    },
-    onInterimTranscript: (text) => {
-      const next = `${dictationBaseRef.current} ${text}`.replace(/\s+/g, " ").trim();
-      setValue(next);
-    },
-  });
-
-  useEffect(() => {
-    if (isListening) return;
-    dictationBaseRef.current = value;
-  }, [value, isListening]);
-
-  useEffect(() => {
-    if (isLoading && isListening) stopDictation();
-  }, [isLoading, isListening, stopDictation]);
-
-  const toggleDictation = () => {
-    if (isListening) {
-      stopDictation();
-      return;
-    }
-    dictationBaseRef.current = value.trim();
-    startDictation();
-  };
-
-  const onSubmit = () => {
-    if (isListening) stopDictation();
-    void handleSubmit();
-  };
-
   return (
-    <div
-      className={cn(
-        "orwix-composer-wrap w-full",
-        breathe && "orwix-composer-breathe",
-      )}
-    >
+    <div className="orwix-composer-wrap w-full">
       <div className="orwix-composer w-full overflow-hidden">
-        <div
-          className={cn(
-            "flex flex-col",
-            compact ? "min-h-0 px-3 py-2.5 sm:px-4" : "min-h-[148px] px-5 py-5",
-          )}
-        >
+        <div className="flex min-h-[148px] flex-col px-5 py-5">
           <textarea
             ref={textareaRef}
             value={value}
-            onChange={(event) => {
-              const next = event.target.value;
-              if (!isListening) dictationBaseRef.current = next;
-              setValue(next);
-            }}
+            onChange={(event) => setValue(event.target.value)}
             disabled={isLoading}
-            rows={compact ? 1 : 3}
-            placeholder={
-              isListening
-                ? "Dinleniyor… konuşun, yazıya dökülüyor"
-                : placeholder
-            }
+            rows={3}
+            placeholder={placeholder}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                onSubmit();
+                void handleSubmit();
               }
             }}
-            className={cn(
-              "w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[17px]",
-              compact
-                ? "max-h-28 min-h-[28px] py-1"
-                : "min-h-[72px]",
-            )}
+            className="min-h-[72px] w-full flex-1 resize-none bg-transparent text-base leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none md:text-[17px]"
           />
-          {dictationError ? (
-            <p className="mt-1 text-xs text-destructive">{dictationError}</p>
-          ) : null}
           <AttachmentPreview
             attachments={attachments}
             onRemove={onRemoveAttachment}
           />
-          <div
-            className={cn(
-              "flex flex-wrap items-center justify-between gap-2",
-              compact ? "mt-1.5" : "mt-3",
-            )}
-          >
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <button
                 type="button"
@@ -314,55 +215,17 @@ function ComposerBlock({
                   <X className="size-3 opacity-60" />
                 </button>
               ) : null}
-              <div className={cn(compact && "hidden sm:block")}>
-                <QualityModeToggle
-                  model={model}
-                  onChange={onModelChange}
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {dictationSupported ? (
-                <button
-                  type="button"
-                  onClick={toggleDictation}
-                  disabled={isLoading}
-                  className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-full border transition-all disabled:opacity-50",
-                    isListening
-                      ? "border-primary/50 bg-primary/15 text-primary"
-                      : "border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary",
-                  )}
-                  aria-label={
-                    isListening ? "Dinlemeyi durdur" : "Sesle yaz (mikrofon)"
-                  }
-                  aria-pressed={isListening}
-                  title={
-                    isListening
-                      ? "Dinlemeyi durdur"
-                      : "Konuşun — soru yazıya dökülür"
-                  }
-                >
-                  <Mic className="size-4" />
-                </button>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => void openVoiceMode()}
+              <QualityModeToggle
+                model={model}
+                onChange={onModelChange}
                 disabled={isLoading}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
-                aria-label="Canlı ses"
-                title="Canlı sesli sohbet"
-              >
-                <AudioLines className="size-4" />
-              </button>
-              <SendButton
-                canSend={canSend}
-                isLoading={isLoading}
-                onClick={onSubmit}
               />
             </div>
+            <SendButton
+              canSend={canSend}
+              isLoading={isLoading}
+              onClick={() => void handleSubmit()}
+            />
           </div>
         </div>
       </div>
@@ -381,38 +244,15 @@ export function OrwixHero({
   const [value, setValue] = useState("");
   const [mode, setMode] = useState<OrwixMode>("general");
   const [moreOpen, setMoreOpen] = useState(false);
-  const [studioOpen, setStudioOpen] = useState(false);
-  const [studioTool, setStudioTool] = useState<StudioToolId | null>(null);
   const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
   const [attachError, setAttachError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const onSendRef = useRef(onSend);
-  const handledPromptIdRef = useRef<number | null>(null);
-
-  onSendRef.current = onSend;
 
   useEffect(() => {
     if (!promptRequest) return;
-    if (handledPromptIdRef.current === promptRequest.id) return;
-    handledPromptIdRef.current = promptRequest.id;
-
-    const nextMode = promptRequest.mode ?? "general";
-    setMode(nextMode);
-    setMoreOpen(false);
-    setStudioOpen(false);
-    setStudioTool(null);
-
-    if (promptRequest.autoSend) {
-      setValue("");
-      void onSendRef.current(promptRequest.text, [], {
-        mode: nextMode,
-        brandBirth: promptRequest.brandBirth,
-      });
-      return;
-    }
-
     setValue(promptRequest.text);
+    setMoreOpen(false);
     requestAnimationFrame(() => {
       textareaRef.current?.focus();
       textareaRef.current?.scrollIntoView({
@@ -425,12 +265,6 @@ export function OrwixHero({
   const hydrated = useStoresHydrated();
   const activeAccountId = useAuthStore((state) => state.activeAccountId);
   const accounts = useAuthStore((state) => state.accounts);
-  const isPro = useImageQuotaStore((state) =>
-    hydrated ? state.isPro(activeAccountId) : false,
-  );
-  const openProModal = useImageQuotaStore((state) => state.openProModal);
-  const openLoginModal = useImageQuotaStore((state) => state.openLoginModal);
-  const openLive = useVoiceStore((state) => state.openLive);
   const activeAccount =
     hydrated && activeAccountId
       ? accounts.find((account) => account.id === activeAccountId) ?? null
@@ -453,59 +287,20 @@ export function OrwixHero({
     const trimmed = value.trim();
     if ((!trimmed && attachments.length === 0) || isLoading) return;
     const pending = attachments;
-    const activeTool = studioTool ?? undefined;
     setValue("");
     setAttachments([]);
     setAttachError(null);
-    setStudioTool(null);
-    await onSend(trimmed, pending, { mode, studioTool: activeTool });
+    await onSend(trimmed, pending, { mode });
   };
 
   const selectMode = (nextMode: OrwixMode) => {
     setMode(nextMode);
     setMoreOpen(false);
-    setStudioOpen(false);
-    setStudioTool(null);
   };
 
   const applyPrompt = (prompt: string) => {
     setValue(prompt);
     setMoreOpen(false);
-    setStudioOpen(false);
-  };
-
-  const selectStudioTool = (tool: StudioTool) => {
-    setStudioOpen(false);
-    setMoreOpen(false);
-
-    if (tool.proOnly) {
-      if (!activeAccountId) {
-        openLoginModal();
-        return;
-      }
-      if (!isPro) {
-        openProModal();
-        return;
-      }
-    }
-
-    if (tool.opensVoice) {
-      void openLive({ brandBriefing: true });
-      return;
-    }
-
-    setMode(tool.mode);
-    setStudioTool(tool.id);
-    setValue(tool.starter);
-    requestAnimationFrame(() => {
-      textareaRef.current?.focus();
-      if (
-        tool.id === "image-to-prompt" ||
-        tool.id === "ocr-rewrite"
-      ) {
-        fileInputRef.current?.click();
-      }
-    });
   };
 
   const handleFilesSelected = async (fileList: FileList | null) => {
@@ -565,38 +360,43 @@ export function OrwixHero({
   return (
     <section
       className={cn(
-        "relative mx-auto flex w-full max-w-3xl flex-col px-4 md:px-6",
+        "relative mx-auto flex w-full flex-col px-4 md:px-6",
+        isAppsMode ? "max-w-6xl" : "max-w-3xl",
         hasMessages
           ? "pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
           : "flex-1 items-center justify-center pb-10 pt-8 md:pb-14 md:pt-12",
       )}
     >
-          {!hasMessages ? (
-        <div className="orwix-hero-intro mb-8 w-full text-center md:mb-10">
-          <div className="orwix-hero-rise orwix-hero-rise-1 mb-6 flex justify-center md:mb-7">
+      {!hasMessages ? (
+        <div className="mb-10 w-full text-center md:mb-12">
+          <div className="mb-6 flex justify-center md:mb-7">
             <OrwixLogo />
           </div>
-          <HeroShimmerTitle className="font-heading text-[clamp(1.55rem,7.2vw,2.75rem)] leading-[1.12] tracking-tight md:text-6xl">
-            {heroTitle}
-          </HeroShimmerTitle>
-          <p className="orwix-hero-rise orwix-hero-rise-3 orwix-hero-subtitle mx-auto mt-4 max-w-md text-base md:text-lg">
+          <h1 className="font-heading text-[2.75rem] leading-[1.05] tracking-tight md:text-6xl">
+            <span className="orwix-hero-title">{heroTitle}</span>
+          </h1>
+          <p className="orwix-hero-subtitle mx-auto mt-4 max-w-md text-base md:text-lg">
             Fikirden ürüne —{" "}
             <span className="orwix-hero-subtitle-em">tek bir komutla</span>.
           </p>
         </div>
       ) : null}
 
-      <div className="orwix-hero-rise orwix-hero-rise-4 w-full">
-        <ComposerBlock
-          {...composerProps}
-          breathe={!hasMessages}
-          compact={hasMessages}
-        />
-      </div>
+      {isAppsMode ? (
+        <div className="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_280px] lg:items-start">
+          <ComposerBlock {...composerProps} />
+          <OrwixAppStudio
+            isLoading={isLoading}
+            className="orwix-app-studio-panel mx-auto w-full max-w-[280px] lg:sticky lg:top-24"
+          />
+        </div>
+      ) : (
+        <ComposerBlock {...composerProps} />
+      )}
 
       {isWebsiteMode && !hasMessages ? (
         <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
-          {ORWIX_TEMPLATES.map((item) => (
+          {ORWIX_TEMPLATES.slice(0, 6).map((item) => (
             <button
               key={item.primary}
               type="button"
@@ -610,22 +410,6 @@ export function OrwixHero({
                   ? ` · ${item.secondary}`
                   : ""}
               </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-
-      {isAppsMode && !hasMessages ? (
-        <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
-          {ORWIX_APP_TEMPLATES.map((item) => (
-            <button
-              key={item.primary}
-              type="button"
-              disabled={isLoading}
-              onClick={() => applyPrompt(item.prompt)}
-              className="orwix-chip relative rounded-full px-3.5 py-2 text-xs font-semibold disabled:opacity-50"
-            >
-              <span className="relative z-[1]">{item.primary}</span>
             </button>
           ))}
         </div>
@@ -668,7 +452,7 @@ export function OrwixHero({
       ) : null}
 
       {mode === "general" && !hasMessages ? (
-        <div className="orwix-hero-rise orwix-hero-rise-5 relative mt-6 flex w-full flex-wrap justify-center gap-2.5 md:mt-7">
+        <div className="relative mt-6 flex w-full flex-wrap justify-center gap-2.5 md:mt-7">
           {ORWIX_SUGGESTIONS.map((item) => (
             <button
               key={item.label}
@@ -687,16 +471,13 @@ export function OrwixHero({
             <button
               type="button"
               disabled={isLoading}
-              onClick={() => {
-                setStudioOpen(false);
-                setMoreOpen((open) => !open);
-              }}
+              onClick={() => setMoreOpen((open) => !open)}
               className="orwix-chip relative flex h-11 items-center rounded-full px-5 text-sm font-semibold disabled:opacity-50"
             >
               <span className="relative z-[1]">Daha fazla</span>
             </button>
             {moreOpen ? (
-              <div className="orwix-glass absolute left-1/2 top-full z-20 mt-2 min-w-[200px] -translate-x-1/2 rounded-xl p-2 sm:left-0 sm:translate-x-0">
+              <div className="orwix-glass absolute left-0 top-full z-20 mt-2 min-w-[200px] rounded-xl p-2">
                 {ORWIX_MORE_SUGGESTIONS.map((item) => (
                   <button
                     key={item}
@@ -724,44 +505,6 @@ export function OrwixHero({
               </div>
             ) : null}
           </div>
-          <StudioToolsMenu
-            open={studioOpen}
-            disabled={isLoading}
-            onToggle={() => {
-              setMoreOpen(false);
-              setStudioOpen((open) => !open);
-            }}
-            onSelect={selectStudioTool}
-          />
-        </div>
-      ) : null}
-
-      {mode !== "general" && !hasMessages ? (
-        <div className="relative mt-4 flex w-full justify-center">
-          <StudioToolsMenu
-            open={studioOpen}
-            disabled={isLoading}
-            onToggle={() => {
-              setMoreOpen(false);
-              setStudioOpen((open) => !open);
-            }}
-            onSelect={selectStudioTool}
-          />
-        </div>
-      ) : null}
-
-      {studioTool && !hasMessages ? (
-        <div className="mt-3 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setStudioTool(null)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary"
-          >
-            <Sparkles className="size-3" />
-            {ORWIX_STUDIO_TOOLS.find((t) => t.id === studioTool)?.label ??
-              "Stüdyo"}
-            <X className="size-3 opacity-70" />
-          </button>
         </div>
       ) : null}
 
@@ -777,63 +520,6 @@ export function OrwixHero({
         }}
       />
     </section>
-  );
-}
-
-function StudioToolsMenu({
-  open,
-  disabled,
-  onToggle,
-  onSelect,
-}: {
-  open: boolean;
-  disabled: boolean;
-  onToggle: () => void;
-  onSelect: (tool: StudioTool) => void;
-}) {
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={onToggle}
-        className="orwix-chip relative flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold disabled:opacity-50"
-      >
-        <span className="orwix-chip-icon">
-          <Wand2 className="size-4" />
-        </span>
-        <span className="relative z-[1]">Stüdyo</span>
-      </button>
-      {open ? (
-        <div className="orwix-glass absolute left-1/2 top-full z-20 mt-2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-xl p-2 sm:left-0 sm:translate-x-0">
-          <p className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-            Stüdyo araçları
-          </p>
-          {ORWIX_STUDIO_TOOLS.map((tool) => (
-            <button
-              key={tool.id}
-              type="button"
-              className="flex w-full items-start gap-2 rounded-lg px-3 py-2.5 text-left transition-colors hover:bg-primary/10"
-              onClick={() => onSelect(tool)}
-            >
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-                  {tool.label}
-                  {tool.proOnly ? (
-                    <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
-                      Pro
-                    </span>
-                  ) : null}
-                </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {tool.description}
-                </span>
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
   );
 }
 
