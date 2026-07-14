@@ -3,6 +3,7 @@
 import { ExternalLink } from "lucide-react";
 
 import { OrwixIcon } from "@/components/brand/orwix-icon";
+import { AssistantMessageActions } from "@/components/chat/assistant-message-actions";
 import {
   detectMediaGeneratingKind,
   MediaGeneratingPlaceholder,
@@ -177,18 +178,14 @@ export function ChatMessageItem({
           {!isThinking && !mediaGeneratingKind && !isTyping ? (
             <div
               className={cn(
-                "mt-2 flex",
-                isUser ? "justify-end" : "justify-between gap-3",
+                "mt-2 flex items-center gap-2",
+                isUser ? "justify-end" : "justify-between",
               )}
             >
-              {!isUser ? (
-                <span className="hidden text-[11px] font-medium tracking-[-0.01em] text-muted-foreground/70 sm:inline">
-                  Orwix
-                </span>
-              ) : null}
+              {!isUser ? <AssistantMessageActions text={displayText} /> : null}
               <time
                 dateTime={new Date(message.createdAt).toISOString()}
-                className="text-[11px] tabular-nums text-muted-foreground/75"
+                className="shrink-0 text-[11px] tabular-nums text-muted-foreground/75"
                 title={new Date(message.createdAt).toLocaleString("tr-TR")}
               >
                 {formatMessageTimestamp(message.createdAt)}

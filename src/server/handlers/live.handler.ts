@@ -13,7 +13,8 @@ import {
   getGeminiLiveVoiceName,
 } from "@/lib/voice/gemini-voice-map";
 import { LIVE_BRAND_BRIEFING_ADDON } from "@/lib/voice/live-brand-briefing";
-import { LIVE_SYSTEM_INSTRUCTION } from "@/lib/voice/live-system-prompt";
+import { getLiveSystemInstruction } from "@/lib/voice/live-system-prompt";
+import type { VoiceProfileId } from "@/types/voice.types";
 
 const sessionRequestSchema = z.object({
   voiceProfile: z
@@ -33,9 +34,13 @@ function getClientKey(request: Request): string {
   return request.headers.get("x-real-ip") ?? "local";
 }
 
-function resolveSystemInstruction(brandBriefing: boolean): string {
-  if (!brandBriefing) return LIVE_SYSTEM_INSTRUCTION;
-  return `${LIVE_SYSTEM_INSTRUCTION}${LIVE_BRAND_BRIEFING_ADDON}`;
+function resolveSystemInstruction(
+  voiceProfile: VoiceProfileId,
+  brandBriefing: boolean,
+): string {
+  const base = getLiveSystemInstruction(voiceProfile);
+  if (!brandBriefing) return base;
+  return `${base}${LIVE_BRAND_BRIEFING_ADDON}`;
 }
 
 function buildLiveConfig(voiceName: string, systemInstruction: string) {
@@ -137,7 +142,10 @@ export async function handleLiveSessionRequest(
 
     const { voiceProfile, brandBriefing } = parsed.data;
     const voiceName = getGeminiLiveVoiceName(voiceProfile);
-    const systemInstruction = resolveSystemInstruction(brandBriefing);
+    const systemInstruction = resolveSystemInstruction(
+      voiceProfile,
+      brandBriefing,
+    );
     const { GEMINI_API_KEY } = getServerEnv();
 
     const models = [GEMINI_LIVE_MODEL, GEMINI_LIVE_MODEL_FALLBACK];

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import {
   ArrowUp,
+  AudioLines,
   Clapperboard,
   Globe,
   ImageIcon,
@@ -30,6 +31,7 @@ import {
   ORWIX_VIDEO_TEMPLATES,
   type OrwixMode,
 } from "@/content/orwix-content";
+import { useSpeechRecognition } from "@/hooks/use-speech-recognition";
 import { useStoresHydrated } from "@/hooks/use-stores-hydrated";
 import {
   ORWIX_STUDIO_TOOLS,
@@ -193,6 +195,49 @@ function ComposerBlock({
   compact?: boolean;
 }) {
   const openVoiceMode = useVoiceStore((state) => state.openLive);
+  const dictationBaseRef = useRef(value);
+  const {
+    isSupported: dictationSupported,
+    isListening,
+    error: dictationError,
+    start: startDictation,
+    stop: stopDictation,
+  } = useSpeechRecognition({
+    lang: "tr-TR",
+    continuous: true,
+    onFinalTranscript: (text) => {
+      const next = `${dictationBaseRef.current} ${text}`.replace(/\s+/g, " ").trim();
+      dictationBaseRef.current = next;
+      setValue(next);
+    },
+    onInterimTranscript: (text) => {
+      const next = `${dictationBaseRef.current} ${text}`.replace(/\s+/g, " ").trim();
+      setValue(next);
+    },
+  });
+
+  useEffect(() => {
+    if (isListening) return;
+    dictationBaseRef.current = value;
+  }, [value, isListening]);
+
+  useEffect(() => {
+    if (isLoading && isListening) stopDictation();
+  }, [isLoading, isListening, stopDictation]);
+
+  const toggleDictation = () => {
+    if (isListening) {
+      stopDictation();
+      return;
+    }
+    dictationBaseRef.current = value.trim();
+    startDictation();
+  };
+
+  const onSubmit = () => {
+    if (isListening) stopDictation();
+    void handleSubmit();
+  };
 
   return (
     <div
@@ -211,14 +256,22 @@ function ComposerBlock({
           <textarea
             ref={textareaRef}
             value={value}
-            onChange={(event) => setValue(event.target.value)}
+            onChange={(event) => {
+              const next = event.target.value;
+              if (!isListening) dictationBaseRef.current = next;
+              setValue(next);
+            }}
             disabled={isLoading}
             rows={compact ? 1 : 3}
-            placeholder={placeholder}
+            placeholder={
+              isListening
+                ? "Dinleniyor… konuşun, yazıya dökülüyor"
+                : placeholder
+            }
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault();
-                void handleSubmit();
+                onSubmit();
               }
             }}
             className={cn(
@@ -228,6 +281,9 @@ function ComposerBlock({
                 : "min-h-[72px]",
             )}
           />
+          {dictationError ? (
+            <p className="mt-1 text-xs text-destructive">{dictationError}</p>
+          ) : null}
           <AttachmentPreview
             attachments={attachments}
             onRemove={onRemoveAttachment}
@@ -267,19 +323,44 @@ function ComposerBlock({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {dictationSupported ? (
+                <button
+                  type="button"
+                  onClick={toggleDictation}
+                  disabled={isLoading}
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-full border transition-all disabled:opacity-50",
+                    isListening
+                      ? "border-primary/50 bg-primary/15 text-primary"
+                      : "border-border/60 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-primary",
+                  )}
+                  aria-label={
+                    isListening ? "Dinlemeyi durdur" : "Sesle yaz (mikrofon)"
+                  }
+                  aria-pressed={isListening}
+                  title={
+                    isListening
+                      ? "Dinlemeyi durdur"
+                      : "Konuşun — soru yazıya dökülür"
+                  }
+                >
+                  <Mic className="size-4" />
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void openVoiceMode()}
                 disabled={isLoading}
                 className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border/60 text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-primary disabled:opacity-50"
                 aria-label="Canlı ses"
+                title="Canlı sesli sohbet"
               >
-                <Mic className="size-4" />
+                <AudioLines className="size-4" />
               </button>
               <SendButton
                 canSend={canSend}
                 isLoading={isLoading}
-                onClick={() => void handleSubmit()}
+                onClick={onSubmit}
               />
             </div>
           </div>
