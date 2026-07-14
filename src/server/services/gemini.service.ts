@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 
 import { getServerEnv } from "@/server/config/env";
 import { mapGeminiError } from "@/server/errors/gemini.errors";
@@ -73,18 +73,14 @@ function getFallbackModels(primary: GeminiModelId): string[] {
 function resolveThinkingLevel(
   model: GeminiModelId,
   requested?: GeminiGenerationConfig["thinkingLevel"],
-): "minimal" | "low" | "medium" | "high" {
-  // Must be lowercase strings — SDK enum "MINIMAL" is ignored by the API.
-  if (
-    requested === "high" ||
-    requested === "medium" ||
-    requested === "low" ||
-    requested === "minimal"
-  ) {
-    return requested;
-  }
-  if (model === GEMINI_MODELS.PRO) return "low";
-  return "minimal";
+): ThinkingLevel {
+  // SDK enum values (MINIMAL/LOW/…) — the client serializes them for the API.
+  if (requested === "high") return ThinkingLevel.HIGH;
+  if (requested === "medium") return ThinkingLevel.MEDIUM;
+  if (requested === "low") return ThinkingLevel.LOW;
+  if (requested === "minimal") return ThinkingLevel.MINIMAL;
+  if (model === GEMINI_MODELS.PRO) return ThinkingLevel.LOW;
+  return ThinkingLevel.MINIMAL;
 }
 
 function buildImageParts(

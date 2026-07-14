@@ -3,12 +3,20 @@
 import { ExternalLink } from "lucide-react";
 
 import { OrwixIcon } from "@/components/brand/orwix-icon";
+import { AssistantMessageActions } from "@/components/chat/assistant-message-actions";
+import {
+  detectMediaGeneratingKind,
+  MediaGeneratingPlaceholder,
+} from "@/components/chat/media-generating-placeholder";
+import { MessageMarkdown } from "@/components/chat/message-markdown";
 import { WebsitePreview } from "@/components/chat/website-preview";
 import { TypingIndicator } from "@/components/chat/typing-indicator";
 import {
   extractHtmlFromContent,
   getDisplayTextWithoutHtml,
 } from "@/lib/chat/extract-html";
+import { resolveMessageImageDataUrl } from "@/lib/chat/session-image-cache";
+import { formatMessageTimestamp } from "@/lib/chat/format-chat-date";
 import type { ChatMessage } from "@/types/chat.types";
 import { cn } from "@/lib/utils";
 
@@ -62,8 +70,15 @@ export function ChatMessageItem({
   isTyping = false,
 }: ChatMessageItemProps) {
   const isUser = message.role === "user";
+  const mediaGeneratingKind =
+    !isUser && isTyping
+      ? detectMediaGeneratingKind(message.content)
+      : null;
   const isThinking =
-    !isUser && isTyping && message.content.trim().length === 0;
+    !isUser &&
+    isTyping &&
+    message.content.trim().length === 0 &&
+    !mediaGeneratingKind;
   const previewHtml =
     !isUser && !isTyping ? extractHtmlFromContent(message.content) : null;
 
@@ -97,7 +112,11 @@ export function ChatMessageItem({
       >
         {!isUser ? (
           <div className="mt-1.5 hidden size-9 shrink-0 items-center justify-center rounded-2xl border border-border/50 bg-white/90 shadow-sm sm:flex">
-            <OrwixIcon size={22} animated={isThinking} className="size-5" />
+            <OrwixIcon
+              size={22}
+              animated={isThinking || Boolean(mediaGeneratingKind)}
+              className="size-5"
+            />
           </div>
         ) : null}
 
@@ -112,7 +131,11 @@ export function ChatMessageItem({
           {!isUser ? (
             <div className="mb-3 flex items-center gap-2.5 sm:hidden">
               <div className="flex size-8 items-center justify-center rounded-xl border border-border/50 bg-white/90">
-                <OrwixIcon size={18} animated={isThinking} className="size-4" />
+                <OrwixIcon
+                  size={18}
+                  animated={isThinking || Boolean(mediaGeneratingKind)}
+                  className="size-4"
+                />
               </div>
               <span className="text-xs font-semibold tracking-[-0.01em] text-foreground/70">
                 Orwix
@@ -120,7 +143,9 @@ export function ChatMessageItem({
             </div>
           ) : null}
 
-          {isThinking ? (
+          {mediaGeneratingKind ? (
+            <MediaGeneratingPlaceholder kind={mediaGeneratingKind} />
+          ) : isThinking ? (
             <div
               className="orwix-thinking flex items-center gap-3"
               aria-live="polite"
@@ -135,45 +160,91 @@ export function ChatMessageItem({
               </span>
             </div>
           ) : (
-            <p className="whitespace-pre-wrap text-[15px] leading-7 tracking-[-0.015em] text-foreground/90">
-              {displayText}
+            <div className="whitespace-pre-wrap text-[15px] leading-7 tracking-[-0.015em] text-foreground/90">
+              {isUser ? (
+                displayText
+              ) : (
+                <MessageMarkdown text={displayText} />
+              )}
               {isTyping ? (
                 <span
-                  className="orwix-caret ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.12em] rounded-full bg-primary/80 align-baseline"
+                  className="orwix-caret orwix-caret-writing ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[0.12em] rounded-full bg-primary/85 align-baseline"
                   aria-hidden
                 />
               ) : null}
-            </p>
+            </div>
           )}
+
+          {!isThinking && !mediaGeneratingKind && !isTyping ? (
+            <div
+              className={cn(
+                "mt-2 flex items-center gap-2",
+                isUser ? "justify-end" : "justify-between",
+              )}
+            >
+              {!isUser ? <AssistantMessageActions text={displayText} /> : null}
+              <time
+                dateTime={new Date(message.createdAt).toISOString()}
+                className="shrink-0 text-[11px] tabular-nums text-muted-foreground/75"
+                title={new Date(message.createdAt).toLocaleString("tr-TR")}
+              >
+                {formatMessageTimestamp(message.createdAt)}
+              </time>
+            </div>
+          ) : null}
 
           {message.images && message.images.length > 0 ? (
             <div className="mt-3 grid gap-3">
-              {message.images.map((image, index) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={`${message.id}-image-${index}`}
-                  src={image.dataUrl}
-                  alt={isUser ? "Yüklenen görsel" : "Üretilen görsel"}
-                  className={cn(
-                    "rounded-xl border border-border/60 object-contain bg-muted/30",
-                    isUser ? "max-h-40" : "max-h-[28rem] w-full",
-                  )}
-                />
-              ))}
+              {message.images.map((image, index) => {
+                const dataUrl = resolveMessageImageDataUrl(
+                  message.id,
+                  image.dataUrl,
+                );
+
+                return dataUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={`${message.id}-image-${index}`}
+                    src={dataUrl}
+                    alt={isUser ? "Yüklenen görsel" : "Üretilen görsel"}
+                    className={cn(
+                      "rounded-xl border border-border/60 object-contain bg-muted/30",
+                      isUser ? "max-h-40" : "max-h-[28rem] w-full",
+                    )}
+                  />
+                ) : (
+                  <p
+                    key={`${message.id}-image-${index}`}
+                    className="rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+                  >
+                    Görsel geçmişte kaydedildi (önizleme bu cihazda tutulmadı).
+                  </p>
+                );
+              })}
             </div>
           ) : null}
 
           {message.videos && message.videos.length > 0 ? (
             <div className="mt-3 grid gap-3">
-              {message.videos.map((video, index) => (
-                <video
-                  key={`${message.id}-video-${index}`}
-                  src={video.dataUrl}
-                  controls
-                  playsInline
-                  className="max-h-[28rem] w-full rounded-xl border border-border/60 bg-black object-contain"
-                />
-              ))}
+              {message.videos.map((video, index) =>
+                video.dataUrl ? (
+                  <video
+                    key={`${message.id}-video-${index}`}
+                    src={video.dataUrl}
+                    controls
+                    playsInline
+                    className="max-h-[28rem] w-full rounded-xl border border-border/60 bg-black object-contain"
+                  />
+                ) : (
+                  <p
+                    key={`${message.id}-video-${index}`}
+                    className="rounded-xl border border-border/50 bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+                  >
+                    Video üretildi (dosya boyutu nedeniyle geçmişte yalnızca metin
+                    tutulur).
+                  </p>
+                ),
+              )}
             </div>
           ) : null}
 
